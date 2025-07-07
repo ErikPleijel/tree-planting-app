@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('content')
+<x-app-layout>
     <div class="container">
         <h1>Planting Locations</h1>
 
@@ -26,15 +24,17 @@
                     <td>
                         <a href="{{ route('planting-locations.show', $location) }}" class="btn btn-info btn-sm">View</a>
                         <a href="{{ route('planting-locations.edit', $location) }}" class="btn btn-warning btn-sm">Edit</a>
-                        <form action="{{ route('planting-locations.destroy', $location) }}" method="POST" style="display:inline;">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this location?')">Delete</button>
-                        </form>
+                        @if(auth()->user()->role->name === 'Admin')
+                            <form action="{{ route('planting-locations.destroy', $location) }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this location?')">Delete</button>
+                            </form>
+                        @endif
                     </td>
                 </tr>
             @endforeach
             </tbody>
         </table>
     </div>
-@endsection
+</x-app-layout>

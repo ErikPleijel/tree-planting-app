@@ -26,14 +26,47 @@ class StatusTablesSeeder extends Seeder
             ['tree_planting_status' => 'Verified'],
         ]);
 
-        DB::table('users')->insert([
+        DB::table('users')->updateOrInsert(
+            ['email' => 'admin@example.com'],
             [
                 'name' => 'Admin User',
-                'email' => 'admin@example.com',
                 'telephone' => '123456789',
                 'password' => Hash::make('password'),
                 'role_id' => 1,
                 'gender' => 'Male',
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        DB::table('users')->insert([
+            [
+                'name' => 'Inspector User',
+                'email' => 'inspector@example.com',
+                'password' => Hash::make('password'),
+                'role_id' => 2,
+                'gender' => 'Male',
+                'telephone' => '123456789',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Verifier User',
+                'email' => 'verifier@example.com',
+                'password' => Hash::make('password'),
+                'role_id' => 3,
+                'gender' => 'Female',
+                'telephone' => '987654321',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'name' => 'Viewer User',
+                'email' => 'viewer@example.com',
+                'password' => Hash::make('password'),
+                'role_id' => 4,
+                'gender' => 'Other',
+                'telephone' => '555555555',
                 'created_at' => now(),
                 'updated_at' => now(),
             ],

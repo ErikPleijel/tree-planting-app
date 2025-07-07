@@ -4,6 +4,10 @@
             {{ __('Dashboard') }}
         </h2>
     </x-slot>
+    <div class="bg-white p-6 rounded shadow text-gray-800">
+        Welcome to your Tree Planting App!
+    </div>
+
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

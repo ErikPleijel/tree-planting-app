@@ -23,16 +23,35 @@ class PlantingLocationController extends Controller
      */
     public function create()
     {
-        //
+        return view('planting-locations.create', [
+            'divisions' => \App\Models\Division::all(),
+            'statuses' => \App\Models\PlantingLocationStatus::all(),
+        ]);
     }
+
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(\Illuminate\Http\Request $request)
     {
-        //
+        $validated = $request->validate([
+            'location' => 'required|string|max:255',
+            'division_id' => 'required|exists:division,id',
+            'comment' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'status' => 'required|exists:planting_location_status,id',
+        ]);
+
+        $validated['user_id'] = auth()->id();
+
+        \App\Models\PlantingLocation::create($validated);
+
+        return redirect()->route('planting-locations.index')
+            ->with('success', 'Planting Location created successfully.');
     }
+
 
     /**
      * Display the specified resource.
@@ -45,24 +64,50 @@ class PlantingLocationController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(PlantingLocation $plantingLocation)
+    public function edit(\App\Models\PlantingLocation $plantingLocation)
     {
-        //
+        return view('planting-locations.edit', [
+            'plantingLocation' => $plantingLocation,
+            'divisions' => \App\Models\Division::all(),
+            'statuses' => \App\Models\PlantingLocationStatus::all(),
+        ]);
     }
+
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, PlantingLocation $plantingLocation)
+    public function update(\Illuminate\Http\Request $request, \App\Models\PlantingLocation $plantingLocation)
     {
-        //
+        $validated = $request->validate([
+            'location' => 'required|string|max:255',
+            'division_id' => 'required|exists:division,id',
+            'comment' => 'nullable|string',
+            'latitude' => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'status' => 'required|exists:planting_location_status,id',
+        ]);
+
+        $plantingLocation->update($validated);
+
+        return redirect()->route('planting-locations.index')
+            ->with('success', 'Planting Location updated successfully.');
     }
+
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(PlantingLocation $plantingLocation)
+    public function destroy(\App\Models\PlantingLocation $plantingLocation)
     {
-        //
+        if (auth()->user()->role->name !== 'Admin') {
+            abort(403, 'Only admins can delete locations.');
+        }
+
+        $plantingLocation->delete();
+
+        return redirect()->route('planting-locations.index')
+            ->with('success', 'Planting Location deleted.');
     }
+
 }
