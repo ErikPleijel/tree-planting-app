@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 
 class StatusTablesSeeder extends Seeder
 {
@@ -26,7 +27,7 @@ class StatusTablesSeeder extends Seeder
             ['tree_planting_status' => 'Verified'],
         ]);
 
-        DB::table('users')->updateOrInsert(
+        /*DB::table('users')->updateOrInsert(
             ['email' => 'admin@example.com'],
             [
                 'name' => 'Mr Erik Admin',
@@ -37,41 +38,11 @@ class StatusTablesSeeder extends Seeder
                 'updated_at' => now(),
                 'created_at' => now(),
             ]
-        );
+        );*/
 
-        DB::table('users')->insert([
-            [
-                'name' => 'Mr Bean Inspector',
-                'email' => 'inspector@example.com',
-                'password' => Hash::make('password'),
-                'role_id' => 2,
-                'gender' => 'Male',
-                'telephone' => '123456789',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Mr Duck Verifier',
-                'email' => 'verifier@example.com',
-                'password' => Hash::make('password'),
-                'role_id' => 3,
-                'gender' => 'Female',
-                'telephone' => '987654321',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-            [
-                'name' => 'Mr Man Viewer',
-                'email' => 'viewer@example.com',
-                'password' => Hash::make('password'),
-                'role_id' => 4,
-                'gender' => 'Other',
-                'telephone' => '555555555',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ],
-        ]);
 
+
+        User::factory()->count(20)->create();
         // Tree Types
         DB::table('tree_types')->insert([
             ['name' => 'Flame Tree', 'description' => 'Delonix regia'],

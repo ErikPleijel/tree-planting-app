@@ -17,15 +17,36 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="font-sans text-gray-900 antialiased">
-<div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100">
-    @auth
-        <p>Hello, {{ auth()->user()->name }}!</p>
-    @endauth
 
-    @guest
-        <p>Welcome, Guest!</p>
-    @endguest
-</div>
+@include('partials.header')
+
+@guest
+    <div class="w-full mt-10 px-10 flex justify-between items-center">
+
+        <div class="flex-1 text-center">
+            <p class="text-3xl font-semibold">{{-- Welcome --}}</p>
+        </div>
+
+        {{-- Right-aligned question and buttons --}}
+        <div class="flex flex-col items-end text-right">
+            <p class="text-lg">Involved in this project?</p>
+
+            <div class="flex gap-4 mt-2">
+                <a href="{{ route('login') }}"
+                   class="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition">
+                    Log In
+                </a>
+
+                <a href="{{ route('register') }}"
+                   class="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition">
+                    Register
+                </a>
+            </div>
+        </div>
+    </div>
+@endguest
+@include('partials.stats')
+
 </body>
 </html>
 

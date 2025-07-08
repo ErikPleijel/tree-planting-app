@@ -17,6 +17,6 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->render(function (AuthenticationException $e, $request) {
-            return redirect()->guest(route('home')); // 👈 redirect to your custom guest page
+            return redirect()->route('home');
         });
     })->create();
