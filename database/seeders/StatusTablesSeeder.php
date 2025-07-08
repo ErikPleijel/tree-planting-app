@@ -29,7 +29,7 @@ class StatusTablesSeeder extends Seeder
         DB::table('users')->updateOrInsert(
             ['email' => 'admin@example.com'],
             [
-                'name' => 'Admin User',
+                'name' => 'Mr Erik Admin',
                 'telephone' => '123456789',
                 'password' => Hash::make('password'),
                 'role_id' => 1,
@@ -41,7 +41,7 @@ class StatusTablesSeeder extends Seeder
 
         DB::table('users')->insert([
             [
-                'name' => 'Inspector User',
+                'name' => 'Mr Bean Inspector',
                 'email' => 'inspector@example.com',
                 'password' => Hash::make('password'),
                 'role_id' => 2,
@@ -51,7 +51,7 @@ class StatusTablesSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Verifier User',
+                'name' => 'Mr Duck Verifier',
                 'email' => 'verifier@example.com',
                 'password' => Hash::make('password'),
                 'role_id' => 3,
@@ -61,7 +61,7 @@ class StatusTablesSeeder extends Seeder
                 'updated_at' => now(),
             ],
             [
-                'name' => 'Viewer User',
+                'name' => 'Mr Man Viewer',
                 'email' => 'viewer@example.com',
                 'password' => Hash::make('password'),
                 'role_id' => 4,
