@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\PlantingLocation;
 use Illuminate\Http\Request;
 
+use App\Services\MapMarkerService;
+
 class PlantingLocationController extends Controller
 {
     /**
@@ -12,7 +14,11 @@ class PlantingLocationController extends Controller
      */
     public function index()
     {
-        $plantingLocations = \App\Models\PlantingLocation::with(['division', 'status'])->get();
+        //$plantingLocations = \App\Models\PlantingLocation::with(['division', 'status'])->get();
+
+        $plantingLocations = PlantingLocation::with(['division', 'statusRelation'])
+            ->withSum('treePlantings as total_trees', 'number_of_trees')
+            ->get();
 
         return view('planting-locations.index', compact('plantingLocations'));
     }
@@ -48,18 +54,34 @@ class PlantingLocationController extends Controller
 
         \App\Models\PlantingLocation::create($validated);
 
-        return redirect()->route('planting-locations.index')
-            ->with('success', 'Planting Location created successfully.');
+        $plantingLocation = \App\Models\PlantingLocation::create($validated);
+
+        return redirect()
+            ->route('planting-locations.show', $plantingLocation->id)
+            ->with('success', 'Planting location created successfully.');
     }
 
 
     /**
      * Display the specified resource.
      */
-    public function show(PlantingLocation $plantingLocation)
+    public function show(Request $request, MapMarkerService $markerService, \App\Models\PlantingLocation $plantingLocation)
     {
-        //
+        $filters = [
+            'id' => $plantingLocation->id,
+        ];
+
+        $markers = $markerService->getMarkers($filters);
+
+     //   $plantingLocation->load(['division', 'statusRelation']);
+        $plantingLocation->load(['division', 'statusRelation', 'treePlantings.treeType', 'treePlantings.statusRelation']);
+
+
+        return view('planting-locations.show', compact('plantingLocation', 'markers'));
     }
+
+
+
 
     /**
      * Show the form for editing the specified resource.

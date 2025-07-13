@@ -3,6 +3,34 @@
         {{-- Insert common header  --}}
     </x-slot>
 
+
+
+    <div class="mx-auto w-full max-w-xl px-4">
+        <x-map
+
+            :markers="$markers"
+
+        />
+    </div>
+
+    <div class="flex justify-center">
+        <form method="GET" action="{{ route('dashboard') }}" class="mb-4">
+            <label for="division_id" class="block mb-1 font-semibold">Filter by Division</label>
+            <select name="division_id" id="division_id" class="border rounded p-2">
+                <option value="">-- All Divisions --</option>
+                @foreach (\App\Models\Division::orderBy('LGA_name')->get() as $division)
+                    <option value="{{ $division->id }}" @selected(request('division_id') == $division->id)>
+                        {{ $division->LGA_name }}
+                    </option>
+                @endforeach
+            </select>
+
+            <button type="submit" class="ml-2 px-4 py-2 bg-green-600 text-white rounded">Filter</button>
+        </form>
+    </div>
+
+
+
     <div class="bg-white p-6 rounded shadow max-w-3xl mx-auto mt-8">
         <h2 class="text-2xl font-bold mb-4">Welcome to the Tree Planting Dashboard</h2>
 
@@ -34,3 +62,12 @@
 
 
 </x-app-layout>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const map = L.map('map').setView([10.0, 6.5], 8);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    });
+</script>

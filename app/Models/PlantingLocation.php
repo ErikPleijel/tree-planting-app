@@ -24,7 +24,12 @@ class PlantingLocation extends Model
         return $this->belongsTo(Division::class);
     }
 
-    public function status()
+   public function status()
+    {
+        return $this->belongsTo(PlantingLocationStatus::class, 'status');
+    }
+
+    public function statusRelation()
     {
         return $this->belongsTo(PlantingLocationStatus::class, 'status');
     }

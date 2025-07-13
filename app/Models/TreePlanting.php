@@ -29,6 +29,11 @@ class TreePlanting extends Model
         return $this->belongsTo(TreePlantingStatus::class, 'status');
     }
 
+    public function statusRelation()
+    {
+        return $this->belongsTo(TreePlantingStatus::class, 'status');
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

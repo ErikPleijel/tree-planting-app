@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -14,15 +15,21 @@ Route::get('/home', function () {
 Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::class)
     ->middleware(['auth', 'role:Admin,Inspector']);
 
+
+
 Route::resource('inspections', \App\Http\Controllers\InspectionController::class)
     ->middleware(['auth', 'role:Admin,Inspector,Verifier']);
 
 Route::resource('planting-locations', \App\Http\Controllers\PlantingLocationController::class)
     ->middleware(['auth', 'role:Admin,Inspector']);
 
-Route::get('/dashboard', function () {
+
+
+/*Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');*/
+
+Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
 
 
 Route::middleware('auth')->group(function () {

@@ -1,40 +1,44 @@
 <x-app-layout>
-    <div class="container">
-        <h1>Planting Locations</h1>
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Planting Locations</h1>
 
-        <a href="{{ route('planting-locations.create') }}" class="btn btn-primary mb-3">Add New Location</a>
+        <div class="text-right mb-4">
+            <a href="{{ route('planting-locations.create') }}"
+               class="btn btn-primary">
+                Add New Location
+            </a>
+        </div>
 
-        <table class="table">
-            <thead>
-            <tr>
-                <th>ID</th>
-                <th>Location</th>
-                <th>Division</th>
-                <th>Status</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
-            <tbody>
-            @foreach($plantingLocations as $location)
+        <div class="overflow-x-auto">
+            <table class="table w-auto mx-auto text-sm bg-white shadow-lg rounded-lg">
+                <thead class="bg-gray-100">
                 <tr>
-                    <td>{{ $location->id }}</td>
-                    <td>{{ $location->location }}</td>
-                    <td>{{ $location->division->LGA_name ?? 'N/A' }}</td>
-                    <td>{{ $location->status->planting_location_status ?? 'N/A' }}</td>
-                    <td>
-                        <a href="{{ route('planting-locations.show', $location) }}" class="btn btn-info btn-sm">View</a>
-                        <a href="{{ route('planting-locations.edit', $location) }}" class="btn btn-warning btn-sm">Edit</a>
-                        @if(auth()->user()->role->name === 'Admin')
-                            <form action="{{ route('planting-locations.destroy', $location) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-danger btn-sm" onclick="return confirm('Delete this location?')">Delete</button>
-                            </form>
-                        @endif
-                    </td>
+                    <th class="px-6 py-3 text-left whitespace-nowrap">ID</th>
+                    <th class="px-6 py-3 text-left whitespace-nowrap">Location</th>
+                    <th class="px-6 py-3 text-left whitespace-nowrap">Division</th>
+                    <th class="px-6 py-3 text-left whitespace-nowrap">Status</th>
+                    <th class="px-6 py-3 text-left whitespace-nowrap">Total Trees</th>
+                    <th class="px-6 py-3 text-left whitespace-nowrap">Actions</th>
+
                 </tr>
-            @endforeach
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                @foreach($plantingLocations as $location)
+                    <tr class="border-t hover:bg-gray-50 transition">
+                        <td class="px-6 py-3">{{ $location->id }}</td>
+                        <td class="px-6 py-3">{{ $location->location }}</td>
+                        <td class="px-6 py-3">{{ $location->division->LGA_name ?? 'N/A' }}</td>
+                        <td class="px-6 py-3">{{ $location->statusRelation->planting_location_status ?? 'N/A' }}</td>
+                        <td class="px-6 py-3 text-center">{{ $location->total_trees ?? 0 }}</td>
+
+                        <td class="px-6 py-3 space-x-2">
+                            <a href="{{ route('planting-locations.show', $location) }}" class="btn btn-sm btn-info">View</a>
+
+                        </td>
+                    </tr>
+                @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
 </x-app-layout>
