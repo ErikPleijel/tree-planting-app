@@ -26,12 +26,12 @@ class PlantingLocation extends Model
 
    public function status()
     {
-        return $this->belongsTo(PlantingLocationStatus::class, 'status');
+        return $this->belongsTo(PlantingLocationStatus::class, 'status_id');
     }
 
-    public function statusRelation()
+   public function statusRelation()
     {
-        return $this->belongsTo(PlantingLocationStatus::class, 'status');
+        return $this->belongsTo(PlantingLocationStatus::class, 'status_id');
     }
 
     public function user()
@@ -42,5 +42,10 @@ class PlantingLocation extends Model
     public function treePlantings()
     {
         return $this->hasMany(TreePlanting::class);
+    }
+
+    public function pictures()
+    {
+        return $this->hasMany(Picture::class);
     }
 }

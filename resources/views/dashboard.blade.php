@@ -3,8 +3,6 @@
         {{-- Insert common header  --}}
     </x-slot>
 
-
-
     <div class="mx-auto w-full max-w-xl px-4">
         <x-map
 

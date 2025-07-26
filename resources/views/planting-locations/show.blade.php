@@ -67,6 +67,31 @@
         </div>
     </div>
 
+    <div class="flex justify-center items-center ">
+        <a href="{{ route('pictures.create', $plantingLocation->id) }}">
+            <button class="btn btn-primary mt-4">📷 Take Photo</button>
+        </a>
+    </div>
+
+    @if($plantingLocation->pictures->count())
+        <h3 class="text-lg font-semibold mb-2 text-center">Uploaded Photos</h3>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            @foreach($plantingLocation->pictures as $pic)
+                <div class="border p-2 rounded shadow">
+                    <img
+                        src="{{ asset('storage/' . $pic->path) }}"
+                        alt="Picture"
+                        class="w-full h-auto rounded"
+                    >
+                    <p class="text-xs text-gray-600 mt-1">Uploaded {{ $pic->created_at->format('Y-m-d H:i') }}</p>
+                </div>
+            @endforeach
+        </div>
+    @else
+        <p class="text-gray-500">No pictures uploaded yet.</p>
+    @endif
+
 
     <h2 class="text-lg font-semibold mt-6 mb-3 text-center">Tree Plantings at this Location</h2>
     @if(session('success'))

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\PlantingLocation;
+use App\Models\TreePlanting;
 
 class PlantingLocationSeeder extends Seeder
 {
@@ -13,6 +14,7 @@ class PlantingLocationSeeder extends Seeder
      */
     public function run(): void
     {
-        PlantingLocation::factory()->count(300)->create();
+        PlantingLocation::factory()->count(50)->create();
+        TreePlanting::factory()->count(200)->create();
     }
 }

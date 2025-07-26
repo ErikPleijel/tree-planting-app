@@ -9,25 +9,11 @@ class Division extends Model
 {
     use HasFactory;
 
+    // Optional: This is actually redundant if the table is named "divisions"
+    // protected $table = 'divisions';
     protected $table = 'division';
-    public function division()
+    public function plantingLocations()
     {
-        return $this->belongsTo(Division::class);
+        return $this->hasMany(PlantingLocation::class);
     }
-
-    public function status()
-    {
-        return $this->belongsTo(PlantingLocationStatus::class, 'status');
-    }
-
-    public function user()
-    {
-        return $this->belongsTo(User::class);
-    }
-
-    public function treePlantings()
-    {
-        return $this->hasMany(TreePlanting::class);
-    }
-
 }

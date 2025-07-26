@@ -3,14 +3,13 @@
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\PictureController;
+use App\Http\Controllers\HomeController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
-
-Route::get('/home', function () {
+/*Route::get('/', function () {
     return view('home');
-})->name('home');
+})->name('home');*/
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
 Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::class)
     ->middleware(['auth', 'role:Admin,Inspector']);
@@ -37,6 +36,10 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+
+Route::get('planting-locations/{plantingLocation}/pictures/create', [PictureController::class, 'create'])->name('pictures.create');
+Route::post('pictures', [PictureController::class, 'store'])->name('pictures.store');
 
 /*
 

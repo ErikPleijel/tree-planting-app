@@ -36,9 +36,44 @@
 
                         </td>
                     </tr>
+                    {{-- Subtable for Tree Plantings --}}
+                    <tr>
+                        <td colspan="6" class="px-6 py-3 bg-gray-50">
+                            @if($location->treePlantings->count())
+                                <table class="w-full text-sm border">
+                                    <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="px-4 py-2 border">ID</th>
+                                        <th class="px-4 py-2 border">Planting Date</th>
+                                        <th class="px-4 py-2 border">Number of Trees</th>
+                                        <th class="px-4 py-2 border">Tree Type</th>
+                                        <th class="px-4 py-2 border">Status</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach($location->treePlantings as $planting)
+                                        <tr class="hover:bg-gray-50">
+                                            <td class="px-4 py-2 border">{{ $planting->id }}</td>
+                                            <td class="px-4 py-2 border">{{ $planting->planting_date }}</td>
+                                            <td class="px-4 py-2 border">{{ $planting->number_of_trees }}</td>
+                                            <td class="px-4 py-2 border">{{ $planting->treeType->name ?? 'N/A' }}</td>
+                                            <td class="px-4 py-2 border">{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <p class="text-gray-500">No tree plantings recorded for this location.</p>
+                            @endif
+                        </td>
+                    </tr>
+
                 @endforeach
                 </tbody>
             </table>
         </div>
+    </div>
+    <div class="mt-4">
+        {{ $plantingLocations->links() }}
     </div>
 </x-app-layout>

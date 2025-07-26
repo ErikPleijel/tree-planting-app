@@ -18,7 +18,7 @@ class PlantingLocationController extends Controller
 
         $plantingLocations = PlantingLocation::with(['division', 'statusRelation'])
             ->withSum('treePlantings as total_trees', 'number_of_trees')
-            ->get();
+            ->paginate(20); // Show 50 per page
 
         return view('planting-locations.index', compact('plantingLocations'));
     }
@@ -74,7 +74,7 @@ class PlantingLocationController extends Controller
         $markers = $markerService->getMarkers($filters);
 
      //   $plantingLocation->load(['division', 'statusRelation']);
-        $plantingLocation->load(['division', 'statusRelation', 'treePlantings.treeType', 'treePlantings.statusRelation']);
+        $plantingLocation->load(['division', 'pictures', 'statusRelation', 'treePlantings.treeType', 'treePlantings.statusRelation']);
 
 
         return view('planting-locations.show', compact('plantingLocation', 'markers'));
