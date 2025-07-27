@@ -29,6 +29,14 @@
                     Tree Plantings Report
                 </x-nav-link>
 
+                @auth
+                    @if (Auth::user()->role?->name === 'Admin')
+                        <x-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
+                            Users Report
+                        </x-nav-link>
+                    @endif
+                @endauth
+
 
             </div>
 
@@ -83,13 +91,38 @@
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+            <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')">
                 HOME
             </x-responsive-nav-link>
+
+            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                Dashboard
+            </x-responsive-nav-link>
+
+            @auth
+                @if (Auth::user()->role?->name === 'Admin' || Auth::user()->role?->name === 'Inspector')
+                    <x-responsive-nav-link :href="route('planting-locations.index')" :active="request()->routeIs('planting-locations.*')">
+                        Planting Locations
+                    </x-responsive-nav-link>
+                @endif
+            @endauth
+
+            <x-responsive-nav-link :href="route('tree-plantings.report')" :active="request()->routeIs('tree-plantings.report')">
+                Tree Plantings Report
+            </x-responsive-nav-link>
+
+            @auth
+                @if (Auth::user()->role?->name === 'Admin')
+                    <x-responsive-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
+                        Users Report
+                    </x-responsive-nav-link>
+                @endif
+            @endauth
         </div>
 
-        <!-- Responsive Settings Options -->
+        <!-- Rest of the responsive menu (Settings, etc.) stays the same -->
         <div class="pt-4 pb-1 border-t border-gray-200">
+            <!-- ... existing settings section ... -->
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
                 <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>

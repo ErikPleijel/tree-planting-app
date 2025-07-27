@@ -5,6 +5,8 @@ use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PictureController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\UserController;
+
 
 /*Route::get('/', function () {
     return view('home');
@@ -72,3 +74,6 @@ Route::resource('planting-locations', \App\Http\Controllers\PlantingLocationCont
 
 
 require __DIR__.'/auth.php';
+Route::get('/users/report', [UserController::class, 'index'])
+    ->name('users.report')
+    ->middleware(['auth', 'role:Admin']);

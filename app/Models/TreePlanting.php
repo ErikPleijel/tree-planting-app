@@ -17,6 +17,11 @@ class TreePlanting extends Model
         'status',
         'user_id',
     ];
+
+    protected $casts = [
+        'planting_date' => 'date'
+    ];
+
     public function treeType()
     {
         return $this->belongsTo(TreeType::class);
@@ -42,4 +47,8 @@ class TreePlanting extends Model
         return $this->belongsTo(User::class);
     }
 
+public function division()
+{
+    return $this->belongsTo(Division::class);
+}
 }

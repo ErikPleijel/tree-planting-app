@@ -22,13 +22,7 @@
     </div>
 </section>
 
-<div class="mx-auto w-full max-w-xl px-4">
-    <x-map
 
-        :markers="$markers"
-
-    />
-</div>
 
 <div class="flex justify-center mt-8">
     <table class="border border-gray-300 shadow-md text-left">
