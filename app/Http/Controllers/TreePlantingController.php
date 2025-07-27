@@ -116,4 +116,44 @@ class TreePlantingController extends Controller
             ->with('success', 'Tree Planting deleted.');
     }
 
+    public function report(Request $request)
+    {
+        $query = \App\Models\TreePlanting::with(['treeType', 'plantingLocation.division', 'user', 'statusRelation'])
+            ->select('tree_plantings.*');
+
+        // Filtering
+        $query->when($request->input('tree_type_id'), fn($q, $id) => $q->where('tree_type_id', $id));
+        $query->when($request->input('division_id'), fn($q, $id) =>
+            $q->whereHas('plantingLocation', fn($q2) => $q2->where('division_id', $id))
+        );
+        $query->when($request->input('user_id'), fn($q, $id) => $q->where('user_id', $id));
+        $query->when($request->input('status'), fn($q, $status) => $q->where('status', $status));
+
+        // Search (on location)
+        if ($search = $request->input('search')) {
+            $query->whereHas('plantingLocation', fn($q2) =>
+                $q2->where('location', 'like', "%$search%")
+            );
+        }
+
+        // Sorting (default: planting date desc)
+        $sortField = $request->input('sort', 'planting_date');
+        $sortDir = $request->input('direction', 'desc');
+        $query->orderBy($sortField, $sortDir);
+
+        // Pagination (25 per page, preserve filters)
+        $treePlantings = $query->paginate(25)->withQueryString();
+
+        // Dropdown data for filters
+        $treeTypes = \App\Models\TreeType::all();
+        $divisions = \App\Models\Division::all();
+        $users = \App\Models\User::all();
+        $statuses = \App\Models\TreePlantingStatus::all();
+
+        return view('tree-plantings.report', compact(
+            'treePlantings', 'treeTypes', 'divisions', 'users', 'statuses'
+        ));
+    }
+
+
 }

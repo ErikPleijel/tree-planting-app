@@ -25,6 +25,11 @@
                     @endif
                 @endauth
 
+                <x-nav-link :href="route('tree-plantings.report')" :active="request()->routeIs('tree-plantings.report')">
+                    Tree Plantings Report
+                </x-nav-link>
+
+
             </div>
 
 

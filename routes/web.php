@@ -11,6 +11,10 @@ use App\Http\Controllers\HomeController;
 })->name('home');*/
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
+
+Route::get('/tree-plantings/report', [App\Http\Controllers\TreePlantingController::class, 'report'])
+    ->name('tree-plantings.report');
+
 Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::class)
     ->middleware(['auth', 'role:Admin,Inspector']);
 
@@ -40,6 +44,9 @@ Route::middleware('auth')->group(function () {
 
 Route::get('planting-locations/{plantingLocation}/pictures/create', [PictureController::class, 'create'])->name('pictures.create');
 Route::post('pictures', [PictureController::class, 'store'])->name('pictures.store');
+
+
+
 
 /*
 
