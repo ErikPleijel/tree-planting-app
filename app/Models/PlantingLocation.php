@@ -48,4 +48,9 @@ class PlantingLocation extends Model
     {
         return $this->hasMany(Picture::class);
     }
+
+    public function inspections()
+    {
+        return $this->hasMany(Inspection::class);
+    }
 }

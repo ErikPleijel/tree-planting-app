@@ -63,10 +63,17 @@
                                 </div>
                             </div>
 
-                            <div class="flex justify-end">
+                            <div class="flex justify-end space-x-2">
                                 <button type="submit" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                                     Filter Results
                                 </button>
+
+                                @if(request()->hasAny(['tree_type_id', 'division_id', 'status', 'search']))
+                                    <a href="{{ route('tree-plantings.report') }}"
+                                       class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                        Reset Filters
+                                    </a>
+                                @endif
                             </div>
                         </form>
                     </div>
@@ -103,8 +110,8 @@
     @foreach($treePlantings as $planting)
         <tr>
             <td class="px-6 py-4 whitespace-nowrap">
-                {{ $planting->planting_date }}
-            </td>
+    {{ $planting->planting_date->format('Y-m-d') }}
+</td>
             <td class="px-6 py-4 whitespace-nowrap">
                 @php
                     $plantingDate = \Carbon\Carbon::parse($planting->planting_date);
@@ -144,11 +151,11 @@
                 {{ $planting->statusRelation->tree_planting_status }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <a href="{{ route('planting-locations.show', $planting->planting_location_id) }}"
-                   class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-3 py-1 rounded-md">
-                    Edit
-                </a>
-            </td>
+    <a href="{{ route('planting-locations.show', $planting->planting_location_id) }}"
+       class="btn btn-sm btn-info">
+        View
+    </a>
+</td>
         </tr>
     @endforeach
     </tbody>

@@ -3,98 +3,76 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inspection;
+use App\Models\PlantingLocation;
 use Illuminate\Http\Request;
 
 class InspectionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        $inspections = \App\Models\Inspection::with('user')->get();
+        $inspections = Inspection::with(['user', 'plantingLocation'])
+            ->orderBy('updated_at', 'desc')
+            ->get();
 
         return view('inspections.index', compact('inspections'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(Request $request)
     {
-        return view('inspections.create');
+        $plantingLocation = PlantingLocation::findOrFail($request->planting_location_id);
+        return view('inspections.create', compact('plantingLocation'));
     }
 
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(\Illuminate\Http\Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
             'inspection_date' => 'required|date',
             'comment' => 'nullable|string',
             'verified' => 'required|boolean',
+            'planting_location_id' => 'required|exists:planting_locations,id',
         ]);
 
         $validated['user_id'] = auth()->id();
 
-        \App\Models\Inspection::create($validated);
+        Inspection::create($validated);
 
-        return redirect()->route('inspections.index')
+        return redirect()->route('planting-locations.show', $validated['planting_location_id'])
             ->with('success', 'Inspection recorded successfully.');
     }
 
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(Inspection $inspection)
+    public function edit(Inspection $inspection)
     {
-        //
+        $plantingLocations = PlantingLocation::all();
+        return view('inspections.edit', compact('inspection', 'plantingLocations'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(\App\Models\Inspection $inspection)
-    {
-        return view('inspections.edit', [
-            'inspection' => $inspection,
-        ]);
-    }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(\Illuminate\Http\Request $request, \App\Models\Inspection $inspection)
+    public function update(Request $request, Inspection $inspection)
     {
         $validated = $request->validate([
             'inspection_date' => 'required|date',
             'comment' => 'nullable|string',
             'verified' => 'required|boolean',
+            'planting_location_id' => 'required|exists:planting_locations,id',
         ]);
 
         $inspection->update($validated);
 
-        return redirect()->route('inspections.index')
+        return redirect()->route('planting-locations.show', $inspection->planting_location_id)
             ->with('success', 'Inspection updated successfully.');
     }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(\App\Models\Inspection $inspection)
+    public function destroy(Inspection $inspection)
     {
-
         if (!in_array(auth()->user()->role->name, ['Admin'])) {
             abort(403, 'Unauthorized.');
         }
+
+        $locationId = $inspection->planting_location_id;
         $inspection->delete();
 
-        return redirect()->route('inspections.index')
-            ->with('success', 'Inspection deleted.');
+        return redirect()->route('planting-locations.show', $locationId)
+            ->with('success', 'Inspection deleted successfully.');
     }
 
 }

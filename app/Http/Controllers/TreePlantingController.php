@@ -22,10 +22,13 @@ class TreePlantingController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
+        $plantingLocationId = $request->get('planting_location_id');
+        $location = \App\Models\PlantingLocation::findOrFail($plantingLocationId);
+
         return view('tree-plantings.create', [
-            'locations' => \App\Models\PlantingLocation::all(),
+            'location' => $location,
             'treeTypes' => \App\Models\TreeType::all(),
             'statuses' => \App\Models\TreePlantingStatus::all(),
         ]);
@@ -104,16 +107,14 @@ class TreePlantingController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(\App\Models\TreePlanting $treePlanting)
+    public function destroy(TreePlanting $treePlanting)
     {
-
-        if (!in_array(auth()->user()->role->name, ['Admin'])) {
-            abort(403, 'Unauthorized.');
-        }
+        $locationId = $treePlanting->planting_location_id;
         $treePlanting->delete();
 
-        return redirect()->route('tree-plantings.index')
-            ->with('success', 'Tree Planting deleted.');
+        return redirect()
+            ->route('planting-locations.show', $locationId)
+            ->with('success', 'Tree planting deleted successfully');
     }
 
     public function report(Request $request)

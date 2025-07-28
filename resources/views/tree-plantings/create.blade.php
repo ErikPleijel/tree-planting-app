@@ -1,9 +1,11 @@
 <x-app-layout>
     <div class="max-w-xl mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
-        <h1 class="text-xl font-bold text-center text-gray-800 mb-4">Add Tree Planting</h1>
+        <h1 class="text-xl font-bold text-center text-gray-600 mb-1">Add Trees in</h1>
+        <p class="text-center text-2xl text-gray-800 mb-4">{{ $location->location }}</p>
 
         <form method="POST" action="{{ route('tree-plantings.store') }}" class="space-y-4">
             @csrf
+            <input type="hidden" name="planting_location_id" value="{{ $location->id }}">
 
             <!-- Planting Date -->
             <div>
@@ -38,21 +40,6 @@
                 </select>
             </div>
 
-            <!-- Location -->
-            <div>
-                <label class="label">
-                    <span class="label-text">Location</span>
-                </label>
-                <select name="planting_location_id" class="select select-bordered w-full" required>
-                    <option value="">-- Select Location --</option>
-                    @foreach($locations as $location)
-                        <option value="{{ $location->id }}" @if(old('planting_location_id', request('planting_location_id'))==$location->id) selected @endif>
-                            {{ $location->location }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
             <!-- Status -->
             <div>
                 <label class="label">
@@ -71,8 +58,7 @@
             <!-- Buttons -->
             <div class="flex justify-end space-x-2 pt-4">
                 <button type="submit" class="btn btn-primary btn-sm">Save</button>
-                <a href="{{ route('planting-locations.show', request('planting_location_id')) }}" class="btn btn-outline btn-sm">Cancel</a>
-
+                <a href="{{ route('planting-locations.show', $location->id) }}" class="btn btn-outline btn-sm">Cancel</a>
             </div>
         </form>
     </div>

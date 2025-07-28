@@ -30,9 +30,11 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role_id' => 2,  // Default to Inspector role
         ];
     }
 
+    // You can remove the admin() method since we're setting the admin role directly in the seeder
     /**
      * Indicate that the model's email address should be unverified.
      */

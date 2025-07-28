@@ -80,7 +80,7 @@
 
                                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
                                         {{ $planting->statusRelation?->tree_planting_status === 'Planted' ? 'bg-green-100 text-green-800' :
-                                           ($planting->statusRelation?->tree_planting_status === 'Verified' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
+                           ($planting->statusRelation?->tree_planting_status === 'Verified' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
                                         {{ ucfirst($planting->statusRelation?->tree_planting_status ?? 'Unknown') }}
                                     </span>
 
@@ -88,8 +88,8 @@
 
                                 </td>
                                 <td class="px-6 py-4">
-                                    <a href="{{ route('tree-plantings.show', $planting) }}"
-                                       class="text-indigo-600 hover:text-indigo-900">View</a>
+
+                                    <a href="{{ route('planting-locations.show', $planting->plantingLocation) }}" class="btn btn-sm btn-info">View</a>
                                 </td>
                             </tr>
                         @empty

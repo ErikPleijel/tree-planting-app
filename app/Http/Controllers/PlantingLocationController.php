@@ -12,16 +12,36 @@ class PlantingLocationController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //$plantingLocations = \App\Models\PlantingLocation::with(['division', 'status'])->get();
+    public function index(Request $request)
+{
+    $query = PlantingLocation::with(['division', 'statusRelation',
+        'treePlantings' => function($query) {
+            $query->orderBy('planting_date', 'desc');
+        },
+        'treePlantings.treeType',
+        'treePlantings.statusRelation'
+    ]);
 
-        $plantingLocations = PlantingLocation::with(['division', 'statusRelation'])
-            ->withSum('treePlantings as total_trees', 'number_of_trees')
-            ->paginate(20); // Show 50 per page
-
-        return view('planting-locations.index', compact('plantingLocations'));
+    // Apply division filter
+    if ($request->filled('division')) {
+        $query->where('division_id', $request->division);
     }
+
+    // Apply search filter
+    if ($request->filled('search')) {
+        $query->where('location', 'like', '%' . $request->search . '%');
+    }
+
+    $plantingLocations = $query
+        ->withSum('treePlantings as total_trees', 'number_of_trees')
+        ->paginate(20)
+        ->withQueryString(); // This preserves the filters in pagination links
+
+    // Get divisions for the dropdown
+    $divisions = \App\Models\Division::orderBy('LGA_name')->get();
+
+    return view('planting-locations.index', compact('plantingLocations', 'divisions'));
+}
 
 
     /**
@@ -39,27 +59,26 @@ class PlantingLocationController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(\Illuminate\Http\Request $request)
-    {
-        $validated = $request->validate([
-            'location' => 'required|string|max:255',
-            'division_id' => 'required|exists:division,id',
-            'comment' => 'nullable|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'status' => 'required|exists:planting_location_status,id',
-        ]);
+    public function store(Request $request)
+{
+    $validated = $request->validate([
+        'location' => 'required|string|max:255',
+        'division_id' => 'required|exists:division,id',
+        'status' => 'required|exists:planting_location_status,id', // Add this line
+        'comment' => 'nullable|string',
+        'latitude' => 'nullable|numeric',
+        'longitude' => 'nullable|numeric',
+    ]);
 
-        $validated['user_id'] = auth()->id();
+    $validated['user_id'] = auth()->id();
 
-        \App\Models\PlantingLocation::create($validated);
+    // Create the planting location only once
+    $plantingLocation = PlantingLocation::create($validated);
 
-        $plantingLocation = \App\Models\PlantingLocation::create($validated);
-
-        return redirect()
-            ->route('planting-locations.show', $plantingLocation->id)
-            ->with('success', 'Planting location created successfully.');
-    }
+    return redirect()
+        ->route('planting-locations.show', $plantingLocation->id)
+        ->with('success', 'Planting location created successfully.');
+}
 
 
     /**
@@ -99,7 +118,7 @@ class PlantingLocationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(\Illuminate\Http\Request $request, \App\Models\PlantingLocation $plantingLocation)
+    public function update(Request $request, PlantingLocation $plantingLocation)
     {
         $validated = $request->validate([
             'location' => 'required|string|max:255',
@@ -107,12 +126,11 @@ class PlantingLocationController extends Controller
             'comment' => 'nullable|string',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
-            'status' => 'required|exists:planting_location_status,id',
         ]);
 
         $plantingLocation->update($validated);
 
-        return redirect()->route('planting-locations.index')
+        return redirect()->route('planting-locations.show', $plantingLocation)
             ->with('success', 'Planting Location updated successfully.');
     }
 

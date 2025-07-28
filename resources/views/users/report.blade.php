@@ -42,6 +42,9 @@
                                         Email
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+                                        Role
+                                    </th>
+                                    <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
                                         Created At
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
@@ -57,6 +60,9 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             {{ $user->email }}
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap">
+                                            {{ $user->role?->name }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             {{ $user->created_at->format('Y-m-d H:i') }}

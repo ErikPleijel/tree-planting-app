@@ -31,7 +31,7 @@
                 </select>
             </div>
 
-            <!-- Status -->
+            <!-- Add this after the Division field -->
             <div>
                 <label class="label" for="status">
                     <span class="label-text">Status</span>
@@ -46,23 +46,27 @@
                 </select>
             </div>
 
+
+
             <!-- Comment -->
             <div>
                 <label class="label" for="comment">
-                    <span class="label-text">Comment</span>
+                    <span class="label-text">Describe the location (optional)</span>
                 </label>
                 <textarea id="comment" name="comment"
                           class="textarea textarea-bordered w-full"
                           rows="3">{{ old('comment', $plantingLocation->comment) }}</textarea>
             </div>
 
-            <!-- 📍 GPS Button -->
-            <div class="flex justify-end">
-                <button type="button" onclick="getLocation()" class="btn btn-sm btn-info mb-2">
-                    📍 Use My Location
-                </button>
+
+
+
+
+            <!-- 🗺️ Map Preview -->
+            <div class="mt-4">
+                <label class="label"><span class="label-text font-semibold">Map Preview</span></label>
+                <div id="map" class="rounded border" style="height: 300px;"></div>
             </div>
-            {{-- TODO: Disable on desktop --}}
 
             <!-- Latitude & Longitude -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -85,16 +89,18 @@
                 </div>
             </div>
 
-            <!-- 🗺️ Map Preview -->
-            <div class="mt-4">
-                <label class="label"><span class="label-text font-semibold">Map Preview</span></label>
-                <div id="map" class="rounded border" style="height: 300px;"></div>
+            <!-- 📍 GPS Button -->
+            <div class="flex justify-end">
+                <button type="button" onclick="getLocation()" class="btn btn-sm btn-info mb-2">
+                    📍 Get location from phone GPS
+                </button>
             </div>
+            {{-- TODO: Disable on desktop --}}
 
             <!-- Buttons -->
             <div class="flex justify-end space-x-2 pt-4">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="{{ route('planting-locations.index') }}" class="btn btn-outline">Cancel</a>
+                <a href="{{ route('planting-locations.show', $plantingLocation) }}" class="btn btn-outline">Cancel</a>
             </div>
         </form>
     </div>
