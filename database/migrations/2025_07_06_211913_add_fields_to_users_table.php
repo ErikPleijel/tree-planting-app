@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('telephone')->nullable();
-            $table->unsignedInteger('role_id')->default(1);
+           // $table->unsignedInteger('role_id')->default(1);
             $table->string('gender')->nullable();
           //  $table->foreignId('picture_id')->nullable()->constrained('pictures')->nullOnDelete();
         });
@@ -26,7 +26,7 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->dropForeign(['picture_id']);
-            $table->dropColumn(['telephone', 'role_id', 'gender', 'picture_id']);
+            $table->dropColumn(['telephone',  'gender', 'picture_id']);
         });
     }
 };
