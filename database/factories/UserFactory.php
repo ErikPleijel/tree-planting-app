@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
-
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
  */
@@ -28,13 +27,11 @@ class UserFactory extends Factory
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
+            'password' => static::$password ??= Hash::make('password'), // Default password
             'remember_token' => Str::random(10),
-         //   'role_id' => 2,  // Default to Inspector role
         ];
     }
 
-    // You can remove the admin() method since we're setting the admin role directly in the seeder
     /**
      * Indicate that the model's email address should be unverified.
      */

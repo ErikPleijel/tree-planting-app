@@ -18,10 +18,43 @@ class DatabaseSeeder extends Seeder
       //  $this->call(RolesTableSeeder::class);
         $this->call(PlantingLocationSeeder::class);
 
+        // Existing role seeding
+        $this->call(RolesSeeder::class);
+        // Seed 20 users and assign TreePlanter role
+        User::factory(20)->create()->each(function ($user) {
+            $user->assignRole('TreePlanter');
+        });
 
-        /*    User::factory()->create([
-                'name' => 'Test User',
-                'email' => 'test@example.com',
-            ]);*/
+        $admin = User::firstOrCreate(
+            ['email' => 'superadmin@ex.com'],
+            [
+                'name' => 'Mr SuperAdmin Man',
+                'password' => bcrypt('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $admin->assignRole('SuperAdmin');
+
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@ex.com'],
+            [
+                'name' => 'Mr Admin User Man',
+                'password' => bcrypt('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $admin->assignRole('Admin');
+
+        $inspector = User::firstOrCreate(
+            ['email' => 'inspector@ex.com'],
+            [
+                'name' => 'Inspector User',
+                'password' => bcrypt('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $inspector->assignRole('Inspector');
+
+
     }
 }

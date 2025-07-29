@@ -21,7 +21,13 @@
                                            placeholder="Search by name or email...">
                                 </div>
 
-                                <div class="flex items-end justify-end">
+                                <div class="flex items-end justify-end space-x-2">
+                                    @if(request()->has('search') && !empty(request('search')))
+                                        <a href="{{ route('users.report') }}"
+                                           class="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-transparent rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
+                                            Remove Filter
+                                        </a>
+                                    @endif
                                     <button type="submit" class="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                                         Filter Results
                                     </button>
@@ -62,16 +68,22 @@
                                             {{ $user->email }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
-                                            {{ $user->role?->name }}
+                                            {{ $user->roles->pluck('name')->implode(', ') }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             {{ $user->created_at->format('Y-m-d H:i') }}
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                             <a href="{{ route('profile.edit') }}"
                                                class="text-indigo-600 hover:text-indigo-900 bg-indigo-100 hover:bg-indigo-200 px-3 py-1 rounded-md">
                                                 View
                                             </a>
+                                            @if(!$user->hasRole('SuperAdmin') && !(auth()->user()->hasRole('Admin') && ($user->id === auth()->id() || $user->hasRole('Admin'))))
+                                                <a href="{{ route('users.edit', $user) }}"
+                                                   class="text-green-600 hover:text-green-900 bg-green-100 hover:bg-green-200 px-3 py-1 rounded-md">
+                                                    EDIT ROLE
+                                                </a>
+                                            @endif
                                         </td>
                                     </tr>
                                 @endforeach

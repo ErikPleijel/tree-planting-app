@@ -29,14 +29,15 @@
         </div>
 
         <div class="flex justify-center flex-wrap gap-2 mb-4">
-
             <a href="{{ route('planting-locations.edit', $plantingLocation) }}" class="btn btn-warning btn-xs">Edit</a>
-            <form action="{{ route('planting-locations.destroy', $plantingLocation) }}" method="POST"
-                  onsubmit="return confirm('Are you sure you want to delete this location?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-error btn-xs">Delete</button>
-            </form>
+            @can('delete records')
+                <form action="{{ route('planting-locations.destroy', $plantingLocation) }}" method="POST"
+                      onsubmit="return confirm('Are you sure you want to delete this location?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-error btn-xs">Delete</button>
+                </form>
+            @endcan
         </div>
     </div>
 

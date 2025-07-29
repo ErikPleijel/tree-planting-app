@@ -41,21 +41,21 @@ class StatusTablesSeeder extends Seeder
         );*/
 
         // Create all users as Inspectors (role_id = 2)
-        $users = User::factory()->count(20)->create([
+       /*$users = User::factory()->count(20)->create([
             'role_id' => 2  // Inspector role
-        ]);
+        ]);*/
 
         // Set one random user as Verifier (role_id = 3)
-        $users->random(1)->first()->update(['role_id' => 3]);
+       // $users->random(1)->first()->update(['role_id' => 3]);
 
         // Create admin user
-        User::factory()->create([
+       /* User::factory()->create([
             'name' => 'Mr Erik Bengtsson',
             'email' => 'admin@example.com',
             'telephone' => '123456789',
-            'role_id' => 1,  // Admin role
+     //       'role_id' => 1,  // Admin role
             'gender' => 'Male',
-        ]);
+        ]);*/
 
 
         // Tree Types

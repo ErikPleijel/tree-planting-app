@@ -7,73 +7,54 @@ use App\Http\Controllers\PictureController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
 
-
-/*Route::get('/', function () {
-    return view('home');
-})->name('home');*/
+// Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-
-Route::get('/tree-plantings/report', [App\Http\Controllers\TreePlantingController::class, 'report'])
+// Tree Plantings - Admin, SuperAdmin and Inspector only
+Route::get('/tree-plantings/report', [\App\Http\Controllers\TreePlantingController::class, 'report'])
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector'])
     ->name('tree-plantings.report');
-
 Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::class)
-    ->middleware(['auth', 'role:Admin,Inspector']);
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector']);
 
-
-
+// Inspections - Admin, SuperAdmin, Inspector, TreePlanter
 Route::resource('inspections', \App\Http\Controllers\InspectionController::class)
-    ->middleware(['auth', 'role:Admin,Inspector,Verifier']);
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector|TreePlanter']);
 
+// Planting Locations - Admin, SuperAdmin and Inspector only
 Route::resource('planting-locations', \App\Http\Controllers\PlantingLocationController::class)
-    ->middleware(['auth', 'role:Admin,Inspector']);
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector']);
 
+// Dashboard (any logged-in and verified user)
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
 
-
-/*Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');*/
-
-Route::get('/dashboard', [DashboardController::class, 'index'])->middleware(['auth', 'verified'])->name('dashboard');
-
-
+// Profile routes
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-
-Route::get('planting-locations/{plantingLocation}/pictures/create', [PictureController::class, 'create'])->name('pictures.create');
+// Picture upload
+Route::get('planting-locations/{plantingLocation}/pictures/create', [PictureController::class, 'create'])
+    ->name('pictures.create');
 Route::post('pictures', [PictureController::class, 'store'])->name('pictures.store');
 
+// User management routes
+Route::middleware(['auth'])->group(function () {
+    Route::get('/users/report', [UserController::class, 'index'])
+        ->middleware('role:Admin|SuperAdmin')
+        ->name('users.report');
 
+    Route::get('/users/{user}/edit', [UserController::class, 'edit'])
+        ->middleware('role:Admin|SuperAdmin')
+        ->name('users.edit');
 
-
-/*
-
-
-
-
-Route::resource('inspections', \App\Http\Controllers\InspectionController::class)->middleware(['auth']);
-
-
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'role:Admin,Inspector,Verifier,Viewer']);
-
-Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::class)->middleware(['auth']);
-
-Route::resource('inspections', \App\Http\Controllers\InspectionController::class)
-    ->middleware(['auth', 'role:Admin,Inspector,Verifier']);
-
-Route::resource('planting-locations', \App\Http\Controllers\PlantingLocationController::class)->middleware(['auth']);
-*/
-
-
-
-
+    Route::put('/users/{user}', [UserController::class, 'update'])
+        ->middleware('role:Admin|SuperAdmin')
+        ->name('users.update');
+});
 
 require __DIR__.'/auth.php';
-Route::get('/users/report', [UserController::class, 'index'])
-    ->name('users.report')
-    ->middleware(['auth', 'role:Admin']);
