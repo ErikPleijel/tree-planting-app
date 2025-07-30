@@ -1,12 +1,19 @@
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="emerald">
-
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
-        <title>{{ config('app.name', 'Laravel') }}</title>
+        {{-- Add favicon links here --}}
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+        {{-- For better compatibility across devices, you can add multiple formats --}}
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+
+        <title>ItacenMu.org Planting trees, growing futures in Niger State.</title>
+        <!-- ... rest of your head section ... -->
 
         <!-- Fonts -->
         <link rel="preconnect" href="https://fonts.bunny.net">
@@ -19,18 +26,13 @@
         <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script src="//unpkg.com/alpinejs" defer></script>
 
-
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
-
-
-
     </head>
     <body class="font-sans antialiased">
+        @include('partials.header')
 
-    @include('partials.header')
-
-    <div class="min-h-screen bg-gray-100">
+        <div class="min-h-screen bg-gray-100">
             @include('layouts.navigation')
 
             <!-- Page Heading -->
@@ -48,7 +50,6 @@
             </main>
         </div>
 
-    @include('partials.footer')
-
+        @include('partials.footer')
     </body>
 </html>

@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PictureController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\MapController;
+use App\Http\Controllers\StatsController;
 
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -56,5 +58,9 @@ Route::middleware(['auth'])->group(function () {
         ->middleware('role:Admin|SuperAdmin')
         ->name('users.update');
 });
+
+Route::get('/stats/map', [MapController::class, 'index'])->name('stats.map');
+
+Route::get('/stats/stats1', [StatsController::class, 'stats1'])->name('stats.stats1');
 
 require __DIR__.'/auth.php';

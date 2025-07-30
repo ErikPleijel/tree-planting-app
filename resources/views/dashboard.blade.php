@@ -36,13 +36,7 @@
         </p>
     </div>
 
-    <div class="mx-auto w-full max-w-xl px-4">
-        <x-map
 
-            :markers="$markers"
-
-        />
-    </div>
 
 
 
@@ -111,12 +105,3 @@
 </div>
 
 </x-app-layout>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const map = L.map('map').setView([10.0, 6.5], 8);
-
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© OpenStreetMap contributors'
-        }).addTo(map);
-    });
-</script>

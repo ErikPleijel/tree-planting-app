@@ -28,10 +28,14 @@ class UserController extends Controller
                 $query->whereNull('roles.name')
                       ->orWhere('roles.name', '!=', 'SuperAdmin');
             })
-            ->orderByRaw('CASE WHEN roles.name IS NULL THEN 1 ELSE 0 END')
-            ->orderBy('roles.name')
+            ->select([
+                'users.*',
+                'roles.name as role_name',
+                \DB::raw('CASE WHEN roles.name IS NULL THEN 1 ELSE 0 END as role_order')
+            ])
+            ->orderBy('role_order')
+            ->orderBy('role_name')
             ->orderBy('users.name')
-            ->select('users.*')
             ->distinct()
             ->paginate(10);
 

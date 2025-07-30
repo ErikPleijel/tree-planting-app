@@ -42,8 +42,8 @@ class PlantingLocationFactory extends Factory
             'location' => $this->faker->randomElement($nigerianCities),
             'division_id' => Division::inRandomOrder()->first()?->id ?? Division::factory(),
             'comment' => $this->faker->optional()->sentence(),
-            'latitude' => $this->faker->latitude(9.0, 11.0),
-            'longitude' => $this->faker->longitude(6.0, 8.0),
+            'latitude' => $this->faker->latitude(8.5, 11.0),
+            'longitude' => $this->faker->longitude(4.0, 7.0),
             'user_id' => User::inRandomOrder()->first()?->id ?? User::factory(),
             'status' => 1,
         ];
