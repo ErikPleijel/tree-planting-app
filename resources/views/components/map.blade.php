@@ -17,7 +17,7 @@
     line-height: 1;  /* Add this to control vertical spacing */
     display: flex;   /* Add this for better vertical centering */
     align-items: center;  /* Add this for better vertical centering */
-    height: 18px;    /* Add this to explicitly control height */
+    height: 29px;    /* Add this to explicitly control height */
 }
     </style>
 @endonce
@@ -65,11 +65,12 @@
         L.marker([{{ $marker['lat'] }}, {{ $marker['lng'] }}], {
             icon: L.divIcon({
                 className: 'tree-label',
-                html: '{{ $marker['totalTrees'] }}',
+                html: '<div>{{ $marker['title'] }}<br>{{ $marker['totalTrees'] }}</div>',
                 iconSize: null,
                 iconAnchor: [0, 45]  // Position above the marker
             })
         }).addTo(map);
+
         @endforeach
     });
 </script>
