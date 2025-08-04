@@ -23,7 +23,7 @@ class StatusTablesSeeder extends Seeder
 
         // Tree Planting Status
         DB::table('tree_planting_status')->insert([
-            ['tree_planting_status' => 'Planted'],
+            ['tree_planting_status' => 'Unverified'],
             ['tree_planting_status' => 'Verified'],
         ]);
 
@@ -40,9 +40,9 @@ class StatusTablesSeeder extends Seeder
             ]
         );*/
 
-        // Create all users as Inspectors (role_id = 2)
+        // Create all users as Monitors (role_id = 2)
        /*$users = User::factory()->count(20)->create([
-            'role_id' => 2  // Inspector role
+            'role_id' => 2  // Monitor role
         ]);*/
 
         // Set one random user as Verifier (role_id = 3)

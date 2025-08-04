@@ -50,6 +50,11 @@ class TreePlantingController extends Controller
 
         $validated['user_id'] = auth()->id();
 
+        // Set default status if user doesn't have required role
+        if (!auth()->user()->hasRole(['Admin', 'SuperAdmin', 'Monitor'])) {
+            $validated['status'] = 1;
+        }
+
         \App\Models\TreePlanting::create($validated);
 
         return redirect()
@@ -74,6 +79,8 @@ class TreePlantingController extends Controller
      */
     public function edit(\App\Models\TreePlanting $treePlanting)
     {
+        $treePlanting->load(['plantingLocation.division', 'division']);
+
         return view('tree-plantings.edit', [
             'treePlanting' => $treePlanting,
             'locations' => \App\Models\PlantingLocation::all(),
@@ -96,11 +103,16 @@ class TreePlantingController extends Controller
             'status' => 'required|exists:tree_planting_status,id',
         ]);
 
+        // Preserve existing status if user doesn't have required role
+        if (!auth()->user()->hasRole(['Admin', 'SuperAdmin', 'Monitor'])) {
+            $validated['status'] = $treePlanting->status;
+        }
+
         $treePlanting->update($validated);
 
         return redirect()
-        ->route('planting-locations.show', $treePlanting->planting_location_id)
-        ->with('success', 'Tree planting updated successfully.');
+            ->route('planting-locations.show', $treePlanting->planting_location_id)
+            ->with('success', 'Tree planting updated successfully.');
     }
 
 

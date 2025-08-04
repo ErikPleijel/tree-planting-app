@@ -41,19 +41,23 @@
             </div>
 
             <!-- Status -->
-            <div>
-                <label class="label">
-                    <span class="label-text">Status</span>
-                </label>
-                <select name="status" class="select select-bordered w-full" required>
-                    <option value="">-- Select Status --</option>
-                    @foreach($statuses as $status)
-                        <option value="{{ $status->id }}" @if(old('status')==$status->id) selected @endif>
-                            {{ $status->tree_planting_status }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            @role('Admin|SuperAdmin|Monitor')
+                <div>
+                    <label class="label">
+                        <span class="label-text">Status</span>
+                    </label>
+                    <select name="status" class="select select-bordered w-full" required>
+                        <option value="">-- Select Status --</option>
+                        @foreach($statuses as $status)
+                            <option value="{{ $status->id }}" @if(old('status')==$status->id) selected @endif>
+                                {{ $status->tree_planting_status }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            @else
+                <input type="hidden" name="status" value="1">
+            @endrole
 
             <!-- Buttons -->
             <div class="flex justify-end space-x-2 pt-4">

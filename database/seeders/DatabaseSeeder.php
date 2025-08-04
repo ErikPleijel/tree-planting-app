@@ -20,15 +20,15 @@ class DatabaseSeeder extends Seeder
 
         // Existing role seeding
         $this->call(RolesSeeder::class);
-        // Seed 20 users and assign TreePlanter role
+        // Seed 20 users and assign Grower role
         User::factory(20)->create()->each(function ($user) {
-            $user->assignRole('TreePlanter');
+            $user->assignRole('Grower');
         });
 
         $admin = User::firstOrCreate(
             ['email' => 'superadmin@ex.com'],
             [
-                'name' => 'Mr SuperAdmin Man',
+                'name' => 'Hon. Marcus Aurelius',
                 'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
@@ -38,22 +38,32 @@ class DatabaseSeeder extends Seeder
         $admin = User::firstOrCreate(
             ['email' => 'admin@ex.com'],
             [
-                'name' => 'Mr Admin User Man',
+                'name' => 'Erik Jörgen',
                 'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );
         $admin->assignRole('Admin');
 
-        $inspector = User::firstOrCreate(
-            ['email' => 'inspector@ex.com'],
+        $Monitor = User::firstOrCreate(
+            ['email' => 'monitor@ex.com'],
             [
-                'name' => 'Inspector User',
+                'name' => 'Prada Streep',
                 'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );
-        $inspector->assignRole('Inspector');
+        $Monitor->assignRole('Monitor');
+
+        $grower = User::firstOrCreate(
+            ['email' => 'grower@ex.com'],
+            [
+                'name' => 'Thomas Greenquist',
+                'password' => bcrypt('password'),
+                'email_verified_at' => now(),
+            ]
+        );
+        $grower->assignRole('grower');
 
 
     }

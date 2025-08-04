@@ -16,6 +16,9 @@
             <h3 class="font-bold mb-2">Contact</h3>
             <p>Email: <a href="mailto:info@itacenmu.org" class="link link-hover">info@itacenmu.org</a></p>
             <p>Phone: <a href="tel:+1234567890" class="link link-hover">+1 (234) 567-890</a></p>
+            <p>RCE_MINNA patron Dr. Abdul ‪+234 8037033595</p>
+
+
         </div>
 
         <!-- Credits -->
@@ -23,7 +26,8 @@
             <h3 class="font-bold mb-2">Credits</h3>
             <p>Designed by Erik Pleijel & Martha Kagiri</p>
             <p>Email: epost@erikpleijel.se</p>
-            <p>Email: marthapleijel@yahoo.se</p>
+            <p>Email: martha@puxinkenya.com</p>
+            <p>Tel: +234 9076465317</p>
         </div>
     </div>
 </footer>

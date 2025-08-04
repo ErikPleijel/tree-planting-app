@@ -28,16 +28,19 @@
             </div>
         </div>
 
+        <!-- Location  Button -->
         <div class="flex justify-center flex-wrap gap-2 mb-4">
-            <a href="{{ route('planting-locations.edit', $plantingLocation) }}" class="btn btn-warning btn-xs">Edit</a>
-            @can('delete records')
+            @role('Admin|SuperAdmin|Monitor')
+                <a href="{{ route('planting-locations.edit', $plantingLocation) }}" class="btn btn-warning btn-xs">Edit</a>
+            @endrole
+            @role('Admin|SuperAdmin')
                 <form action="{{ route('planting-locations.destroy', $plantingLocation) }}" method="POST"
                       onsubmit="return confirm('Are you sure you want to delete this location?');">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="btn btn-error btn-xs">Delete</button>
                 </form>
-            @endcan
+            @endrole
         </div>
     </div>
 
@@ -65,56 +68,58 @@
     @else
         <div class="max-w-4xl mx-auto border border-gray-300 rounded-lg shadow p-4 bg-white">
             <div class="overflow-x-auto">
-
                 <table class="table table-auto table-sm w-fit mx-auto text-sm">
-                    <thead>
-                    <tr>
-                        {{--<th class="px-2 py-1 whitespace-nowrap">ID</th>--}}
-                        <th class="px-2 py-1 whitespace-nowrap">Date</th>
-                        <th class="px-2 py-1 whitespace-nowrap">#</th>
-                        <th class="px-2 py-1 whitespace-nowrap">Tree</th>
-                        <th class="px-2 py-1 whitespace-nowrap">Status</th>
-                        <th class="px-2 py-1 whitespace-nowrap text-center">Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach($plantingLocation->treePlantings()->orderBy('planting_date', 'desc')->get() as $planting)
-                        <tr>
-                            {{--<td class="px-2 py-1 whitespace-nowrap">{{ $planting->id }}</td>--}}
-                            <td class="px-2 py-1 whitespace-nowrap">{{ \Carbon\Carbon::parse($planting->planting_date)->format('Y-m-d') }}</td>
-                            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->number_of_trees }}</td>
-                            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->treeType->name ?? 'N/A' }}</td>
-
-                            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
-                            <td class="px-2 py-1 whitespace-nowrap">
-                                <div class="flex flex-wrap justify-center gap-1">
-                                    <a href="{{ route('tree-plantings.edit', $planting) }}" class="btn btn-warning btn-xs">Edit</a>
-                                    <form action="{{ route('tree-plantings.destroy', $planting) }}" method="POST" onsubmit="return confirm('Delete this planting?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-error btn-xs">Delete</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-
-                    </tbody>
-                </table>
+    <thead>
+    <tr>
+        <th class="px-2 py-1 whitespace-nowrap">Date</th>
+        <th class="px-2 py-1 whitespace-nowrap">#</th>
+        <th class="px-2 py-1 whitespace-nowrap">Tree</th>
+        <th class="px-2 py-1 whitespace-nowrap">Years</th>
+        <th class="px-2 py-1 whitespace-nowrap">Status</th>
+        <th class="px-2 py-1 whitespace-nowrap">Added By</th>
+        <th class="px-2 py-1 whitespace-nowrap text-center">Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach($plantingLocation->treePlantings()->orderBy('planting_date', 'desc')->get() as $planting)
+        <tr class="@if($planting->status === 1) text-red-600 @elseif($planting->status === 2) text-green-600 @endif">
+            <td class="px-2 py-1 whitespace-nowrap">{{ \Carbon\Carbon::parse($planting->planting_date)->format('Y-m-d') }}</td>
+            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->number_of_trees }}</td>
+            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->treeType->name ?? 'N/A' }}</td>
+            <td class="px-2 py-1 whitespace-nowrap">{{ number_format(\Carbon\Carbon::parse($planting->planting_date)->diffInDays(now()) / 365.25, 1) }}</td>
+            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
+            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->user->name ?? 'N/A' }}</td>
+            <td class="px-2 py-1 whitespace-nowrap">
+                <div class="flex flex-wrap justify-center gap-1">
+                    @role('Admin|SuperAdmin|Monitor|Grower')
+                        <a href="{{ route('tree-plantings.edit', $planting) }}" class="btn btn-warning btn-xs">Edit</a>
+                    @endrole
+                    @role('Admin|SuperAdmin')
+                        <form action="{{ route('tree-plantings.destroy', $planting) }}" method="POST" onsubmit="return confirm('Delete this planting?')">
+                            @csrf
+                            @method('DELETE')
+                            <button class="btn btn-error btn-xs">Delete</button>
+                        </form>
+                    @endrole
+                </div>
+            </td>
+        </tr>
+    @endforeach
+    </tbody>
+</table>
             </div>
         </div>
     @endif
 
 
 
-
-{{-- Add this section before the closing </x-app-layout> tag --}}
-
 <h2 class="text-2xl font-semibold mt-12 mb-3 text-center">Inspections</h2>
 <div class="flex justify-end max-w-4xl mx-auto mt-6 mb-2">
-    <a href="{{ route('inspections.create', ['planting_location_id' => $plantingLocation->id]) }}" class="btn btn-primary btn-sm">
-        ➕ New Inspection
-    </a>
+    @role('Admin|SuperAdmin|Monitor')
+        <a href="{{ route('inspections.create', ['planting_location_id' => $plantingLocation->id]) }}" class="btn btn-primary btn-sm">
+            ➕ New Inspection
+        </a>
+    @endrole
 </div>
 
 @if($plantingLocation->inspections->isEmpty())
@@ -128,8 +133,10 @@
                         <th class="px-2 py-1 whitespace-nowrap">Date</th>
                         <th class="px-2 py-1 whitespace-nowrap">Comment</th>
                         <th class="px-2 py-1 whitespace-nowrap">Pass?</th>
-                        <th class="px-2 py-1 whitespace-nowrap">Inspector</th>
-                        <th class="px-2 py-1 whitespace-nowrap text-center">Actions</th>
+                        <th class="px-2 py-1 whitespace-nowrap">Monitor</th>
+                        @role('Admin|SuperAdmin|Monitor')
+                           <th class="px-2 py-1 whitespace-nowrap text-center">Actions</th>
+                        @endrole
                     </tr>
                 </thead>
                 <tbody>
@@ -145,14 +152,19 @@
                                 @endif
                             </td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $inspection->user->name ?? 'N/A' }}</td>
+                            <!-- Inspections Delete Button -->
                             <td class="px-2 py-1 whitespace-nowrap">
                                 <div class="flex flex-wrap justify-center gap-1">
-                                    <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-warning btn-xs">Edit</a>
-                                    <form action="{{ route('inspections.destroy', $inspection) }}" method="POST" onsubmit="return confirm('Delete this inspection?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="btn btn-error btn-xs">Delete</button>
-                                    </form>
+                                    @role('Admin|SuperAdmin|Monitor')
+                                        <a href="{{ route('inspections.edit', $inspection) }}" class="btn btn-warning btn-xs">Edit</a>
+                                    @endrole
+                                    @role('Admin|SuperAdmin')
+                                        <form action="{{ route('inspections.destroy', $inspection) }}" method="POST" onsubmit="return confirm('Delete this inspection?')">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-error btn-xs">Delete</button>
+                                        </form>
+                                    @endrole
                                 </div>
                             </td>
                         </tr>

@@ -1,10 +1,16 @@
 <x-app-layout>
     <div class="max-w-2xl mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
-        <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Edit Tree Planting</h1>
+
+        <h1 class="text-xl font-bold text-center text-gray-600 mb-1">Edit Trees in</h1>
+        <p class="text-center text-2xl text-gray-800 mb-4">{{ $treePlanting->plantingLocation->location }}</p>
+
 
         <form method="POST" action="{{ route('tree-plantings.update', $treePlanting) }}" class="space-y-4">
             @csrf
             @method('PUT')
+
+            <!-- Add hidden input for planting_location_id -->
+            <input type="hidden" name="planting_location_id" value="{{ $treePlanting->planting_location_id }}">
 
             <!-- Planting Date -->
             <div>
@@ -13,7 +19,7 @@
                 </label>
                 <input type="date" id="planting_date" name="planting_date"
                        class="input input-bordered w-full"
-                       value="{{ old('planting_date', $treePlanting->planting_date) }}" required>
+                       value="{{ old('planting_date', $treePlanting->planting_date->format('Y-m-d')) }}" required>
             </div>
 
             <!-- Number of Trees -->
@@ -41,22 +47,8 @@
                 </select>
             </div>
 
-            <!-- Location -->
-            <div>
-                <label class="label" for="planting_location_id">
-                    <span class="label-text">Location</span>
-                </label>
-                <select id="planting_location_id" name="planting_location_id" class="select select-bordered w-full" required>
-                    <option value="">-- Select Location --</option>
-                    @foreach($locations as $location)
-                        <option value="{{ $location->id }}" @if(old('planting_location_id', $treePlanting->planting_location_id)==$location->id) selected @endif>
-                            {{ $location->location }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-
             <!-- Status -->
+            @role('Admin|SuperAdmin|Monitor')
             <div>
                 <label class="label" for="status">
                     <span class="label-text">Status</span>
@@ -70,12 +62,14 @@
                     @endforeach
                 </select>
             </div>
+        @else
+            <input type="hidden" name="status" value="{{ $treePlanting->status }}">
+        @endrole
 
             <!-- Buttons -->
             <div class="flex justify-end space-x-2 pt-4">
                 <button type="submit" class="btn btn-primary">Save Changes</button>
                 <a href="{{ route('planting-locations.show', $treePlanting->planting_location_id) }}" class="btn btn-outline">Cancel</a>
-
             </div>
         </form>
     </div>

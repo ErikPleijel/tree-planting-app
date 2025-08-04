@@ -43,7 +43,7 @@
                                       d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
                             </svg>
                         </div>
-                        <h3 class="card-title mb-2">Plant Trees</h3>
+                        <h3 class="card-title mb-2">Become a Grower</h3>
                         <p class="text-base-content/80">Join our community of tree planters and help grow the future.
                             Every tree counts!</p>
                         @guest
@@ -54,7 +54,7 @@
                         <div class="mt-4 text-sm text-base-content/70 border-t pt-4 w-full">
                             <p class="font-semibold mb-1">For more information:</p>
                             <p><i class="fas fa-phone mr-2"></i>+234 800 555 0123</p>
-                            <p><i class="fas fa-envelope mr-2"></i>planters@itacenmu.org</p>
+                            <p><i class="fas fa-envelope mr-2"></i>growers@itacenmu.org</p>
                         </div>
                     </div>
                 </div>
@@ -70,18 +70,18 @@
                                       d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
                             </svg>
                         </div>
-                        <h3 class="card-title mb-2">Become an Inspector</h3>
+                        <h3 class="card-title mb-2">Become a Monitor</h3>
                         <p class="text-base-content/80">Help verify and monitor tree planting progress across Niger
                             State.</p>
                         @guest
                             <div class="card-actions mt-4 hidden">
-                                <a href="{{ route('register') }}" class="btn btn-primary">Join as Inspector</a>
+                                <a href="{{ route('register') }}" class="btn btn-primary">Join as Monitor</a>
                             </div>
                         @endguest
                         <div class="mt-4 text-sm text-base-content/70 border-t pt-4 w-full">
-                            <p class="font-semibold mb-1">Contact our inspection team:</p>
+                            <p class="font-semibold mb-1">Contact our Monitor team:</p>
                             <p><i class="fas fa-phone mr-2"></i>+234 800 555 0124</p>
-                            <p><i class="fas fa-envelope mr-2"></i>inspectors@itacenmu.org</p>
+                            <p><i class="fas fa-envelope mr-2"></i>monitors@itacenmu.org</p>
                         </div>
                     </div>
                 </div>

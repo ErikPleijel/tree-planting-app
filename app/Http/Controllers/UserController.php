@@ -9,30 +9,31 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
+
     public function index(): View
     {
         $users = User::query()
-            ->with('roles')
-            ->when(request('search'), function($query, $search) {
-                $query->where(function($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-                });
-            })
             ->leftJoin('model_has_roles', function($join) {
                 $join->on('users.id', '=', 'model_has_roles.model_id')
                     ->where('model_has_roles.model_type', '=', User::class);
             })
             ->leftJoin('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->when(request('search'), function($query, $search) {
+                $query->where(function($q) use ($search) {
+                    $q->where('users.name', 'like', "%{$search}%")
+                        ->orWhere('users.email', 'like', "%{$search}%");
+                });
+            })
             ->where(function($query) {
                 $query->whereNull('roles.name')
-                      ->orWhere('roles.name', '!=', 'SuperAdmin');
+                    ->orWhere('roles.name', '!=', 'SuperAdmin');
             })
             ->select([
                 'users.*',
                 'roles.name as role_name',
                 \DB::raw('CASE WHEN roles.name IS NULL THEN 1 ELSE 0 END as role_order')
             ])
+            ->with('roles') // Eager load roles
             ->orderBy('role_order')
             ->orderBy('role_name')
             ->orderBy('users.name')

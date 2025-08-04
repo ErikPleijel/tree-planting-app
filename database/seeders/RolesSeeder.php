@@ -28,16 +28,16 @@ class RolesSeeder extends Seeder
         }
 
         // Create roles with guard_name explicitly (avoid conflicts)
-        $treePlanter = Role::firstOrCreate(['name' => 'TreePlanter', 'guard_name' => 'web']);
-        $inspector = Role::firstOrCreate(['name' => 'Inspector', 'guard_name' => 'web']);
+        $Grower = Role::firstOrCreate(['name' => 'Grower', 'guard_name' => 'web']);
+        $Monitor = Role::firstOrCreate(['name' => 'Monitor', 'guard_name' => 'web']);
         $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
         $superAdmin = Role::firstOrCreate(['name' => 'SuperAdmin', 'guard_name' => 'web']);
 
-        $treePlanter->syncPermissions([
+        $Grower->syncPermissions([
             'view reports',
         ]);
 
-        $inspector->syncPermissions([
+        $Monitor->syncPermissions([
             'view planting locations',
             'edit planting locations',
             'view reports',

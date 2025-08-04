@@ -9,7 +9,7 @@
             <tr>
                 <th>ID</th>
                 <th>Date</th>
-                <th>Inspector</th>
+                <th>Monitor</th>
                 <th>Verified</th>
                 <th>Comment</th>
                 <th>Actions</th>

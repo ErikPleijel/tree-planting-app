@@ -12,20 +12,20 @@ use App\Http\Controllers\StatsController;
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-// Tree Plantings - Admin, SuperAdmin and Inspector only
+// Tree Plantings - Admin, SuperAdmin and Monitor only
 Route::get('/tree-plantings/report', [\App\Http\Controllers\TreePlantingController::class, 'report'])
-    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector'])
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])
     ->name('tree-plantings.report');
 Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::class)
-    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector']);
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower']);
 
-// Inspections - Admin, SuperAdmin, Inspector, TreePlanter
+// Inspections - Admin, SuperAdmin, Monitor, Grower
 Route::resource('inspections', \App\Http\Controllers\InspectionController::class)
-    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector|TreePlanter']);
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower|Grower']);
 
-// Planting Locations - Admin, SuperAdmin and Inspector only
+// Planting Locations - Admin, SuperAdmin and Monitor only
 Route::resource('planting-locations', \App\Http\Controllers\PlantingLocationController::class)
-    ->middleware(['auth', 'role:Admin|SuperAdmin|Inspector']);
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower']);
 
 // Dashboard (any logged-in and verified user)
 Route::get('/dashboard', [DashboardController::class, 'index'])
