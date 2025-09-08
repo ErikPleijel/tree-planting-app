@@ -30,7 +30,7 @@
 
         <!-- Location  Button -->
         <div class="flex justify-center flex-wrap gap-2 mb-4">
-            @role('Admin|SuperAdmin|Monitor')
+            @role('Admin|SuperAdmin|Monitor|Grower')
                 <a href="{{ route('planting-locations.edit', $plantingLocation) }}" class="btn btn-warning btn-xs">Edit</a>
             @endrole
             @role('Admin|SuperAdmin')
@@ -63,7 +63,7 @@
             ➕ New Tree Planting
         </a>
     </div>
-@if($plantingLocation->treePlantings->isEmpty())
+    @if($plantingLocation->treePlantings->isEmpty())
         <p class="text-center text-sm text-gray-500">No tree plantings recorded yet.</p>
     @else
         <div class="max-w-4xl mx-auto border border-gray-300 rounded-lg shadow p-4 bg-white">

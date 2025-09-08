@@ -10,13 +10,18 @@ class TreePlantingController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+
     public function index()
     {
-        $treePlantings = \App\Models\TreePlanting::with(['plantingLocation', 'treeType', 'status','statusRelation'])->get();
-     //   $treePlantings = TreePlanting::with(['statusRelation', 'treeType', 'plantingLocation'])->get();
+        $treePlantings = \App\Models\TreePlanting::with(['plantingLocation', 'treeType', 'status','statusRelation'])
+            ->orderBy('planting_date', 'desc') // Most recent first
+            ->paginate(15);
+
 
         return view('tree-plantings.index', compact('treePlantings'));
     }
+
 
 
     /**

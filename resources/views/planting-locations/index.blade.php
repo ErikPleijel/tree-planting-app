@@ -118,6 +118,6 @@
         </div>
     </div>
     <div class="mt-4">
-        {{ $plantingLocations->links() }}
+        {{ $plantingLocations->links('custom.pagination') }}
     </div>
 </x-app-layout>

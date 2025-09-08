@@ -8,11 +8,37 @@ use Illuminate\Http\Request;
 
 class InspectionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $inspections = Inspection::with(['user', 'plantingLocation'])
-            ->orderBy('updated_at', 'desc')
-            ->get();
+        $query = Inspection::with(['user', 'plantingLocation']);
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('comment', 'LIKE', "%{$search}%")
+                  ->orWhereHas('plantingLocation', function($q) use ($search) {
+                      $q->where('location', 'LIKE', "%{$search}%");
+                  })
+                  ->orWhereHas('user', function($q) use ($search) {
+                      $q->where('name', 'LIKE', "%{$search}%");
+                  });
+            });
+        }
+
+        // Apply status filter
+        if ($request->filled('status')) {
+            $status = $request->get('status');
+            if ($status === 'verified') {
+                $query->where('verified', true);
+            } elseif ($status === 'unverified') {
+                $query->where('verified', false);
+            }
+        }
+
+        $inspections = $query->orderBy('inspection_date', 'desc')
+            ->paginate(15)
+            ->withQueryString(); // Preserve query parameters in pagination links
 
         return view('inspections.index', compact('inspections'));
     }
@@ -74,5 +100,4 @@ class InspectionController extends Controller
         return redirect()->route('planting-locations.show', $locationId)
             ->with('success', 'Inspection deleted successfully.');
     }
-
 }
