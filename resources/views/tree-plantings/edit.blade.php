@@ -14,30 +14,30 @@
 
             <!-- Planting Date -->
             <div>
-                <label class="label" for="planting_date">
-                    <span class="label-text">Planting Date</span>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="planting_date">
+                    <span>Planting Date</span>
                 </label>
                 <input type="date" id="planting_date" name="planting_date"
-                       class="input input-bordered w-full"
+                       class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                        value="{{ old('planting_date', $treePlanting->planting_date->format('Y-m-d')) }}" required>
             </div>
 
             <!-- Number of Trees -->
             <div>
-                <label class="label" for="number_of_trees">
-                    <span class="label-text">Number of Trees</span>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="number_of_trees">
+                    <span>Number of Trees</span>
                 </label>
                 <input type="number" id="number_of_trees" name="number_of_trees"
-                       class="input input-bordered w-full"
+                       class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
                        value="{{ old('number_of_trees', $treePlanting->number_of_trees) }}" required>
             </div>
 
             <!-- Tree Type -->
             <div>
-                <label class="label" for="tree_type_id">
-                    <span class="label-text">Tree Type</span>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="tree_type_id">
+                    <span>Tree Type</span>
                 </label>
-                <select id="tree_type_id" name="tree_type_id" class="select select-bordered w-full" required>
+                <select id="tree_type_id" name="tree_type_id" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" required>
                     <option value="">-- Select Tree Type --</option>
                     @foreach($treeTypes as $type)
                         <option value="{{ $type->id }}" @if(old('tree_type_id', $treePlanting->tree_type_id)==$type->id) selected @endif>
@@ -50,10 +50,10 @@
             <!-- Status -->
             @role('Admin|SuperAdmin|Monitor')
             <div>
-                <label class="label" for="status">
-                    <span class="label-text">Status</span>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="status">
+                    <span>Status</span>
                 </label>
-                <select id="status" name="status" class="select select-bordered w-full" required>
+                <select id="status" name="status" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary" required>
                     <option value="">-- Select Status --</option>
                     @foreach($statuses as $status)
                         <option value="{{ $status->id }}" @if(old('status', $treePlanting->status)==$status->id) selected @endif>
@@ -68,8 +68,8 @@
 
             <!-- Buttons -->
             <div class="flex justify-end space-x-2 pt-4">
-                <button type="submit" class="btn btn-primary">Save Changes</button>
-                <a href="{{ route('planting-locations.show', $treePlanting->planting_location_id) }}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="bg-primary text-white px-6 py-3 rounded hover:bg-green-700 transition-colors">Save Changes</button>
+                <a href="{{ route('planting-locations.show', $treePlanting->planting_location_id) }}" class="border border-gray-300 text-gray-700 px-6 py-3 rounded hover:bg-gray-50 transition-colors">Cancel</a>
             </div>
         </form>
     </div>

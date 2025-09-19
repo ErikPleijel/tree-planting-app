@@ -4,30 +4,31 @@
 
 
         <div class="overflow-x-auto">
-            <table class="table table-zebra table-sm w-full text-sm">
+            <table class="w-full text-sm border-collapse bg-white">
                 <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Date</th>
-                    <th>Location</th>
-                    <th>Tree Type</th>
-                    <th>#</th>
-                    <th>Status</th>
-                    <th>Actions</th>
+                <tr class="border-b bg-gray-50">
+                    <th class="px-4 py-2 text-left">ID</th>
+                    <th class="px-4 py-2 text-left">Date</th>
+                    <th class="px-4 py-2 text-left">Location</th>
+                    <th class="px-4 py-2 text-left">Tree Type</th>
+                    <th class="px-4 py-2 text-left">#</th>
+                    <th class="px-4 py-2 text-left">Status</th>
+                    <th class="px-4 py-2 text-left">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                @foreach($treePlantings as $planting)
-                    <tr>
-                        <td>{{ $planting->id }}</td>
-                        <td>{{ $planting->planting_date->format('Y-m-d') }}</td>
-                        <td>{{ $planting->plantingLocation->location ?? 'N/A' }}</td>
-                        <td>{{ $planting->treeType->name ?? 'N/A' }}</td>
-                        <td>{{ $planting->number_of_trees }}</td>
-                        <td>{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
-                        <td class="flex flex-wrap gap-1">
-                            <a href="{{ route('planting-locations.show', $planting->plantingLocation) }}" class="btn btn-info btn-xs">View {{ $planting->plantingLocation->location ?? 'N/A' }}</a>
-
+                @foreach($treePlantings as $index => $planting)
+                    <tr class="border-b {{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
+                        <td class="px-4 py-2">{{ $planting->id }}</td>
+                        <td class="px-4 py-2">{{ $planting->planting_date->format('Y-m-d') }}</td>
+                        <td class="px-4 py-2">{{ $planting->plantingLocation->location ?? 'N/A' }}</td>
+                        <td class="px-4 py-2">{{ $planting->treeType->name ?? 'N/A' }}</td>
+                        <td class="px-4 py-2">{{ $planting->number_of_trees }}</td>
+                        <td class="px-4 py-2">{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
+                        <td class="px-4 py-2">
+                            <div class="flex flex-wrap gap-1">
+                                <a href="{{ route('planting-locations.show', $planting->plantingLocation) }}" class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition-colors">View {{ $planting->plantingLocation->location ?? 'N/A' }}</a>
+                            </div>
                         </td>
                     </tr>
                 @endforeach

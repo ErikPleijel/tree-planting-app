@@ -1,4 +1,4 @@
-<header class="bg-primary text-primary-content p-6">
+<header class="bg-primary text-white p-6">
     <div class="max-w-4xl mx-auto flex items-center gap-4 sm:gap-8 justify-center">
         <img src="{{ asset('images/TreePlantingImage.png') }}"
              alt="Tree Icon"

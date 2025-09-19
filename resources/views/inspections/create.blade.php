@@ -51,8 +51,8 @@
 
                 <div class="flex justify-end gap-2">
                     <a href="{{ route('planting-locations.show', $plantingLocation) }}"
-                       class="btn btn-outline">Cancel</a>
-                    <button type="submit" class="btn btn-primary">Save Inspection</button>
+                       class="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors">Cancel</a>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors">Save Inspection</button>
                 </div>
             </form>
         </div>

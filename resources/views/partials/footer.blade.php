@@ -1,4 +1,4 @@
-<footer class="bg-neutral text-neutral-content p-6 mt-12">
+<footer class="bg-gray-700 text-white p-6 mt-12">
     <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
         <!-- Address -->
         <div>
@@ -14,11 +14,9 @@
         <!-- Contact -->
         <div>
             <h3 class="font-bold mb-2">Contact</h3>
-            <p>Email: <a href="mailto:info@itacenmu.org" class="link link-hover">info@itacenmu.org</a></p>
-            <p>Phone: <a href="tel:+1234567890" class="link link-hover">+1 (234) 567-890</a></p>
-            <p>RCE_MINNA patron Dr. Abdul ‪+234 8037033595</p>
-
-
+            <p>Email: <a href="mailto:info@itacenmu.org" class="text-blue-300 hover:text-blue-100 underline">info@itacenmu.org</a></p>
+            <p>Phone: <a href="tel:+1234567890" class="text-blue-300 hover:text-blue-100 underline">+1 (234) 567-890</a></p>
+            <p>RCE_MINNA patron Dr. Abdul ‪+234 8037033595</p>
         </div>
 
         <!-- Credits -->

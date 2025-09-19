@@ -4,7 +4,7 @@
 
         <div class="text-right mb-4">
             <a href="{{ route('planting-locations.create') }}"
-               class="btn btn-primary">
+               class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
                 Add New Location
             </a>
         </div>
@@ -13,7 +13,7 @@
     <form action="{{ route('planting-locations.index') }}" method="GET" class="flex items-center gap-4"> <!-- Center items vertically and remove flex-1 -->
         <!-- Division Filter -->
         <div class="w-[150px] text-center"> <!-- Add text-center -->
-            <select name="division" class="select select-bordered w-full text-center"> <!-- Add text-center -->
+            <select name="division" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-center"> <!-- Add text-center -->
                 <option value="">All</option>
                 @foreach($divisions as $division)
                     <option value="{{ $division->id }}" {{ request('division') == $division->id ? 'selected' : '' }}>
@@ -29,17 +29,17 @@
                    name="search"
                    placeholder="Search..."
                    value="{{ request('search') }}"
-                   class="input input-bordered w-full text-center"> <!-- Add text-center -->
+                   class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-center"> <!-- Add text-center -->
         </div>
 
         <!-- Filter Button -->
-        <button type="submit" class="btn btn-secondary">
+        <button type="submit" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
             Filter
         </button>
 
         <!-- Reset Button -->
         @if(request()->hasAny(['division', 'search']))
-            <a href="{{ route('planting-locations.index') }}" class="btn btn-ghost">
+            <a href="{{ route('planting-locations.index') }}" class="text-gray-500 hover:text-gray-700 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors">
                 Reset
             </a>
         @endif
@@ -68,7 +68,7 @@
                         {{-- <td class="px-6 py-3">{{ $location->statusRelation->planting_location_status ?? 'N/A' }}</td> --}}
                         <td class="px-6 py-2 text-center hidden">{{ $location->total_trees ?? 0 }}</td>
                         <td class="px-6 py-2 space-x-2">
-                            <a href="{{ route('planting-locations.show', $location) }}" class="btn btn-sm btn-info">View</a>
+                            <a href="{{ route('planting-locations.show', $location) }}" class="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors">View</a>
                         </td>
                     </tr>
                     {{-- Subtable for Tree Plantings --}}

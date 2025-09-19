@@ -12,7 +12,7 @@
 
         <div class="mt-6">
             <a href="{{ route('tree-plantings.index') }}"
-               class="btn btn-secondary">← Back to List</a>
+               class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors">← Back to List</a>
         </div>
     </div>
 </x-app-layout>

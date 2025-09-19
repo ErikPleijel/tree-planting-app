@@ -16,12 +16,15 @@ export default {
             },
             colors: {
                 primary: '#2F855A',
+                'primary-content': '#ffffff', // Add explicit colors to replace DaisyUI semantic colors
+                neutral: '#374151',
+                'neutral-content': '#ffffff',
             }
         },
     },
 
     plugins: [
         forms,
-        require('daisyui'),
+        // Remove require('daisyui') line
     ],
 };

@@ -104,6 +104,9 @@
         <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
             Status
         </th>
+        <th scope="col" class="px-6 py-3 text-xs font-medium tracking-wider text-left text-gray-500 uppercase">
+            Actions
+        </th>
     </tr>
     </thead>
     <tbody class="bg-white divide-y divide-gray-200">
@@ -152,7 +155,7 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
     <a href="{{ route('planting-locations.show', $planting->planting_location_id) }}"
-       class="btn btn-sm btn-info">
+       class="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors">
         View
     </a>
 </td>
