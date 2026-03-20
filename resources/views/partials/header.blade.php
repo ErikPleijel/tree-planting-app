@@ -6,7 +6,7 @@
         <div class="text-center">
             <h1 class="text-2xl sm:text-4xl font-bold">ItacenMu.org</h1>
             <p class="text-base sm:text-lg opacity-90">Planting trees, growing&nbsp;futures
-                <br>in&nbsp;Niger&nbsp;State.</p>
+                <br>in&nbsp;Africa.</p>
         </div>
     </div>
 </header>
