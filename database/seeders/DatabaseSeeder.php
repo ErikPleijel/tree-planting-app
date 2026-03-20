@@ -16,26 +16,26 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
         $this->call(StatusTablesSeeder::class);
       //  $this->call(RolesTableSeeder::class);
-        $this->call(PlantingLocationSeeder::class);
+     //   $this->call(PlantingLocationSeeder::class);
 
         // Existing role seeding
         $this->call(RolesSeeder::class);
         // Seed 20 users and assign Grower role
-        User::factory(20)->create()->each(function ($user) {
+        /*User::factory(20)->create()->each(function ($user) {
             $user->assignRole('Grower');
-        });
+        });*/
 
         $admin = User::firstOrCreate(
-            ['email' => 'superadmin@ex.com'],
+            ['email' => 'erik.pleijel@gmail.com'],
             [
-                'name' => 'Hon. Marcus Aurelius',
-                'password' => bcrypt('password'),
+                'name' => 'Erik Pleijel',
+                'password' => bcrypt('bhu1nji2'),
                 'email_verified_at' => now(),
             ]
         );
         $admin->assignRole('SuperAdmin');
 
-        $admin = User::firstOrCreate(
+       /* $admin = User::firstOrCreate(
             ['email' => 'admin@ex.com'],
             [
                 'name' => 'Erik Jörgen',
@@ -63,7 +63,7 @@ class DatabaseSeeder extends Seeder
                 'email_verified_at' => now(),
             ]
         );
-        $grower->assignRole('grower');
+        $grower->assignRole('grower');*/
 
 
     }

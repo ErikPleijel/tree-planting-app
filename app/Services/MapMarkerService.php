@@ -8,7 +8,7 @@ class MapMarkerService
 {
     public function getMarkers(array $filters = []): array
     {
-        $query = PlantingLocation::query();
+        $query = PlantingLocation::with(['division', 'treePlantings']);
 
         if (!empty($filters['lga'])) {
             $query->where('location', 'LIKE', '%' . $filters['lga'] . '%');
@@ -26,19 +26,33 @@ class MapMarkerService
             $query->where('id', $filters['id']);
         }
 
-
-        // ✅ New filter: Division ID
         if (!empty($filters['division_id'])) {
             $query->where('division_id', $filters['division_id']);
         }
 
-        return $query->get()->map(function ($location) {
-            return [
-                'lat' => $location->latitude,
-                'lng' => $location->longitude,
-                'popup' => "<strong>{$location->location}</strong><br>{$location->comment}",
-            ];
-        })->toArray();
-    }
+        return $query->get()
+            ->filter(function ($location) {
+                return !is_null($location->latitude) && !is_null($location->longitude);
+            })
+            ->map(function ($location) {
+                $divisionName = $location->division ? $location->division->LGA_name : 'N/A';
+                $totalTrees = $location->treePlantings->sum('number_of_trees');
 
+                return [
+                    'id' => $location->id,
+                    'lat' => $location->latitude,
+                    'lng' => $location->longitude,
+                    'title' => $location->location,
+                    'markerType' => 'blue',
+                    'totalTrees' => $totalTrees,
+                    'popup' => "<div class='p-2'>
+                        <h4 class='font-bold text-lg mb-2' style='color: #1e40af; display: block;'>{$location->location}</h4>
+                        <p class='mb-1'><span class='font-medium'>LGA:</span> {$divisionName}</p>
+                        <p class='mb-1'><span class='font-medium'>Total Trees:</span> {$totalTrees}</p>
+                    </div>",
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
 }

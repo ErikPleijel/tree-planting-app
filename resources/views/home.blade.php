@@ -6,6 +6,18 @@
             </div>
         </div>
     @endguest
+
+        <div class="max-w-[700px] mx-auto">
+            <x-map
+                :markers="$markers"
+                :zoom="6"
+                :lat="0"
+                :lng="38"
+                height="520px"
+                width="100%"
+            />
+        </div>
+
     <section class="py-12 bg-white text-center">
         <div class="max-w-4xl mx-auto">
             <h2 class="text-3xl font-bold mb-6">Our Progress</h2>
@@ -204,3 +216,5 @@
         </div>
     </section>
 </x-app-layout>
+
+

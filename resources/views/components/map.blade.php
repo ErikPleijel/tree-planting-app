@@ -56,7 +56,7 @@
         @foreach ($markers as $marker)
         // Add marker
         L.marker([{{ $marker['lat'] }}, {{ $marker['lng'] }}], {
-            icon: icons['{{ $marker['markerType'] }}']
+            icon: icons['{{ $marker['markerType'] ?? 'blue' }}']
         })
         .addTo(map)
         .bindPopup(`{!! $marker['popup'] !!}`);
