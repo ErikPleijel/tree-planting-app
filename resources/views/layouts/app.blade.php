@@ -12,7 +12,7 @@
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
 
-        <title>ItacenMu.org Planting trees, growing futures in Niger State.</title>
+        <title>ItacenMu.org Planting trees, growing futures in Afica.</title>
         <!-- ... rest of your head section ... -->
 
         <!-- Fonts -->
