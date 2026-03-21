@@ -5,7 +5,7 @@
                 <!-- LGA Statistics Table -->
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6">
-                        <h2 class="text-xl font-semibold mb-4">Trees by LGA</h2>
+                        <h2 class="text-xl font-semibold mb-4">Trees by Region</h2>
                         <div class="overflow-x-auto">
                             <table class="min-w-full">
                                 <thead class="bg-gray-50">

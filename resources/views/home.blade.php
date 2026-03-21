@@ -7,44 +7,57 @@
         </div>
     @endguest
 
-        <div class="max-w-[700px] mx-auto">
-            <x-map
-                :markers="$markers"
-                :zoom="6"
-                :lat="0"
-                :lng="38"
-                height="520px"
-                width="100%"
-            />
-        </div>
-
-    <section class="py-12 bg-white text-center">
-        <div class="max-w-4xl mx-auto">
-            <h2 class="text-3xl font-bold mb-6">Our Progress</h2>
-            <div class="flex flex-col md:flex-row gap-6 justify-center shadow-lg rounded-lg p-6 bg-white">
-                <div class="text-center p-4">
-                    <div class="text-sm text-gray-500 mb-2">Trees Planted</div>
-                    <div class="text-4xl font-bold text-green-600 mb-2">{{ \App\Models\TreePlanting::sum('number_of_trees') }}</div>
-                    <div class="text-sm text-gray-600">And counting!</div>
-                </div>
-                <div class="text-center p-4">
-                    <div class="text-sm text-gray-500 mb-2">Field Workers</div>
-                    <div class="text-4xl font-bold text-blue-500 mb-2">{{ \App\Models\User::count() }}</div>
-                    <div class="text-sm text-gray-600">Across Niger State</div>
-                </div>
-                <div class="text-center p-4">
-                    <div class="text-sm text-gray-500 mb-2">Target for 2032</div>
-                    <div class="text-4xl font-bold text-orange-500 mb-2">25,000,000</div>
-                    <div class="text-sm text-gray-600">Let's make it happen 🌳</div>
+        <section class="py-12 bg-white text-center">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-6">Our Progress</h2>
+                <div class="flex flex-col md:flex-row gap-6 justify-center shadow-lg rounded-lg p-6 bg-white">
+                    <div class="text-center p-4">
+                        <div class="text-sm text-gray-500 mb-2">Trees Planted</div>
+                        <div class="text-4xl font-bold text-green-600 mb-2">{{ \App\Models\TreePlanting::sum('number_of_trees') }}</div>
+                        <div class="text-sm text-gray-600">And counting!</div>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="text-sm text-gray-500 mb-2">Field Workers</div>
+                        <div class="text-4xl font-bold text-blue-500 mb-2">{{ \App\Models\User::count() }}</div>
+                        <div class="text-sm text-gray-600">Across Africa</div>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="text-sm text-gray-500 mb-2">Target for 2030</div>
+                        <div class="text-4xl font-bold text-orange-500 mb-2">1,000,000</div>
+                        <div class="text-sm text-gray-600">Let's make it happen 🌳</div>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+
+        <section>
+            <div class="max-w-[700px] mx-auto">
+                <x-map
+                    :markers="$markers"
+                    :zoom="6"
+                    :lat="0"
+                    :lng="38"
+                    height="520px"
+                    width="100%"
+                />
+            </div>
+
+            @role('Admin|SuperAdmin|Monitor|Grower')
+            <div class="text-center mt-6">
+                <a href="{{ route('planting-locations.create') }}"
+                   class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                    Add New Location
+                </a>
+            </div>
+            @endrole
+        </section>
+
+
 
     {{-- You Can Contribute Section --}}
     <section class="py-16 bg-gradient-to-b from-white to-gray-50">
         <div class="max-w-6xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-12">How You Can Contribute</h2>
+            <h2 class="text-3xl font-bold text-center mb-1">How You Can Contribute</h2>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div class="bg-white rounded-lg shadow-xl hover:shadow-2xl transition-shadow duration-300 p-6">
                     <div class="flex flex-col items-center text-center">
@@ -65,8 +78,8 @@
                         @endguest
                         <div class="mt-4 text-sm text-gray-500 border-t pt-4 w-full">
                             <p class="font-semibold mb-1">For more information:</p>
-                            <p><i class="fas fa-phone mr-2"></i>+234 800 555 0123</p>
-                            <p><i class="fas fa-envelope mr-2"></i>growers@itacenmu.org</p>
+                            <p><i class="fas fa-phone mr-2"></i>+254 702 439928</p>
+                            <p><i class="fas fa-envelope mr-2"></i>martha@puxinkenya.com</p>
                         </div>
                     </div>
                 </div>
@@ -83,8 +96,7 @@
                             </svg>
                         </div>
                         <h3 class="text-xl font-bold mb-2">Become a Monitor</h3>
-                        <p class="text-gray-600 mb-4">Help verify and monitor tree planting progress across Niger
-                            State.</p>
+                        <p class="text-gray-600 mb-4">Help verify and monitor tree planting progress across Africa.</p>
                         @guest
                             <div class="mt-4 hidden">
                                 <a href="{{ route('register') }}" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">Join as Monitor</a>
@@ -92,8 +104,9 @@
                         @endguest
                         <div class="mt-4 text-sm text-gray-500 border-t pt-4 w-full">
                             <p class="font-semibold mb-1">Contact our Monitor team:</p>
-                            <p><i class="fas fa-phone mr-2"></i>+234 800 555 0124</p>
-                            <p><i class="fas fa-envelope mr-2"></i>monitors@itacenmu.org</p>
+                            <p><i class="fas fa-phone mr-2"></i>+254 702 439928</p>
+                            <p><i class="fas fa-envelope mr-2"></i>martha@puxinkenya.com
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -150,7 +163,7 @@
                 <div class="bg-white rounded-lg shadow-xl flex-1 p-6">
                     <div>
                         <h3 class="text-xl font-bold mb-4">Map</h3>
-                        <p class="mb-6 text-gray-600">Discover tree planting locations across Niger State and see
+                        <p class="mb-6 text-gray-600">Discover tree planting locations across Africa and see
                             our growing impact in real-time.</p>
                         <div class="flex justify-center">
                             <a href="{{ route('stats.map') }}" class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
@@ -185,8 +198,7 @@
             </div>
             <p class="text-gray-500 max-w-2xl mx-auto">
                 Our transparent data visualization tools help you understand the impact of every tree planted.
-                Track our progress, identify key planting areas, and see how we're working towards our goal of 25
-                million trees.
+                Track our progress, identify key planting areas, and see how we're working towards our goal.
             </p>
         </div>
     </section>
@@ -196,23 +208,33 @@
         <div class="max-w-3xl mx-auto px-4 text-center">
             <h2 class="text-3xl font-bold mb-4">About the Project</h2>
             <p class="text-lg opacity-90 leading-relaxed">
-                Itacen Mu is a community-led tree 🌳 growing initiative across Niger state in North Central Nigeria 🇳🇬.
+                “Itacen Mu” means “My Tree” in Hausa. It reflects a simple idea: that each tree planted belongs to someone — and that care and responsibility start at the individual level.
+            </p>
+            <p class="text-lg opacity-90 leading-relaxed mt-4">
+                ItacenMu.org is a community-led tree 🌳 growing initiative across Africa.
+                This platform serves as a simple monitoring tool for anyone involved in tree planting.
+            </p>
+            <p class="text-lg opacity-90 leading-relaxed mt-4">
+                Planters can map where trees are planted, upload photos, and track progress over time as the trees grow.
+                By documenting each location, we create a transparent and shared record of impact — helping communities learn, improve, and stay accountable.
             </p>
 
-            <h2 class="text-3xl font-bold mb-4 mt-10">OUR MISSION</h2>
+            <h2 class="text-3xl font-bold mb-4 mt-10">Our Mission</h2>
             <p class="text-lg opacity-90 leading-relaxed">
                 To combat desertification, improve soil quality, and support sustainable agriculture and livelihoods for
                 future generations.
             </p>
 
-            <h2 class="text-3xl font-bold mb-4 mt-10">PARTNERSHIP</h2>
-            <p class="text-lg opacity-90 leading-relaxed">
-                ITACEN-MU initiative is a collaboration between Kenya Puxin Renewable Energy Co. as the app developers
-                and RCE-Minna as the local implementing partner, with technical assistance from the office of His
-                Excellency The Hon. Governor Niger State. The initiative aims to bring together all communities in the
-                25 local governments with a target of 1 million trees grown per local government in the next 5 years,
-                totaling 25 million trees across the entire state of Niger State.
-            </p>
+            <div style="display: none;">
+                <h2 class="text-3xl font-bold mb-4 mt-10">PARTNERSHIP</h2>
+                <p class="text-lg opacity-90 leading-relaxed">
+                    ITACEN-MU initiative is a collaboration between Kenya Puxin Renewable Energy Co. as the app developers
+                    and RCE-Minna as the local implementing partner, with technical assistance from the office of His
+                    Excellency The Hon. Governor Niger State. The initiative aims to bring together all communities in the
+                    25 local governments with a target of 1 million trees grown per local government in the next 5 years,
+                    totaling 25 million trees across the entire state of Niger State.
+                </p>
+            </div>
         </div>
     </section>
 </x-app-layout>

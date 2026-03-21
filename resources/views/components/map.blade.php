@@ -67,9 +67,11 @@
                 className: 'tree-label',
                 html: '<div>{{ $marker['title'] }}<br>{{ $marker['totalTrees'] }}</div>',
                 iconSize: null,
-                iconAnchor: [0, 45]  // Position above the marker
+                iconAnchor: [0, 45]
             })
-        }).addTo(map);
+        })
+            .addTo(map)
+            .bindPopup(`{!! $marker['popup'] !!}`);
 
         @endforeach
     });

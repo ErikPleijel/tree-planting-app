@@ -45,10 +45,16 @@ class MapMarkerService
                     'title' => $location->location,
                     'markerType' => 'blue',
                     'totalTrees' => $totalTrees,
-                    'popup' => "<div class='p-2'>
-                        <h4 class='font-bold text-lg mb-2' style='color: #1e40af; display: block;'>{$location->location}</h4>
-                        <p class='mb-1'><span class='font-medium'>LGA:</span> {$divisionName}</p>
-                        <p class='mb-1'><span class='font-medium'>Total Trees:</span> {$totalTrees}</p>
+                    'popup' => "<div class='p-3 min-w-[200px]'>
+                        <h4 class='font-bold text-lg mb-2 text-blue-800'>{$location->location}</h4>
+
+                        <p class='text-lg mb-1'><span class='font-medium'>👉</span> {$divisionName}</p>
+                        <p class='text-sm mb-1'><span class='font-medium'>Total Trees:</span> {$totalTrees}</p>
+
+                        <a href='" . route('planting-locations.show', $location->id) . "'
+                           class='text-blue-600 hover:underline text-sm font-medium'>
+                            View details →
+                        </a>
                     </div>",
                 ];
             })
