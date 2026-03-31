@@ -91,12 +91,19 @@
         <section class="py-14 bg-white">
             <div class="max-w-5xl mx-auto px-4">
 
+                <!-- Header -->
                 <div class="text-center mb-8">
                     <h2 class="text-3xl font-bold text-[#1a3319] mb-2">
                         Latest Photos
                     </h2>
-                    <p class="text-[#6b8c5a] text-sm">
+
+                    <p class="text-[#6b8c5a] text-base mb-1">
                         Recent images from planting locations
+                    </p>
+
+                    <!-- Instruction -->
+                    <p class="text-gray-500 text-sm">
+                        Click a photo to view the planting site
                     </p>
                 </div>
 
@@ -105,17 +112,44 @@
                 @else
                     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
                         @foreach($latestPictures as $picture)
-                            <button
-                                type="button"
-                                class="group block w-full"
-                                onclick="openPhotoModal('{{ asset('storage/' . $picture->path) }}')"
-                            >
-                                <img
-                                    src="{{ asset('storage/' . $picture->thumbnail) }}"
-                                    alt="Latest planting photo"
-                                    class="w-full h-32 object-cover rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition duration-200"
-                                >
-                            </button>
+                            @php
+                                $location = $picture->plantingLocation;
+                                $thumb = $picture->thumbnail ?: $picture->path;
+                            @endphp
+
+                            <div class="text-center">
+
+                                <div class="relative group">
+                                    @if($location)
+                                        <a href="{{ route('public.planting-locations.show', $location->public_code) }}">
+                                            <img
+                                                src="{{ asset('storage/' . $thumb) }}"
+                                                alt="Photo"
+                                                class="w-full h-40 sm:h-44 md:h-48 object-cover rounded-lg shadow transition duration-200 hover:shadow-md hover:scale-[1.02] cursor-pointer"
+                                            >
+
+                                            <!-- Hover overlay -->
+                                            <div class="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition rounded-lg"></div>
+                                        </a>
+                                    @else
+                                        <img
+                                            src="{{ asset('storage/' . $thumb) }}"
+                                            alt="Photo"
+                                            class="w-full h-48 sm:h-44 md:h-48 object-cover rounded-lg shadow"
+                                        >
+                                    @endif
+                                </div>
+
+                                @if($location)
+                                    <a
+                                        href="{{ route('public.planting-locations.show', $location->public_code) }}"
+                                        class="block mt-1 text-xs text-[#3a7020] hover:underline truncate"
+                                    >
+                                        {{ $location->location }}
+                                    </a>
+                                @endif
+
+                            </div>
                         @endforeach
                     </div>
                 @endif

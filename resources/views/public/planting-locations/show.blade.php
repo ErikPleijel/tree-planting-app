@@ -304,16 +304,34 @@
         /* Photos */
         .photos-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
+            grid-template-columns: 1fr;
+            gap: 14px;
         }
 
         .photos-grid img {
             width: 100%;
-            aspect-ratio: 1 / 1;
+            height: 260px;
             object-fit: cover;
-            border-radius: 10px;
+            border-radius: 12px;
             border: 1px solid #d6e8cc;
+            display: block;
+        }
+
+        .photos-grid button {
+            border: 0;
+            padding: 0;
+            background: none;
+            cursor: pointer;
+        }
+
+        .photos-grid img:hover {
+            opacity: 0.96;
+        }
+
+        @media (min-width: 700px) {
+            .photos-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         /* Contributors */
@@ -513,10 +531,15 @@
         @else
             <div class="photos-grid">
                 @foreach($plantingLocation->pictures as $pic)
-                    <img
-                        src="{{ asset('storage/' . $pic->path) }}"
-                        alt="Photo of {{ $plantingLocation->location }}"
+                    <button
+                        type="button"
+                        onclick="openPhotoModal('{{ asset('storage/' . $pic->path) }}')"
                     >
+                        <img
+                            src="{{ asset('storage/' . $pic->path) }}"
+                            alt="Photo of {{ $plantingLocation->location }}"
+                        >
+                    </button>
                 @endforeach
             </div>
         @endif
@@ -566,6 +589,42 @@
     </div>
 
 </div>
+
+<div
+    id="photoModal"
+    style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.82); z-index:9999; align-items:center; justify-content:center; padding:20px;"
+    onclick="closePhotoModal()"
+>
+    <img
+        id="photoModalImage"
+        src=""
+        alt="Large photo"
+        style="max-width:95vw; max-height:92vh; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.35);"
+        onclick="event.stopPropagation()"
+    >
+</div>
+
+<script>
+    function openPhotoModal(imageUrl) {
+        const modal = document.getElementById('photoModal');
+        const modalImage = document.getElementById('photoModalImage');
+        modalImage.src = imageUrl;
+        modal.style.display = 'flex';
+    }
+
+    function closePhotoModal() {
+        const modal = document.getElementById('photoModal');
+        const modalImage = document.getElementById('photoModalImage');
+        modal.style.display = 'none';
+        modalImage.src = '';
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            closePhotoModal();
+        }
+    });
+</script>
 
 </body>
 </html>

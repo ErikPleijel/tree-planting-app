@@ -34,7 +34,8 @@ class HomeController extends Controller
             ->limit(6)
             ->get();
 
-        $latestPictures = Picture::latest()
+        $latestPictures = Picture::with('plantingLocation')
+            ->latest()
             ->take(10)
             ->get();
 
