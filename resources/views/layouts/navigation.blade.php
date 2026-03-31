@@ -15,7 +15,7 @@
 
                     @role('Admin|SuperAdmin|Monitor|Grower')
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        DASHBOARD
+                        Dashboard
                     </x-nav-link>
                     @endrole
 
@@ -48,11 +48,13 @@
                         </x-nav-link>
                     @endrole
 
-                    @role('Admin|SuperAdmin|Monitor')
-                        <x-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
-                            Team
-                        </x-nav-link>
+                    @role('SuperAdmin')
+                    <x-nav-link :href="route('tree-types.index')" :active="request()->routeIs('tree-types.*')">
+                        Tree Types
+                    </x-nav-link>
                     @endrole
+
+
                 </div>
             </div>
 

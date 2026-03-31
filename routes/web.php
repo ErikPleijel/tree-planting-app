@@ -9,7 +9,9 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\MapController;
 use App\Http\Controllers\StatsController;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Vite; // Add this import
+use Illuminate\Support\Facades\Vite;
+use App\Http\Controllers\PublicPlantingLocationController;
+use App\Http\Controllers\TreeTypeController;
 
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -77,16 +79,18 @@ Route::get('/diagnostic', function () {
         'css'   => $cssUrl,
     ]);
 
-    return <<<HTML
-        <html>
-        <head>
-          <link rel="stylesheet" href="{$cssUrl}">
-        </head>
-        <body>
-          <h1>Diagnostic</h1>
-          <p>CSS links included above.</p>
-          <p>We also logged them to laravel.log.</p>
-        </body>
-        </html>
-    HTML;
+
+});
+
+Route::get('/p/{public_code}', [PublicPlantingLocationController::class, 'show'])
+    ->name('public.planting-locations.show');
+
+Route::get('/planting-locations/{plantingLocation}/qr-label', [\App\Http\Controllers\PlantingLocationController::class, 'qrLabel'])
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])
+    ->name('planting-locations.qr-label');
+
+
+
+Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {
+    Route::resource('tree-types', TreeTypeController::class);
 });

@@ -30,26 +30,96 @@
             </div>
         </section>
 
-        <section>
-            <div class="max-w-[700px] mx-auto">
-                <x-map
-                    :markers="$markers"
-                    :zoom="6"
-                    :lat="0"
-                    :lng="38"
-                    height="520px"
-                    width="100%"
-                />
-            </div>
+        <section class="py-12 bg-white">
+            <div class="max-w-5xl mx-auto px-4 text-center">
 
-            @role('Admin|SuperAdmin|Monitor|Grower')
-            <div class="text-center mt-6">
-                <a href="{{ route('planting-locations.create') }}"
-                   class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
-                    Add New Location
-                </a>
+                <!-- Header -->
+                <h2 class="text-3xl font-bold text-[#1a3319] mb-2">
+                    Explore Planting Locations
+                </h2>
+
+                <!-- Subtext -->
+                <p class="text-[#6b8c5a] text-base mb-6">
+                    Click on a marker to view details about each planting site
+                </p>
+
+                <!-- Map -->
+                <div class="max-w-[700px] mx-auto rounded-xl overflow-hidden border border-[#d6e8cc] shadow-sm">
+                    <x-map
+                        :markers="$markers"
+                        :zoom="6"
+                        :lat="0"
+                        :lng="38"
+                        height="520px"
+                        width="100%"
+                    />
+                </div>
+
+                @role('Admin|SuperAdmin|Monitor|Grower')
+                <div class="text-center mt-6">
+                    <a href="{{ route('planting-locations.create') }}"
+                       class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                        Add New Location
+                    </a>
+                </div>
+                @endrole
+
             </div>
-            @endrole
+        </section>
+
+        <section class="py-14 bg-gradient-to-b from-white to-[#f6f9f2]">
+            <div class="max-w-5xl mx-auto px-4">
+
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold text-[#1a3319] mb-2">
+                        Latest Plantings
+                    </h2>
+                    <p class="text-[#6b8c5a] text-sm">
+                        Real locations. Real trees. Growing impact 🌱
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    @foreach($latestPlantingLocations as $plantingLocation)
+                        @include('planting-locations.partials.home-card', ['plantingLocation' => $plantingLocation])
+                    @endforeach
+                </div>
+
+            </div>
+        </section>
+
+        <section class="py-14 bg-white">
+            <div class="max-w-5xl mx-auto px-4">
+
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-[#1a3319] mb-2">
+                        Latest Photos
+                    </h2>
+                    <p class="text-[#6b8c5a] text-sm">
+                        Recent images from planting locations
+                    </p>
+                </div>
+
+                @if($latestPictures->isEmpty())
+                    <p class="text-center text-gray-500">No photos uploaded yet.</p>
+                @else
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                        @foreach($latestPictures as $picture)
+                            <button
+                                type="button"
+                                class="group block w-full"
+                                onclick="openPhotoModal('{{ asset('storage/' . $picture->path) }}')"
+                            >
+                                <img
+                                    src="{{ asset('storage/' . $picture->thumbnail) }}"
+                                    alt="Latest planting photo"
+                                    class="w-full h-32 object-cover rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition duration-200"
+                                >
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
         </section>
 
 
@@ -237,6 +307,57 @@
             </div>
         </div>
     </section>
+
+        <div
+            id="photoModal"
+            class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50 p-4"
+            onclick="closePhotoModal()"
+        >
+            <div class="relative max-w-5xl w-full flex justify-center">
+                <button
+                    type="button"
+                    onclick="closePhotoModal()"
+                    class="absolute top-2 right-2 bg-white/90 hover:bg-white text-black rounded-full w-10 h-10 text-xl font-bold shadow"
+                >
+                    ×
+                </button>
+
+                <img
+                    id="photoModalImage"
+                    src=""
+                    alt="Large planting photo"
+                    class="max-h-[90vh] max-w-full rounded-lg shadow-2xl"
+                    onclick="event.stopPropagation()"
+                >
+            </div>
+        </div>
+
+        <script>
+            function openPhotoModal(imageUrl) {
+            const modal = document.getElementById('photoModal');
+            const modalImage = document.getElementById('photoModalImage');
+
+            modalImage.src = imageUrl;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+            function closePhotoModal() {
+            const modal = document.getElementById('photoModal');
+            const modalImage = document.getElementById('photoModalImage');
+
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            modalImage.src = '';
+        }
+
+            document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+            closePhotoModal();
+        }
+        });
+    </script>
+
 </x-app-layout>
 
 

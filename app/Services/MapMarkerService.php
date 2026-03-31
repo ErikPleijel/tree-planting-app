@@ -46,12 +46,14 @@ class MapMarkerService
                     'markerType' => 'blue',
                     'totalTrees' => $totalTrees,
                     'popup' => "<div class='p-3 min-w-[200px]'>
-                        <h4 class='font-bold text-lg mb-2 text-blue-800'>{$location->location}</h4>
-
+                        <div class='mb-2'>
+                            <h4 class='font-bold text-lg leading-none mb-0 text-blue-800'>{$location->location}</h4>
+                            <p class='text-xs mb-0 text-gray-500' style='margin-top: 2px;'>" . implode(' ', str_split($location->public_code, 3)) . "</p>
+                        </div>
                         <p class='text-lg mb-1'><span class='font-medium'>👉</span> {$divisionName}</p>
                         <p class='text-sm mb-1'><span class='font-medium'>Total Trees:</span> {$totalTrees}</p>
 
-                        <a href='" . route('planting-locations.show', $location->id) . "'
+                        <a href='" . route('public.planting-locations.show', $location->public_code) . "'
                            class='text-blue-600 hover:underline text-sm font-medium'>
                             View details →
                         </a>

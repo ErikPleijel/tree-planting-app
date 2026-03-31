@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 
-class StatusTablesSeeder extends Seeder
+class VariousTablesSeeder extends Seeder
 {
     /**
      * Run the database seeds.
@@ -60,25 +60,25 @@ class StatusTablesSeeder extends Seeder
 
         // Tree Types
         DB::table('tree_types')->insert([
-            ['name' => 'Flame Tree', 'description' => 'Delonix regia'],
-            ['name' => 'Mahogany', 'description' => 'Swietenia macrophylla'],
-            ['name' => 'Black Plum', 'description' => 'Syzygium cumini'],
-            ['name' => 'Ficus', 'description' => 'Ficus spp.'],
-            ['name' => 'Satelite', 'description' => 'Terminalia mantaly'],
-            ['name' => 'Eucalyptus', 'description' => 'Eucalyptus camaldulensis'],
-            ['name' => 'Almond', 'description' => 'Prunus amygdalus'],
-            ['name' => 'Albizia', 'description' => 'Albizia lebbeck'],
-            ['name' => 'Teak', 'description' => 'Tectona grandis'],
-            ['name' => 'Bamboo', 'description' => 'Bambusa vulgaris'],
-            ['name' => 'Baobab', 'description' => 'Adansonia digitata'],
-            ['name' => 'Cashew', 'description' => 'Anacardium occidentale'],
-            ['name' => 'Guava', 'description' => 'Psidium guajava'],
-            ['name' => 'Moringa', 'description' => 'Moringa oleifera'],
-            ['name' => 'Neem', 'description' => 'Azadirachta indica'],
-            ['name' => 'Leucaena', 'description' => 'Leucaena leucocephala'],
-            ['name' => 'Orange', 'description' => 'Citrus sinensis'],
-            ['name' => 'Mango', 'description' => 'Mangifera indica'],
-            ['name' => 'Shea Butter', 'description' => 'Vitellaria paradoxa'],
+            ['name' => 'Flame Tree', 'latin_name' => 'Delonix regia', 'description' => 'Ornamental tree known for its bright red flowers', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Mahogany', 'latin_name' => 'Swietenia macrophylla', 'description' => 'Valuable hardwood tree used for timber', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Black Plum', 'latin_name' => 'Syzygium cumini', 'description' => 'Fruit-bearing tree with medicinal properties', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Ficus', 'latin_name' => 'Ficus spp.', 'description' => 'Large genus of trees often used for shade and landscaping', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Satelite', 'latin_name' => 'Terminalia mantaly', 'description' => 'Fast-growing ornamental tree with layered branches', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Eucalyptus', 'latin_name' => 'Eucalyptus camaldulensis', 'description' => 'Fast-growing tree commonly used for timber and fuel', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Almond', 'latin_name' => 'Prunus amygdalus', 'description' => 'Nut-producing tree grown in warm climates', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Albizia', 'latin_name' => 'Albizia lebbeck', 'description' => 'Nitrogen-fixing tree used for shade and soil improvement', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Teak', 'latin_name' => 'Tectona grandis', 'description' => 'Highly valued hardwood tree for construction and furniture', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Bamboo', 'latin_name' => 'Bambusa vulgaris', 'description' => 'Fast-growing grass used for construction and crafts', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Baobab', 'latin_name' => 'Adansonia digitata', 'description' => 'Iconic African tree with a massive trunk and edible fruit', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Cashew', 'latin_name' => 'Anacardium occidentale', 'description' => 'Tree that produces cashew nuts and fruit', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Guava', 'latin_name' => 'Psidium guajava', 'description' => 'Fruit tree rich in vitamins and widely cultivated', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Moringa', 'latin_name' => 'Moringa oleifera', 'description' => 'Highly nutritious tree known as the “miracle tree”', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Neem', 'latin_name' => 'Azadirachta indica', 'description' => 'Drought-resistant tree with medicinal and pesticidal uses', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Leucaena', 'latin_name' => 'Leucaena leucocephala', 'description' => 'Fast-growing tree used for fodder and soil improvement', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Orange', 'latin_name' => 'Citrus sinensis', 'description' => 'Popular fruit tree producing sweet citrus fruits', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Mango', 'latin_name' => 'Mangifera indica', 'description' => 'Tropical fruit tree producing sweet mangoes', 'created_at' => now(), 'updated_at' => now()],
+            ['name' => 'Shea Butter', 'latin_name' => 'Vitellaria paradoxa', 'description' => 'Tree producing nuts used for shea butter', 'created_at' => now(), 'updated_at' => now()],
         ]);
 
         DB::table('division')->insert([

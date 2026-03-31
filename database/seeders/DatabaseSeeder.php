@@ -14,7 +14,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // User::factory(10)->create();
-        $this->call(StatusTablesSeeder::class);
+        $this->call(VariousTablesSeeder::class);
       //  $this->call(RolesTableSeeder::class);
      //   $this->call(PlantingLocationSeeder::class);
 
@@ -35,35 +35,45 @@ class DatabaseSeeder extends Seeder
         );
         $admin->assignRole('SuperAdmin');
 
-       /* $admin = User::firstOrCreate(
-            ['email' => 'admin@ex.com'],
+       $admin = User::firstOrCreate(
+            ['email' => 'erikpleijel@yahoo.se'],
             [
-                'name' => 'Erik Jörgen',
+                'name' => 'Erik Bengtsson',
                 'password' => bcrypt('password'),
                 'email_verified_at' => now(),
             ]
         );
-        $admin->assignRole('Admin');
+        $admin->assignRole('Grower');
 
-        $Monitor = User::firstOrCreate(
-            ['email' => 'monitor@ex.com'],
+        $admin = User::firstOrCreate(
+            ['email' => 'marthapleijel@yahoo.se'],
             [
-                'name' => 'Prada Streep',
-                'password' => bcrypt('password'),
+                'name' => 'Martha Kagiri',
+                'password' => bcrypt('Kan900gkan900g'),
                 'email_verified_at' => now(),
             ]
         );
-        $Monitor->assignRole('Monitor');
+        $admin->assignRole('Grower');
 
-        $grower = User::firstOrCreate(
-            ['email' => 'grower@ex.com'],
-            [
-                'name' => 'Thomas Greenquist',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-        $grower->assignRole('grower');*/
+        /*  $Monitor = User::firstOrCreate(
+             ['email' => 'monitor@ex.com'],
+             [
+                 'name' => 'Prada Streep',
+                 'password' => bcrypt('password'),
+                 'email_verified_at' => now(),
+             ]
+         );
+         $Monitor->assignRole('Monitor');
+
+         $grower = User::firstOrCreate(
+             ['email' => 'grower@ex.com'],
+             [
+                 'name' => 'Thomas Greenquist',
+                 'password' => bcrypt('password'),
+                 'email_verified_at' => now(),
+             ]
+         );
+         $grower->assignRole('grower');*/
 
 
     }

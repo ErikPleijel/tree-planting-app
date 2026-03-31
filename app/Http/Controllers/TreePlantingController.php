@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TreePlanting;
+use App\Models\TreeType;
 use Illuminate\Http\Request;
 
 class TreePlantingController extends Controller
@@ -34,7 +35,7 @@ class TreePlantingController extends Controller
 
         return view('tree-plantings.create', [
             'location' => $location,
-            'treeTypes' => \App\Models\TreeType::all(),
+            'treeTypes' => \App\Models\TreeType::orderBy('name')->get(),
             'statuses' => \App\Models\TreePlantingStatus::all(),
         ]);
     }
@@ -163,7 +164,7 @@ class TreePlantingController extends Controller
         $treePlantings = $query->paginate(25)->withQueryString();
 
         // Dropdown data for filters
-        $treeTypes = \App\Models\TreeType::all();
+        $treeTypes = TreeType::orderByDesc('name')->get();
         $divisions = \App\Models\Division::all();
         $users = \App\Models\User::all();
         $statuses = \App\Models\TreePlantingStatus::all();

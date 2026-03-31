@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\PlantingLocation;
 use Illuminate\Http\Request;
-
 use App\Services\MapMarkerService;
 
 class PlantingLocationController extends Controller
@@ -13,36 +12,36 @@ class PlantingLocationController extends Controller
      * Display a listing of the resource.
      */
     public function index(Request $request)
-{
-    $query = PlantingLocation::with(['division', 'statusRelation',
-        'treePlantings' => function($query) {
-            $query->orderBy('planting_date', 'desc');
-        },
-        'treePlantings.treeType',
-        'treePlantings.statusRelation'
-    ]);
+    {
+        $query = PlantingLocation::with([
+            'division',
+            'status',
+            'treePlantings' => function ($query) {
+                $query->orderBy('planting_date', 'desc');
+            },
+            'treePlantings.treeType',
+            'treePlantings.statusRelation',
+        ]);
 
-    // Apply division filter
-    if ($request->filled('division')) {
-        $query->where('division_id', $request->division);
+        // Apply division filter
+        if ($request->filled('division')) {
+            $query->where('division_id', $request->division);
+        }
+
+        // Apply search filter
+        if ($request->filled('search')) {
+            $query->where('location', 'like', '%' . $request->search . '%');
+        }
+
+        $plantingLocations = $query
+            ->withSum('treePlantings as total_trees', 'number_of_trees')
+            ->paginate(20)
+            ->withQueryString();
+
+        $divisions = \App\Models\Division::orderBy('LGA_name')->get();
+
+        return view('planting-locations.index', compact('plantingLocations', 'divisions'));
     }
-
-    // Apply search filter
-    if ($request->filled('search')) {
-        $query->where('location', 'like', '%' . $request->search . '%');
-    }
-
-    $plantingLocations = $query
-        ->withSum('treePlantings as total_trees', 'number_of_trees')
-        ->paginate(20)
-        ->withQueryString(); // This preserves the filters in pagination links
-
-    // Get divisions for the dropdown
-    $divisions = \App\Models\Division::orderBy('LGA_name')->get();
-
-    return view('planting-locations.index', compact('plantingLocations', 'divisions'));
-}
-
 
     /**
      * Show the form for creating a new resource.
@@ -55,65 +54,69 @@ class PlantingLocationController extends Controller
         ]);
     }
 
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-{
-    $validated = $request->validate([
-        'location' => 'required|string|max:255',
-        'division_id' => 'required|exists:division,id',
-        'status' => 'required|exists:planting_location_status,id', // Add this line
-        'comment' => 'nullable|string',
-        'latitude' => 'nullable|numeric',
-        'longitude' => 'nullable|numeric',
-    ]);
+    {
+        $validated = $request->validate([
+            'location'     => 'required|string|max:255',
+            'division_id'  => 'required|exists:division,id',
+            'status_id'    => 'required|exists:planting_location_status,id',
+            'comment'      => 'nullable|string',
+            'contributors' => 'nullable|string',
+            'latitude'     => 'nullable|numeric',
+            'longitude'    => 'nullable|numeric',
+        ]);
 
-    $validated['user_id'] = auth()->id();
+        $validated['user_id']      = auth()->id();
+        $validated['contributors'] = $request->contributors
+            ? strip_tags($request->contributors, '<p><br><strong><em><u><ol><ul><li><a><span>')
+            : null;
 
-    // Create the planting location only once
-    $plantingLocation = PlantingLocation::create($validated);
+        $plantingLocation = PlantingLocation::create($validated);
 
-    return redirect()
-        ->route('planting-locations.show', $plantingLocation->id)
-        ->with('success', 'Planting location created successfully.');
-}
-
+        return redirect()
+            ->route('planting-locations.show', $plantingLocation->id)
+            ->with('success', 'Planting location created successfully.');
+    }
 
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, MapMarkerService $markerService, \App\Models\PlantingLocation $plantingLocation)
-    {
+    public function show(
+        Request $request,
+        MapMarkerService $markerService,
+        PlantingLocation $plantingLocation
+    ) {
         $filters = [
             'id' => $plantingLocation->id,
         ];
 
         $markers = $markerService->getMarkers($filters);
 
-     //   $plantingLocation->load(['division', 'statusRelation']);
-        $plantingLocation->load(['division', 'pictures', 'statusRelation', 'treePlantings.treeType', 'treePlantings.statusRelation']);
-
+        $plantingLocation->load([
+            'division',
+            'pictures',
+            'status',
+            'treePlantings.treeType',
+            'treePlantings.statusRelation',
+        ]);
 
         return view('planting-locations.show', compact('plantingLocation', 'markers'));
     }
 
-
-
-
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(\App\Models\PlantingLocation $plantingLocation)
+    public function edit(PlantingLocation $plantingLocation)
     {
         return view('planting-locations.edit', [
             'plantingLocation' => $plantingLocation,
-            'divisions' => \App\Models\Division::all(),
-            'statuses' => \App\Models\PlantingLocationStatus::all(),
+            'divisions'        => \App\Models\Division::all(),
+            'statuses'         => \App\Models\PlantingLocationStatus::all(),
         ]);
     }
-
 
     /**
      * Update the specified resource in storage.
@@ -121,24 +124,30 @@ class PlantingLocationController extends Controller
     public function update(Request $request, PlantingLocation $plantingLocation)
     {
         $validated = $request->validate([
-            'location' => 'required|string|max:255',
-            'division_id' => 'required|exists:division,id',
-            'comment' => 'nullable|string',
-            'latitude' => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
+            'location'     => 'required|string|max:255',
+            'division_id'  => 'required|exists:division,id',
+            'status_id'    => 'required|exists:planting_location_status,id',
+            'comment'      => 'nullable|string',
+            'contributors' => 'nullable|string',
+            'latitude'     => 'nullable|numeric',
+            'longitude'    => 'nullable|numeric',
         ]);
+
+        $validated['contributors'] = $request->contributors
+            ? strip_tags($request->contributors, '<p><br><strong><em><u><ol><ul><li><a><span>')
+            : null;
 
         $plantingLocation->update($validated);
 
-        return redirect()->route('planting-locations.show', $plantingLocation)
+        return redirect()
+            ->route('planting-locations.show', $plantingLocation)
             ->with('success', 'Planting Location updated successfully.');
     }
-
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(\App\Models\PlantingLocation $plantingLocation)
+    public function destroy(PlantingLocation $plantingLocation)
     {
         if (auth()->user()->role->name !== 'Admin') {
             abort(403, 'Only admins can delete locations.');
@@ -146,8 +155,13 @@ class PlantingLocationController extends Controller
 
         $plantingLocation->delete();
 
-        return redirect()->route('planting-locations.index')
+        return redirect()
+            ->route('planting-locations.index')
             ->with('success', 'Planting Location deleted.');
     }
 
+    public function qrLabel(PlantingLocation $plantingLocation)
+    {
+        return view('planting-locations.qr-label', compact('plantingLocation'));
+    }
 }

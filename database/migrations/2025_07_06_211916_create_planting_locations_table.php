@@ -13,13 +13,17 @@ return new class extends Migration
     {
         Schema::create('planting_locations', function (Blueprint $table) {
             $table->id();
+
+            // Public QR identifier
+            $table->string('public_code', 8)->unique();
+
             $table->string('location');
             $table->foreignId('division_id')->constrained('division')->onDelete('cascade');
             $table->text('comment')->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->foreignId('status')->constrained('planting_location_status');
+            $table->foreignId('status_id')->constrained('planting_location_status');
             $table->timestamps();
         });
     }
