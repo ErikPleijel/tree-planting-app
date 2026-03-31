@@ -54,6 +54,12 @@
                     </x-nav-link>
                     @endrole
 
+                    @role('Admin|SuperAdmin|Monitor')
+                    <x-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
+                        Team
+                    </x-nav-link>
+                    @endrole
+
 
                 </div>
             </div>

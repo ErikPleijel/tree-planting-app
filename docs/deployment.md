@@ -8,6 +8,10 @@ cd /var/www/tree-planting-app
 QUICK DEPLOY
 /var/www/tree-planting-app/deploy.sh    ./deploy.sh
 
+WIPE OUT REMOTE:
+To wipe remote VPS db, Use: php artisan migrate:fresh --seed --force
+For normal deploy, use: To wipe remote VPS db, Use: php artisan migrate --force
+
 
 Log in at mysql
 mysql -u root -p
