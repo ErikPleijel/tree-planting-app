@@ -11,6 +11,11 @@ class Picture extends Model
         'planting_location_id',
         'path',
         'thumbnail',
+        'show_on_welcome',
+    ];
+
+    protected $casts = [
+        'show_on_welcome' => 'boolean',
     ];
 
     public function user()

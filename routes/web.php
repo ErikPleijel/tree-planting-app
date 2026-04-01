@@ -43,6 +43,16 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
+Route::get(
+    '/planting-locations/{plantingLocation}/pictures/upload',
+    [PictureController::class, 'uploadForm']
+)->name('pictures.upload.form');
+
+Route::post(
+    '/planting-locations/{plantingLocation}/pictures/upload',
+    [PictureController::class, 'uploadStore']
+)->name('pictures.upload.store');
+
 // Picture upload
 Route::get('planting-locations/{plantingLocation}/pictures/create', [PictureController::class, 'create'])
     ->name('pictures.create');
@@ -89,6 +99,12 @@ Route::get('/planting-locations/{plantingLocation}/qr-label', [\App\Http\Control
     ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])
     ->name('planting-locations.qr-label');
 
+
+Route::delete('/pictures/{picture}', [PictureController::class, 'destroy'])
+    ->name('pictures.destroy');
+
+Route::patch('/pictures/{picture}/toggle-welcome', [PictureController::class, 'toggleWelcome'])
+    ->name('pictures.toggle-welcome');
 
 
 Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {

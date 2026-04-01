@@ -206,29 +206,120 @@
         @endif
     </div>
 
-    <!-- Photos -->
-    <h2 class="text-2xl font-semibold mt-12 mb-3 text-center">Photos</h2>
-    <div class="flex justify-center items-center">
-        <a href="{{ route('pictures.create', $plantingLocation->id) }}">
-            <button class="bg-primary text-white px-6 py-3 rounded hover:bg-green-700 transition-colors mt-4">📷 Take Photo</button>
-        </a>
-    </div>
 
-    @if($plantingLocation->pictures->count())
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            @foreach($plantingLocation->pictures as $pic)
-                <div class="border p-2 rounded shadow">
-                    <img
-                        src="{{ asset('storage/' . $pic->path) }}"
-                        alt="Picture"
-                        class="w-full h-auto rounded"
-                    >
-                    <p class="text-xs text-gray-600 mt-1">Uploaded {{ $pic->created_at->format('Y-m-d H:i') }}</p>
-                </div>
-            @endforeach
+        <!-- Photos -->
+        <h2 class="text-2xl font-semibold mt-12 mb-3 text-center">Photos</h2>
+        <div class="flex flex-wrap justify-center items-center gap-3 mb-6 mt-4">
+
+            {{-- Camera capture (existing) --}}
+            <a href="{{ route('pictures.create', $plantingLocation->id) }}">
+                <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-medium">
+                    📷 Take Photo
+                </button>
+            </a>
+
+            {{-- Upload from device (new) --}}
+            <a href="{{ route('pictures.upload.form', $plantingLocation) }}">
+                <button class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                    🖼 Upload from Device
+                </button>
+            </a>
+
         </div>
-    @else
-        <p class="text-gray-500">No pictures uploaded yet.</p>
-    @endif
+
+        @if($plantingLocation->pictures->count())
+            <div class="max-w-5xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-10">
+                @foreach($plantingLocation->pictures()->latest()->get() as $pic)
+
+                    @php
+                        // Can this user manage this picture?
+                        $canManage = Auth::check() && (
+                            Auth::id() === $pic->user_id ||
+                            Auth::user()->hasRole(['Admin', 'SuperAdmin'])
+                        );
+                    @endphp
+
+                    <div class="border rounded-lg shadow overflow-hidden bg-white flex flex-col">
+
+                        {{-- Image --}}
+                        <div class="relative">
+                            <img
+                                src="{{ asset('storage/' . $pic->path) }}"
+                                alt="Photo"
+                                class="w-full h-40 object-cover"
+                            >
+
+                            {{-- "Show on welcome" badge (always visible so everyone can see the state) --}}
+                            <span class="absolute top-1 left-1 text-xs px-1.5 py-0.5 rounded
+                        {{ $pic->show_on_welcome ? 'bg-green-600 text-white' : 'bg-gray-400 text-white' }}">
+                        {{ $pic->show_on_welcome ? '🌐 Welcome' : '🚫 Hidden' }}
+                    </span>
+                        </div>
+
+                        {{-- Meta --}}
+                        <div class="px-2 py-1 text-xs text-gray-500">
+                            {{ $pic->created_at->format('Y-m-d H:i') }}
+                            @if($pic->user)
+                                · {{ $pic->user->name }}
+                            @endif
+                        </div>
+
+                        {{-- Actions (only shown to users with permission) --}}
+                        @if($canManage)
+                            <div class="flex items-center justify-between gap-1 px-2 pb-2 mt-auto">
+
+                                {{-- Toggle "show on welcome page" --}}
+                                <form
+                                    action="{{ route('pictures.toggle-welcome', $pic) }}"
+                                    method="POST"
+                                    title="{{ $pic->show_on_welcome ? 'Hide from welcome page' : 'Show on welcome page' }}"
+                                >
+                                    @csrf
+                                    @method('PATCH')
+                                    <button
+                                        type="submit"
+                                        class="flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors
+                                    {{ $pic->show_on_welcome
+                                        ? 'border-green-500 text-green-700 hover:bg-green-50'
+                                        : 'border-gray-400 text-gray-600 hover:bg-gray-50' }}"
+                                    >
+                                        {{-- Visual toggle switch --}}
+                                        <span class="relative inline-block w-7 h-4 flex-shrink-0">
+                                    <span class="block w-full h-full rounded-full transition-colors
+                                        {{ $pic->show_on_welcome ? 'bg-green-500' : 'bg-gray-300' }}">
+                                    </span>
+                                    <span class="absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition-transform
+                                        {{ $pic->show_on_welcome ? 'translate-x-3' : 'translate-x-0' }}">
+                                    </span>
+                                </span>
+                                        Welcome
+                                    </button>
+                                </form>
+
+                                {{-- Delete --}}
+                                <form
+                                    action="{{ route('pictures.destroy', $pic) }}"
+                                    method="POST"
+                                    onsubmit="return confirm('Delete this photo? This cannot be undone.')"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+                                    <button
+                                        type="submit"
+                                        class="text-xs px-2 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition-colors"
+                                    >
+                                        🗑 Delete
+                                    </button>
+                                </form>
+
+                            </div>
+                        @endif
+
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <p class="text-center text-gray-500 mb-10">No pictures uploaded yet.</p>
+        @endif
 
 </x-app-layout>
