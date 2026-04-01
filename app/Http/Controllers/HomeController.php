@@ -35,6 +35,7 @@ class HomeController extends Controller
             ->get();
 
         $latestPictures = Picture::with('plantingLocation')
+            ->where('show_on_welcome', true)
             ->latest()
             ->take(10)
             ->get();
