@@ -16,6 +16,13 @@
             <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
+        <!-- Invitation Code -->
+        <div class="mt-4">
+            <x-input-label for="invitation_code" :value="__('Invitation Code')" />
+            <x-text-input id="invitation_code" class="block mt-1 w-full" type="text" name="invitation_code" required autocomplete="off" />
+            <x-input-error :messages="$errors->get('invitation_code')" class="mt-2" />
+        </div>
+
         <!-- Password -->
         <div class="mt-4">
             <x-input-label for="password" :value="__('Password')" />
@@ -27,6 +34,8 @@
 
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
+
+
 
         <!-- Confirm Password -->
         <div class="mt-4">
