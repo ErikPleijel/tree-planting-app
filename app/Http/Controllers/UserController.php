@@ -10,6 +10,33 @@ use Spatie\Permission\Models\Role;
 class UserController extends Controller
 {
 
+    public function team(): View
+    {
+        $users = User::query()
+            ->leftJoin('model_has_roles', function ($join) {
+                $join->on('users.id', '=', 'model_has_roles.model_id')
+                    ->where('model_has_roles.model_type', '=', User::class);
+            })
+            ->leftJoin('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->select([
+                'users.*',
+                'roles.name as role_name',
+                \DB::raw("CASE roles.name
+                    WHEN 'SuperAdmin' THEN 1
+                    WHEN 'Admin' THEN 2
+                    WHEN 'Monitor' THEN 3
+                    WHEN 'Grower' THEN 4
+                    ELSE 5
+                END as role_order"),
+            ])
+            ->orderBy('role_order')
+            ->orderBy('users.name')
+            ->distinct()
+            ->paginate(30);
+
+        return view('team.index', compact('users'));
+    }
+
     public function index(): View
     {
         $users = User::query()

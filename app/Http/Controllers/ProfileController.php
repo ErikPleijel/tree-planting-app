@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ProfileController extends Controller
@@ -26,13 +27,34 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $request->user()->fill($request->validated());
+        $user = $request->user();
+        $user->fill($request->safe()->only(['name', 'email', 'telephone', 'country']));
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
         }
 
-        $request->user()->save();
+        // Handle profile picture replacement
+        if ($request->hasFile('profile_picture_file')) {
+            if ($user->profile_picture_path) {
+                Storage::disk('public')->delete($user->profile_picture_path);
+            }
+            $user->profile_picture_path = $request->file('profile_picture_file')->store('profile-pictures', 'public');
+        } elseif ($request->filled('profile_picture_data')) {
+            if ($user->profile_picture_path) {
+                Storage::disk('public')->delete($user->profile_picture_path);
+            }
+            $imageData   = $request->input('profile_picture_data');
+            $image       = preg_replace('/^data:image\/\w+;base64,/', '', $imageData);
+            $image       = str_replace(' ', '+', $image);
+            $imageBinary = base64_decode($image);
+            $filename    = uniqid('selfie_') . '.jpg';
+            $path        = 'profile-pictures/' . $filename;
+            Storage::disk('public')->put($path, $imageBinary);
+            $user->profile_picture_path = $path;
+        }
+
+        $user->save();
 
         return Redirect::route('profile.edit')->with('status', 'profile-updated');
     }

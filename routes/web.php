@@ -36,6 +36,11 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+// Team directory (all logged-in users)
+Route::get('/team', [UserController::class, 'team'])
+    ->middleware('auth')
+    ->name('team.index');
+
 // Profile routes
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

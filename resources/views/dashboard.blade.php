@@ -40,6 +40,13 @@
         <p class="text-sm text-gray-600">
             Thank you for your work in restoring our environment — one tree at a time.
         </p>
+
+        <div class="mt-6 text-center">
+            <a href="{{ route('team.index') }}"
+               class="inline-flex items-center px-5 py-2 bg-green-700 text-white text-sm font-medium rounded-md hover:bg-green-800 transition-colors">
+                Your Team
+            </a>
+        </div>
     </div>
 
     <div class="max-w-7xl mx-auto mt-8 px-4 sm:px-6 lg:px-8">
