@@ -7,28 +7,7 @@
         </div>
     @endguest
 
-        <section class="py-12 bg-white text-center">
-            <div class="max-w-4xl mx-auto">
-                <h2 class="text-3xl font-bold mb-6">Our Progress</h2>
-                <div class="flex flex-col md:flex-row gap-6 justify-center shadow-lg rounded-lg p-6 bg-white">
-                    <div class="text-center p-4">
-                        <div class="text-sm text-gray-500 mb-2">Trees Planted</div>
-                        <div class="text-4xl font-bold text-green-600 mb-2">{{ \App\Models\TreePlanting::sum('number_of_trees') }}</div>
-                        <div class="text-sm text-gray-600">And counting!</div>
-                    </div>
-                    <div class="text-center p-4">
-                        <div class="text-sm text-gray-500 mb-2">Field Workers</div>
-                        <div class="text-4xl font-bold text-blue-500 mb-2">{{ \App\Models\User::count() }}</div>
-                        <div class="text-sm text-gray-600">Across Africa</div>
-                    </div>
-                    <div class="text-center p-4">
-                        <div class="text-sm text-gray-500 mb-2">Target for 2030</div>
-                        <div class="text-4xl font-bold text-orange-500 mb-2">1,000,000</div>
-                        <div class="text-sm text-gray-600">Let's make it happen 🌳</div>
-                    </div>
-                </div>
-            </div>
-        </section>
+
 
         <section class="py-12 bg-white">
             <div class="max-w-5xl mx-auto px-4 text-center">
@@ -157,7 +136,28 @@
         </section>
 
 
-
+        <section class="py-12 bg-white text-center">
+            <div class="max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold mb-6">Our Progress</h2>
+                <div class="flex flex-col md:flex-row gap-6 justify-center shadow-lg rounded-lg p-6 bg-white">
+                    <div class="text-center p-4">
+                        <div class="text-sm text-gray-500 mb-2">Trees Planted</div>
+                        <div class="text-4xl font-bold text-green-600 mb-2">{{ \App\Models\TreePlanting::sum('number_of_trees') }}</div>
+                        <div class="text-sm text-gray-600">And counting!</div>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="text-sm text-gray-500 mb-2">Field Workers</div>
+                        <div class="text-4xl font-bold text-blue-500 mb-2">{{ \App\Models\User::count() }}</div>
+                        <div class="text-sm text-gray-600">Across Africa</div>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="text-sm text-gray-500 mb-2">Target for 2030</div>
+                        <div class="text-4xl font-bold text-orange-500 mb-2">1,000,000</div>
+                        <div class="text-sm text-gray-600">Let's make it happen 🌳</div>
+                    </div>
+                </div>
+            </div>
+        </section>
     {{-- You Can Contribute Section --}}
     <section class="py-16 bg-gradient-to-b from-white to-gray-50">
         <div class="max-w-6xl mx-auto px-4">
