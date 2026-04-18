@@ -152,12 +152,19 @@
                     </div>
                     <div class="text-center p-4">
                         <div class="text-sm text-gray-500 mb-2">Target for 2030</div>
-                        <div class="text-4xl font-bold text-orange-500 mb-2">1,000,000</div>
+                        <div class="text-4xl font-bold text-orange-500 mb-2">25,000,000</div>
                         <div class="text-sm text-gray-600">Let's make it happen 🌳</div>
                     </div>
                 </div>
             </div>
         </section>
+        <div class="text-center mt-6">
+            <a href="{{ route('team.index') }}"
+               class="inline-flex items-center px-5 py-2 bg-green-700 text-white text-sm font-medium rounded-md hover:bg-green-800 transition-colors">
+                The Team
+            </a>
+        </div>
+
     {{-- You Can Contribute Section --}}
     <section class="py-16 bg-gradient-to-b from-white to-gray-50">
         <div class="max-w-6xl mx-auto px-4">

@@ -1,4 +1,5 @@
-
+One line deployment:
+ssh root@139.84.228.69 '/var/www/tree-planting-app/deploy.sh'
 
 
 ssh root@139.84.228.69
