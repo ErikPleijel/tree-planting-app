@@ -18,6 +18,7 @@ class UserController extends Controller
                     ->where('model_has_roles.model_type', '=', User::class);
             })
             ->leftJoin('roles', 'model_has_roles.role_id', '=', 'roles.id')
+            ->whereNotNull('roles.name')
             ->select([
                 'users.*',
                 'roles.name as role_name',
