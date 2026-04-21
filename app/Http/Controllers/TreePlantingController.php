@@ -13,14 +13,35 @@ class TreePlantingController extends Controller
      */
 
 
-    public function index()
+    public function index(Request $request)
     {
-        $treePlantings = \App\Models\TreePlanting::with(['plantingLocation', 'treeType', 'status','statusRelation'])
-            ->orderBy('planting_date', 'desc') // Most recent first
-            ->paginate(15);
+        $query = \App\Models\TreePlanting::with(['plantingLocation', 'treeType', 'statusRelation'])
+            ->join('tree_types', 'tree_plantings.tree_type_id', '=', 'tree_types.id')
+            ->join('planting_locations', 'tree_plantings.planting_location_id', '=', 'planting_locations.id')
+            ->select('tree_plantings.*');
 
+        if ($treeTypeId = $request->input('tree_type_id')) {
+            $query->where('tree_plantings.tree_type_id', $treeTypeId);
+        }
 
-        return view('tree-plantings.index', compact('treePlantings'));
+        if ($status = $request->input('status')) {
+            $query->where('tree_plantings.status', $status);
+        }
+
+        match ($request->input('sort', 'date_asc')) {
+            'date_desc'      => $query->orderBy('tree_plantings.planting_date', 'desc'),
+            'tree_type_asc'  => $query->orderBy('tree_types.name', 'asc'),
+            'tree_type_desc' => $query->orderBy('tree_types.name', 'desc'),
+            'location_asc'   => $query->orderBy('planting_locations.location', 'asc'),
+            'location_desc'  => $query->orderBy('planting_locations.location', 'desc'),
+            default          => $query->orderBy('tree_plantings.planting_date', 'asc'),
+        };
+
+        $treePlantings = $query->paginate(15)->withQueryString();
+        $treeTypes = TreeType::orderBy('name')->get();
+        $statuses = \App\Models\TreePlantingStatus::all();
+
+        return view('tree-plantings.index', compact('treePlantings', 'treeTypes', 'statuses'));
     }
 
 

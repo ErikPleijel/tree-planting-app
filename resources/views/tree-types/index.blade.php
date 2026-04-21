@@ -3,10 +3,12 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
             <h1 class="text-2xl font-bold text-gray-800">Tree Types</h1>
 
+            @role('Admin|SuperAdmin')
             <a href="{{ route('tree-types.create') }}"
                class="inline-block bg-primary text-white px-5 py-3 rounded hover:bg-green-700 transition-colors">
                 + Add Tree Type
             </a>
+            @endrole
         </div>
 
         @if(session('success'))
@@ -29,7 +31,10 @@
                         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">Name</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">Latin Name</th>
                         <th class="px-4 py-3 text-left text-sm font-semibold text-gray-700 border-b">Description</th>
+                        <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b">Total Planted</th>
+                        @role('Admin|SuperAdmin')
                         <th class="px-4 py-3 text-right text-sm font-semibold text-gray-700 border-b">Actions</th>
+                        @endrole
                     </tr>
                     </thead>
                     <tbody class="bg-white">
@@ -44,6 +49,10 @@
                             <td class="px-4 py-3 text-gray-600">
                                 {{ \Illuminate\Support\Str::limit(strip_tags($treeType->description), 200) ?: '—' }}
                             </td>
+                            <td class="px-4 py-3 text-right text-gray-800 font-medium">
+                                {{ number_format($treeType->tree_plantings_sum_number_of_trees ?? 0) }}
+                            </td>
+                            @role('Admin|SuperAdmin')
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ route('tree-types.show', $treeType) }}"
@@ -67,6 +76,7 @@
                                     </form>
                                 </div>
                             </td>
+                            @endrole
                         </tr>
                     @endforeach
                     </tbody>

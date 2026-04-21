@@ -11,7 +11,9 @@ class TreeTypeController extends Controller
 
     public function index()
     {
-        $treeTypes = TreeType::orderBy('name')->paginate(150);
+        $treeTypes = TreeType::withSum('treePlantings', 'number_of_trees')
+            ->orderBy('name')
+            ->paginate(150);
 
         return view('tree-types.index', compact('treeTypes'));
     }

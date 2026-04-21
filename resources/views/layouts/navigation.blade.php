@@ -48,11 +48,9 @@
                         </x-nav-link>
                     @endrole
 
-                    @role('SuperAdmin')
                     <x-nav-link :href="route('tree-types.index')" :active="request()->routeIs('tree-types.*')">
                         Tree Types
                     </x-nav-link>
-                    @endrole
 
                     @role('Admin|SuperAdmin|Monitor')
                     <x-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
@@ -201,6 +199,10 @@
         Team
     </x-responsive-nav-link>
     @endrole
+
+    <x-responsive-nav-link :href="route('tree-types.index')" :active="request()->routeIs('tree-types.*')">
+        Tree Types
+    </x-responsive-nav-link>
 </div>
 
 

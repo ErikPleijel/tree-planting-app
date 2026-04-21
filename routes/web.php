@@ -112,6 +112,13 @@ Route::patch('/pictures/{picture}/toggle-welcome', [PictureController::class, 't
     ->name('pictures.toggle-welcome');
 
 
-Route::middleware(['auth', 'role:SuperAdmin'])->group(function () {
-    Route::resource('tree-types', TreeTypeController::class);
+// Tree types — index/show are public; create/edit/delete require Admin or SuperAdmin
+Route::get('/tree-types', [TreeTypeController::class, 'index'])->name('tree-types.index');
+Route::middleware(['auth', 'role:Admin|SuperAdmin'])->group(function () {
+    Route::get('/tree-types/create', [TreeTypeController::class, 'create'])->name('tree-types.create');
+    Route::post('/tree-types', [TreeTypeController::class, 'store'])->name('tree-types.store');
+    Route::get('/tree-types/{treeType}/edit', [TreeTypeController::class, 'edit'])->name('tree-types.edit');
+    Route::put('/tree-types/{treeType}', [TreeTypeController::class, 'update'])->name('tree-types.update');
+    Route::delete('/tree-types/{treeType}', [TreeTypeController::class, 'destroy'])->name('tree-types.destroy');
 });
+Route::get('/tree-types/{treeType}', [TreeTypeController::class, 'show'])->name('tree-types.show');
