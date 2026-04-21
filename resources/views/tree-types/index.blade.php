@@ -42,7 +42,7 @@
                                 {{ $treeType->latin_name ?: '—' }}
                             </td>
                             <td class="px-4 py-3 text-gray-600">
-                                {{ \Illuminate\Support\Str::limit(strip_tags($treeType->description), 80) ?: '—' }}
+                                {{ \Illuminate\Support\Str::limit(strip_tags($treeType->description), 200) ?: '—' }}
                             </td>
                             <td class="px-4 py-3">
                                 <div class="flex justify-end gap-2">
