@@ -7,31 +7,57 @@
         </div>
     @endguest
 
-
-
+        <!-- Welcome Text -->
         <section class="py-12 bg-white">
+
+            <div class="max-w-2xl mx-auto px-4 text-center mb-10">
+                <h1 class="text-4xl font-bold text-[#1a3319] mb-4">Tracking Africa's Growing Forests</h1>
+                <p class="text-[#3d5a35] text-lg leading-relaxed mb-3">
+                    This site is a living record of tree planting across Africa — tracking not just where trees are planted, but how they grow over time.
+                </p>
+                <p class="text-[#6b8c5a] text-base leading-relaxed">
+                    Behind every pin on this map are people doing the real work — planting, organising, financing.
+                    We simply help keep their efforts visible.
+                </p>
+            </div>
+        </section>
+
+
+        <section class="mb-8 bg-white">
             <div class="max-w-5xl mx-auto px-4 text-center">
 
-                <!-- Header -->
                 <h2 class="text-3xl font-bold text-[#1a3319] mb-2">
                     Explore Planting Locations
                 </h2>
 
-                <!-- Subtext -->
                 <p class="text-[#6b8c5a] text-base mb-6">
                     Click on a marker to view details about each planting site
                 </p>
 
-                <!-- Map -->
-                <div class="max-w-[700px] mx-auto rounded-xl overflow-hidden border border-[#d6e8cc] shadow-sm">
-                    <x-map
-                        :markers="$markers"
-                        :zoom="6"
-                        :lat="0"
-                        :lng="38"
-                        height="520px"
-                        width="100%"
-                    />
+                <!-- Map wrapper with touch-lock overlay -->
+                <div class="max-w-[700px] mx-auto rounded-xl overflow-hidden border border-[#d6e8cc] shadow-sm relative"
+                     id="map-container">
+
+                    <!-- Overlay (mobile only) -->
+                    <div id="map-overlay"
+                         class="md:hidden absolute inset-0 z-10 flex items-center justify-center cursor-pointer bg-black/10 rounded-xl"
+                         onclick="activateMap()">
+                        <div class="bg-white/90 rounded-lg px-5 py-3 shadow text-sm text-[#1a3319] font-medium pointer-events-none">
+                            Tap to interact with the map
+                        </div>
+                    </div>
+
+                    <!-- Map itself (pointer-events disabled on mobile until tapped) -->
+                    <div id="map-inner" class="map-locked">
+                        <x-map
+                            :markers="$markers"
+                            :zoom="6"
+                            :lat="0"
+                            :lng="38"
+                            height="520px"
+                            width="100%"
+                        />
+                    </div>
                 </div>
 
                 @role('Admin|SuperAdmin|Monitor|Grower')
@@ -45,6 +71,17 @@
 
             </div>
         </section>
+
+        <style>
+            @media (max-width: 767px) {
+                .map-locked {
+                    pointer-events: none;
+                }
+                .map-unlocked {
+                    pointer-events: auto;
+                }
+            }
+        </style>
 
         <section class="py-14 bg-gradient-to-b from-white to-[#f6f9f2]">
             <div class="max-w-5xl mx-auto px-4">
@@ -397,6 +434,29 @@
             closePhotoModal();
         }
         });
+
+            function activateMap() {
+                const overlay = document.getElementById('map-overlay');
+                const inner = document.getElementById('map-inner');
+
+                overlay.classList.add('hidden');
+                inner.classList.remove('map-locked');
+                inner.classList.add('map-unlocked');
+
+                // Re-lock when user scrolls away from the map
+                const container = document.getElementById('map-container');
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (!entry.isIntersecting) {
+                            overlay.classList.remove('hidden');
+                            inner.classList.add('map-locked');
+                            inner.classList.remove('map-unlocked');
+                        }
+                    });
+                }, { threshold: 0 });
+
+                observer.observe(container);
+            }
     </script>
 
 </x-app-layout>

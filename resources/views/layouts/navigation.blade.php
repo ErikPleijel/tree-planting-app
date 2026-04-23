@@ -54,9 +54,15 @@
 
                     @role('Admin|SuperAdmin|Monitor')
                     <x-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
-                        Team
+                        Authorizations
                     </x-nav-link>
                     @endrole
+
+                    @auth
+                    <x-nav-link :href="route('team.index')" :active="request()->routeIs('team.index')">
+                        The Team
+                    </x-nav-link>
+                    @endauth
 
 
                 </div>
@@ -196,9 +202,15 @@
 
     @role('Admin|SuperAdmin|Monitor')
     <x-responsive-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
-        Team
+        Authorizations
     </x-responsive-nav-link>
     @endrole
+
+    @auth
+    <x-responsive-nav-link :href="route('team.index')" :active="request()->routeIs('team.index')">
+        The Team
+    </x-responsive-nav-link>
+    @endauth
 
     <x-responsive-nav-link :href="route('tree-types.index')" :active="request()->routeIs('tree-types.*')">
         Tree Types
