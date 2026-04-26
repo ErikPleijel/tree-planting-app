@@ -10,6 +10,9 @@
         ->groupBy('treeType.name')
         ->map(fn($group) => $group->sum('number_of_trees'))
         ->sortByDesc(fn($count) => $count);
+
+    $maxShown    = 5;
+    $hiddenCount = max(0, $treeTypes->count() - $maxShown);
 @endphp
 
 <div class="bg-white border-2 border-[#b6d89a] rounded-2xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden h-full flex flex-col">
@@ -39,40 +42,40 @@
         </div>
     </div>
 
-    <div class="p-5 flex-1 flex flex-col">
-        <div class="mb-4">
-            <div class="text-3xl font-bold text-[#2d6118] leading-none">
-                {{ number_format($totalTrees) }}
+    <div class="p-4 flex-1 flex flex-col">
+
+        {{-- Trees count + View button on the same row --}}
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-bold text-[#2d6118] leading-none">{{ number_format($totalTrees) }}</span>
+                <span class="text-sm text-[#6b8c5a]">trees planted</span>
             </div>
-            <div class="text-sm text-[#6b8c5a] mt-1">
-                Trees planted
-            </div>
-        </div>
-
-        <div class="mb-4">
-            <h4 class="text-sm font-semibold text-gray-700 mb-2">Tree types</h4>
-
-            @if($treeTypes->isNotEmpty())
-                <div class="flex flex-wrap gap-2">
-                    @foreach($treeTypes->take(5) as $name => $count)
-                        <span class="inline-flex items-center gap-2 bg-[#eaf4de] text-[#2d6118] border border-[#c0dd97] text-xs italic px-3 py-1 rounded-full">
-                            <span class="not-italic font-semibold text-[#3a7020] bg-white/70 px-2 py-[1px] rounded-full">
-                                {{ $count }}
-                            </span>
-                            {{ $name }}
-                        </span>
-                    @endforeach
-                </div>
-            @else
-                <p class="text-sm text-gray-400">No tree types listed yet.</p>
-            @endif
-        </div>
-
-        <div class="mt-auto pt-2">
             <a href="{{ route('public.planting-locations.show', $plantingLocation->public_code) }}"
-               class="inline-block bg-primary text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+               class="inline-block bg-primary text-white px-3 py-1.5 text-sm rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap">
                 View location
             </a>
         </div>
+
+        {{-- Tree type pills --}}
+        @if($treeTypes->isNotEmpty())
+            <div class="flex flex-wrap gap-1">
+                @foreach($treeTypes->take($maxShown) as $name => $count)
+                    <span class="inline-flex items-center gap-1 bg-[#eaf4de] text-[#2d6118] border border-[#c0dd97] text-xs italic px-2 py-0.5 rounded-full">
+                        <span class="not-italic font-semibold text-[#3a7020] bg-white/70 px-1.5 py-px rounded-full">
+                            {{ $count }}
+                        </span>
+                        {{ $name }}
+                    </span>
+                @endforeach
+                @if($hiddenCount > 0)
+                    <span class="text-xs text-[#6b8c5a] italic self-center">
+                        and {{ $hiddenCount }} more {{ $hiddenCount === 1 ? 'tree type' : 'tree types' }}
+                    </span>
+                @endif
+            </div>
+        @else
+            <p class="text-xs text-gray-400">No tree types listed yet.</p>
+        @endif
+
     </div>
 </div>

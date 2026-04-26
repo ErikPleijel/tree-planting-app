@@ -80,7 +80,6 @@
                     id="showOnWelcome"
                     name="show_on_welcome"
                     value="1"
-                    checked
                     class="w-4 h-4 accent-green-600 cursor-pointer"
                 >
                 <label for="showOnWelcome" class="text-sm text-gray-700 cursor-pointer select-none">

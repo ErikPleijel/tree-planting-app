@@ -34,7 +34,7 @@
         <ol class="list-decimal list-inside mb-4">
             <li>Use the navigation menu to access <strong>Plantings</strong>, <strong>Inspections</strong>, or <strong>Locations</strong>.</li>
             <li>Click on any record to view details, update status, or submit inspection notes.</li>
-            <li>If you're new, be sure to read the <a href="#" class="text-blue-600 underline">Field Manual</a> or ask your team leader for help.</li>
+
         </ol>
 
         <p class="text-sm text-gray-600">

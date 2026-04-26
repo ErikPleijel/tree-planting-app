@@ -23,7 +23,7 @@
         </section>
 
 
-        <section class="mb-8 bg-white">
+        <section class="mb-12 bg-white">
             <div class="max-w-5xl mx-auto px-4 text-center">
 
                 <h2 class="text-3xl font-bold text-[#1a3319] mb-2">
@@ -51,9 +51,9 @@
                     <div id="map-inner" class="map-locked">
                         <x-map
                             :markers="$markers"
-                            :zoom="6"
+                            :zoom="4"
                             :lat="0"
-                            :lng="38"
+                            :lng="20"
                             height="520px"
                             width="100%"
                         />

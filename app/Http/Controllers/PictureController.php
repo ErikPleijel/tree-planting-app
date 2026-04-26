@@ -45,7 +45,7 @@ class PictureController extends Controller
             'planting_location_id' => $request->planting_location_id,
             'path'                 => $path,
             'thumbnail'            => $path,
-            'show_on_welcome'      => true,
+            'show_on_welcome'      => false,
         ]);
 
         return redirect()
@@ -87,7 +87,7 @@ class PictureController extends Controller
             'photos.*.max'     => 'Each photo must be under 8 MB.',
         ]);
 
-        $showOnWelcome = $request->boolean('show_on_welcome', true);
+        $showOnWelcome = $request->boolean('show_on_welcome', false);
         $count = 0;
 
         foreach ($request->file('photos') as $file) {
