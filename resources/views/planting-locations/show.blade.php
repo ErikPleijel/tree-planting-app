@@ -13,6 +13,7 @@
     @endif
 
     <div class="max-w-2xl mx-auto mt-6 p-4 bg-white shadow rounded-lg">
+        <h2 class="text-4xl text-center font-semibold text-gray-700 mb-4">Location Data</h2>
         <!-- Rest of the existing content -->
         <div class="text-center mb-6">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ $plantingLocation->location }}</h1>

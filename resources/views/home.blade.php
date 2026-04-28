@@ -52,25 +52,26 @@
                         <x-map
                             :markers="$markers"
                             :zoom="4"
-                            :lat="0"
-                            :lng="20"
+                            :lat="-5"
+                            :lng="28"
                             height="520px"
                             width="100%"
                         />
                     </div>
                 </div>
 
-                @role('Admin|SuperAdmin|Monitor|Grower')
-                <div class="text-center mt-6">
-                    <a href="{{ route('planting-locations.create') }}"
-                       class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
-                        Add New Location
-                    </a>
-                </div>
-                @endrole
 
             </div>
         </section>
+
+        @role('Admin|SuperAdmin|Monitor|Grower')
+        <div class="text-center mt-6">
+            <a href="{{ route('planting-locations.create') }}"
+               class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                Add New Location
+            </a>
+        </div>
+        @endrole
 
         <style>
             @media (max-width: 767px) {
@@ -184,7 +185,7 @@
                     </div>
                     <div class="text-center p-4">
                         <div class="text-sm text-gray-500 mb-2">Field Workers</div>
-                        <div class="text-4xl font-bold text-blue-500 mb-2">{{ \App\Models\User::count() }}</div>
+                        <div class="text-4xl font-bold text-blue-500 mb-2">{{ \App\Models\User::whereHas('roles')->count() }}</div>
                         <div class="text-sm text-gray-600">Across Africa</div>
                     </div>
                     <div class="text-center p-4">
@@ -195,12 +196,6 @@
                 </div>
             </div>
         </section>
-        <div class="text-center mt-6">
-            <a href="{{ route('team.index') }}"
-               class="inline-flex items-center px-5 py-2 bg-green-700 text-white text-sm font-medium rounded-md hover:bg-green-800 transition-colors">
-                The Team
-            </a>
-        </div>
 
     {{-- You Can Contribute Section --}}
     <section class="py-16 bg-gradient-to-b from-white to-gray-50">

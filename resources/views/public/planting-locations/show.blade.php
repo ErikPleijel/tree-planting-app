@@ -447,7 +447,7 @@
 
 @role('Admin|SuperAdmin|Monitor|Grower')
 <div class="text-center  mt-2">
-    <a href="{{ route('planting-locations.show', $plantingLocation) }}" class="bg-yellow-500 text-white px-3 py-1 text-lg rounded hover:bg-yellow-600 transition-colors">ADMIN EDIT</a>
+    <a href="{{ route('planting-locations.show', $plantingLocation) }}" class="bg-yellow-500 text-white px-3 py-1 text-lg rounded hover:bg-yellow-600 transition-colors">Edit Location Data</a>
 </div>
 @endrole
 

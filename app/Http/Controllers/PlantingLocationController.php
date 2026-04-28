@@ -149,7 +149,7 @@ class PlantingLocationController extends Controller
      */
     public function destroy(PlantingLocation $plantingLocation)
     {
-        if (auth()->user()->role->name !== 'Admin') {
+        if (! auth()->user()->hasRole(['Admin', 'SuperAdmin'])) {
             abort(403, 'Only admins can delete locations.');
         }
 

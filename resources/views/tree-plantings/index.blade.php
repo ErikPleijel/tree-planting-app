@@ -1,6 +1,7 @@
 <x-app-layout>
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 class="text-2xl font-bold mb-4 text-center">Tree Plantings</h1>
+        <h1 class="text-4xl font-bold mb-4 text-center">Tree Plantings</h1>
+
 
         {{-- Filters --}}
         <form method="GET" action="{{ route('tree-plantings.index') }}" class="mb-4 flex flex-wrap gap-3 items-end">
