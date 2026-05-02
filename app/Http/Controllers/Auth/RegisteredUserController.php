@@ -34,7 +34,7 @@ class RegisteredUserController extends Controller
             'name'                 => ['required', 'string', 'max:255'],
             'email'                => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password'             => ['required', 'confirmed', Rules\Password::defaults()],
-            'invitation_code'      => ['required', 'in:'.env('INVITATION_CODE')],
+            'invitation_code'      => ['required', 'in:'.config('app.invitation_code')],
             'telephone'            => ['nullable', 'string', 'max:30'],
             'country'              => ['nullable', 'string', 'max:100'],
             'profile_picture_file' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],

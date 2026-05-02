@@ -123,4 +123,6 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    'invitation_code' => env('INVITATION_CODE'),
+
 ];

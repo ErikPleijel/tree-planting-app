@@ -151,10 +151,12 @@
                 captureSelfie() {
                     const video  = document.getElementById('selfieVideo');
                     const canvas = document.getElementById('selfieCanvas');
-                    canvas.width  = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.getContext('2d').drawImage(video, 0, 0);
-                    document.getElementById('selfieData').value = canvas.toDataURL('image/jpeg');
+                    const maxDim = 800;
+                    const scale  = Math.min(1, maxDim / Math.max(video.videoWidth, video.videoHeight));
+                    canvas.width  = video.videoWidth  * scale;
+                    canvas.height = video.videoHeight * scale;
+                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                    document.getElementById('selfieData').value = canvas.toDataURL('image/jpeg', 0.8);
                     this.selfieCaptured = true;
                     this.stopCamera();
                 },
