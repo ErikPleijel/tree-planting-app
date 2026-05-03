@@ -124,14 +124,13 @@
             });
 
         function capturePhoto() {
-            const context = canvas.getContext('2d');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            context.drawImage(video, 0, 0);
+            const maxDim = 1200;
+            const scale  = Math.min(1, maxDim / Math.max(video.videoWidth, video.videoHeight));
+            canvas.width  = video.videoWidth  * scale;
+            canvas.height = video.videoHeight * scale;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.classList.remove('hidden');
-
-            // Convert to base64 and store in hidden input
-            imageDataInput.value = canvas.toDataURL('image/jpeg');
+            imageDataInput.value = canvas.toDataURL('image/jpeg', 0.82);
         }
     </script>
 
