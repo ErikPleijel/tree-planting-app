@@ -82,6 +82,8 @@ class TreePlantingController extends Controller
             $validated['status'] = 1;
         }
 
+        $validated['status_updated_by'] = auth()->id();
+
         \App\Models\TreePlanting::create($validated);
 
         return redirect()
@@ -133,6 +135,10 @@ class TreePlantingController extends Controller
         // Preserve existing status if user doesn't have required role
         if (!auth()->user()->hasRole(['Admin', 'SuperAdmin', 'Monitor'])) {
             $validated['status'] = $treePlanting->status;
+        }
+
+        if ((int) $validated['status'] !== (int) $treePlanting->status) {
+            $validated['status_updated_by'] = auth()->id();
         }
 
         $treePlanting->update($validated);

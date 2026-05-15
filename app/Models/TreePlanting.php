@@ -15,6 +15,7 @@ class TreePlanting extends Model
         'tree_type_id',
         'planting_location_id',
         'status',
+        'status_updated_by',
         'user_id',
     ];
 
@@ -45,6 +46,11 @@ class TreePlanting extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function statusUpdatedBy()
+    {
+        return $this->belongsTo(User::class, 'status_updated_by');
     }
 
 public function division()

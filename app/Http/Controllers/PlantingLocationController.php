@@ -21,6 +21,7 @@ class PlantingLocationController extends Controller
             },
             'treePlantings.treeType',
             'treePlantings.statusRelation',
+            'treePlantings.statusUpdatedBy',
         ]);
 
         // Apply division filter
