@@ -29,12 +29,12 @@ class TreePlantingController extends Controller
         }
 
         match ($request->input('sort', 'date_desc')) {
-            'date_asc'       => $query->orderBy('tree_plantings.planting_date', 'asc'),
+            'date_asc'       => $query->orderBy('tree_plantings.updated_at', 'asc'),
             'tree_type_asc'  => $query->orderBy('tree_types.name', 'asc'),
             'tree_type_desc' => $query->orderBy('tree_types.name', 'desc'),
             'location_asc'   => $query->orderBy('planting_locations.location', 'asc'),
             'location_desc'  => $query->orderBy('planting_locations.location', 'desc'),
-            default          => $query->orderBy('tree_plantings.planting_date', 'desc'),
+            default          => $query->orderBy('tree_plantings.updated_at', 'desc'),
         };
 
         $treePlantings = $query->paginate(15)->withQueryString();
