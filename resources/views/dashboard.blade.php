@@ -1,15 +1,28 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="text-xl font-semibold leading-tight text-gray-800">
-            <h1>{{ Auth::user()->name }}</h1>
-            <p class="text-lg mt-1">
-                Your role:
-                @role('Admin|SuperAdmin|Monitor|Grower')
-                    <span class="bg-green-800 text-white px-2 py-1 rounded">{{ Auth::user()->roles->first()->name }}</span>
-                @else
-                    <span class="bg-yellow-200 px-2 py-1 rounded">You have not been assigned a role yet</span>
-                @endrole
-            </p>
+        <div class="flex items-center gap-4">
+            @if(Auth::user()->profile_picture_path)
+                <img src="{{ asset('storage/' . Auth::user()->profile_picture_path) }}"
+                     alt="Profile photo"
+                     class="w-20 h-24 object-cover rounded-lg flex-shrink-0">
+            @else
+                <div class="w-20 h-24 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                    </svg>
+                </div>
+            @endif
+            <div class="text-xl font-semibold leading-tight text-gray-800">
+                <h1>{{ Auth::user()->name }}</h1>
+                <p class="text-lg mt-1">
+                    Your role:
+                    @role('Admin|SuperAdmin|Monitor|Grower')
+                        <span class="bg-green-800 text-white px-2 py-1 rounded">{{ Auth::user()->roles->first()->name }}</span>
+                    @else
+                        <span class="bg-yellow-200 px-2 py-1 rounded">You have not been assigned a role yet</span>
+                    @endrole
+                </p>
+            </div>
         </div>
     </x-slot>
 
@@ -20,8 +33,19 @@
             This dashboard gives you an overview of current tree planting activities in your assigned areas. As a Monitor or Field Worker, your role is essential in ensuring that each planting meets the standards for survival, documentation, and long-term sustainability.
         </p>
 
+        {{-- No photo reminder --}}
+        @if(!Auth::user()->profile_picture_path)
+        <div class="text-center mb-4">
+            <p class="text-lg font-semibold text-orange-600">
+                ❗ You have not uploaded a profile photo yet.
+                <a href="{{ route('profile.edit') }}" class="underline hover:text-orange-800">Upload one on your Profile page.</a>
+            </p>
+        </div>
+        @endif
+
         {{-- Quick-action buttons --}}
         <div class="flex flex-wrap justify-center gap-2 mb-8">
+            <a href="{{ route('profile.edit') }}" class="bg-indigo-600 text-white px-4 py-2 text-sm rounded hover:bg-indigo-700 transition-colors">Profile</a>
             @role('Admin|SuperAdmin|Monitor|Grower')
             <a href="{{ route('planting-locations.create') }}" class="bg-green-700 text-white px-4 py-2 text-sm rounded hover:bg-green-800 transition-colors">Add New Location</a>
             <a href="{{ route('planting-locations.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Planting Locations</a>
