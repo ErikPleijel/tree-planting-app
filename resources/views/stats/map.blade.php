@@ -74,7 +74,7 @@
                 @role('Admin|SuperAdmin|Monitor|Grower')
                     <td class="px-6 py-4 whitespace-nowrap">
                         <a href="{{ route('planting-locations.show', $location->id) }}"
-                           class="btn btn-sm btn-info">
+                           class="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors">
                             View
                         </a>
                     </td>
