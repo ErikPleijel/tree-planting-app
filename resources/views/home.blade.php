@@ -64,14 +64,6 @@
             </div>
         </section>
 
-        @role('Admin|SuperAdmin|Monitor|Grower')
-        <div class="text-center mt-6">
-            <a href="{{ route('planting-locations.create') }}"
-               class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
-                Add New Location
-            </a>
-        </div>
-        @endrole
 
         <style>
             @media (max-width: 767px) {

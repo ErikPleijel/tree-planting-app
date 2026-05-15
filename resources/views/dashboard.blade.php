@@ -13,34 +13,53 @@
         </div>
     </x-slot>
 
-    <div class="bg-white p-6 rounded shadow max-w-3xl mx-auto mt-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
         <h2 class="text-2xl font-bold mb-4 text-center">DASHBOARD</h2>
 
-        <!-- Rest of the existing content -->
-        <p class="mb-4">
-            This dashboard gives you an overview of current tree planting activities in your assigned areas. As an Monitor or Field Worker, your role is essential in ensuring that each planting meets the standards for survival, documentation, and long-term sustainability.
+        <p class="text-center text-gray-600 mb-6 max-w-2xl mx-auto">
+            This dashboard gives you an overview of current tree planting activities in your assigned areas. As a Monitor or Field Worker, your role is essential in ensuring that each planting meets the standards for survival, documentation, and long-term sustainability.
         </p>
 
-        <h3 class="text-xl font-semibold mt-6 mb-2">Your Responsibilities:</h3>
-        <ul class="list-disc list-inside mb-4">
-            <li>Review and verify newly planted trees in the field.</li>
-            <li>Record accurate inspection results and upload supporting photos if required.</li>
-            <li>Report any issues such as missing trees, poor soil conditions, or pest damage.</li>
-            <li>Ensure that each planting location is properly geotagged and documented.</li>
-            <li><strong>Always write down all key data on paper as a backup</strong>, in case of technical problems or poor network coverage.</li>
-        </ul>
+        {{-- Quick-action buttons --}}
+        <div class="flex flex-wrap justify-center gap-2 mb-8">
+            @role('Admin|SuperAdmin|Monitor|Grower')
+            <a href="{{ route('planting-locations.create') }}" class="bg-green-700 text-white px-4 py-2 text-sm rounded hover:bg-green-800 transition-colors">Add New Location</a>
+            <a href="{{ route('planting-locations.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Planting Locations</a>
+            @endrole
 
-        <h3 class="text-xl font-semibold mt-6 mb-2">Getting Started:</h3>
-        <ol class="list-decimal list-inside mb-4">
-            <li>Use the navigation menu to access <strong>Plantings</strong>, <strong>Inspections</strong>, or <strong>Locations</strong>.</li>
-            <li>Click on any record to view details, update status, or submit inspection notes.</li>
+            @role('Admin|SuperAdmin|Monitor')
+            <a href="{{ route('tree-plantings.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Plantings</a>
+            <a href="{{ route('inspections.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Inspections</a>
+            @endrole
 
-        </ol>
+            <a href="{{ route('tree-types.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Tree Types</a>
 
-        <p class="text-sm text-gray-600">
-            Thank you for your work in restoring our environment — one tree at a time.
-        </p>
+            @role('Admin|SuperAdmin')
+            <a href="{{ route('users.report') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Authorizations</a>
+            @endrole
 
+            <a href="{{ route('team.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">The Team</a>
+            <a href="{{ route('stats.map') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Map</a>
+            <a href="{{ route('stats.stats1') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Statistics</a>
+        </div>
+
+        {{-- Stat cards --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-4xl font-bold text-green-700">{{ number_format($statTreesPlanted) }}</p>
+                <p class="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">Trees Planted by You</p>
+            </div>
+            @if($statVerifications !== null)
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-4xl font-bold text-yellow-600">{{ number_format($statVerifications) }}</p>
+                <p class="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">Plantings Verified by You</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-4xl font-bold text-blue-600">{{ number_format($statInspections) }}</p>
+                <p class="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">Inspections Carried Out by You</p>
+            </div>
+            @endif
+        </div>
     </div>
 
     <div class="max-w-7xl mx-auto mt-8 px-4 sm:px-6 lg:px-8">
@@ -209,5 +228,26 @@
     </div>
 </div>
 @endif
+
+<div class="bg-white p-6 rounded shadow max-w-3xl mx-auto mt-8 mb-8">
+    <h3 class="text-xl font-semibold mt-2 mb-2">Your Responsibilities:</h3>
+    <ul class="list-disc list-inside mb-4">
+        <li>Review and verify newly planted trees in the field.</li>
+        <li>Record accurate inspection results and upload supporting photos if required.</li>
+        <li>Report any issues such as missing trees, poor soil conditions, or pest damage.</li>
+        <li>Ensure that each planting location is properly geotagged and documented.</li>
+        <li><strong>Always write down all key data on paper as a backup</strong>, in case of technical problems or poor network coverage.</li>
+    </ul>
+
+    <h3 class="text-xl font-semibold mt-6 mb-2">Getting Started:</h3>
+    <ol class="list-decimal list-inside mb-4">
+        <li>Use the navigation menu to access <strong>Plantings</strong>, <strong>Inspections</strong>, or <strong>Locations</strong>.</li>
+        <li>Click on any record to view details, update status, or submit inspection notes.</li>
+    </ol>
+
+    <p class="text-sm text-gray-600">
+        Thank you for your work in restoring our environment — one tree at a time.
+    </p>
+</div>
 
 </x-app-layout>

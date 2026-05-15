@@ -55,6 +55,9 @@
                                         Role
                                     </th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Last log in
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
@@ -74,6 +77,9 @@
                                                 {{ $user->role_name ?: 'No Role' }}
                                             </span>
                                         </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {{ $user->last_login_at ? $user->last_login_at->format('Y-m-d H:i') : '—' }}
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                             @if(!$user->hasRole('SuperAdmin'))
                                                 <a href="{{ route('users.edit', $user) }}"
@@ -87,7 +93,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                                        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
                                             No users found.
                                         </td>
                                     </tr>
