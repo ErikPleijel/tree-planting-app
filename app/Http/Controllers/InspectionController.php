@@ -90,7 +90,7 @@ class InspectionController extends Controller
 
     public function destroy(Inspection $inspection)
     {
-        if (!in_array(auth()->user()->role->name, ['Admin'])) {
+        if (!auth()->user()->hasAnyRole(['Admin', 'SuperAdmin'])) {
             abort(403, 'Unauthorized.');
         }
 
