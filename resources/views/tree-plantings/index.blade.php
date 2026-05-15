@@ -32,8 +32,8 @@
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Sort by</label>
                 <select name="sort" class="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-                    <option value="date_asc"      {{ request('sort', 'date_asc') === 'date_asc'      ? 'selected' : '' }}>Date: Oldest First</option>
-                    <option value="date_desc"     {{ request('sort') === 'date_desc'                  ? 'selected' : '' }}>Date: Newest First</option>
+                    <option value="date_desc"     {{ request('sort', 'date_desc') === 'date_desc'     ? 'selected' : '' }}>Date: Newest First</option>
+                    <option value="date_asc"      {{ request('sort') === 'date_asc'                   ? 'selected' : '' }}>Date: Oldest First</option>
                     <option value="tree_type_asc" {{ request('sort') === 'tree_type_asc'              ? 'selected' : '' }}>Tree Type: A → Z</option>
                     <option value="tree_type_desc"{{ request('sort') === 'tree_type_desc'             ? 'selected' : '' }}>Tree Type: Z → A</option>
                     <option value="location_asc"  {{ request('sort') === 'location_asc'              ? 'selected' : '' }}>Location: A → Z</option>

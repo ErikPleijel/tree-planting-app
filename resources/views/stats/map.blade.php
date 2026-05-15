@@ -8,9 +8,9 @@
                 <div class="w-full mb-6">
                     <x-map
                         :markers="$markers"
-                        :zoom="8"
-                        :lat="9.75"
-                        :lng="5.6"
+                        :zoom="6"
+                        :lat="0.02"
+                        :lng="37.9"
                     />
                 </div>
 
