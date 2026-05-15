@@ -16,8 +16,7 @@ For normal deploy, use: To wipe remote VPS db, Use: php artisan migrate --force
 
 Log in at mysql
 mysql -u root -p
-Mysql: bhu1nji2mko3#
-Password: secret123
+See password in one.note
 
 Backup database to VPS
 mysqldump -u root -p treeplanting_test > /root/treeplanting_test_backup_$(date +%F_%H-%M).sql

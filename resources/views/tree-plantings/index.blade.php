@@ -57,8 +57,7 @@
             <table class="w-full text-sm border-collapse bg-white">
                 <thead>
                 <tr class="border-b bg-gray-50">
-                    <th class="px-4 py-2 text-left">ID</th>
-                    <th class="px-4 py-2 text-left">Date</th>
+                    <th class="px-4 py-2 text-left">Updated at</th>
                     <th class="px-4 py-2 text-left">Location</th>
                     <th class="px-4 py-2 text-left">Tree Type</th>
                     <th class="px-4 py-2 text-left">#</th>
@@ -69,8 +68,7 @@
                 <tbody>
                 @foreach($treePlantings as $index => $planting)
                     <tr class="border-b {{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
-                        <td class="px-4 py-2">{{ $planting->id }}</td>
-                        <td class="px-4 py-2">{{ $planting->planting_date->format('Y-m-d') }}</td>
+                        <td class="px-4 py-2">{{ $planting->updated_at->format('Y-m-d H:i') }}</td>
                         <td class="px-4 py-2">{{ $planting->plantingLocation->location ?? 'N/A' }}</td>
                         <td class="px-4 py-2">{{ $planting->treeType->name ?? 'N/A' }}</td>
                         <td class="px-4 py-2">{{ $planting->number_of_trees }}</td>
