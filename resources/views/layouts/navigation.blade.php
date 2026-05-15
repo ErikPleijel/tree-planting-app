@@ -52,7 +52,7 @@
                         Tree Types
                     </x-nav-link>
 
-                    @role('Admin|SuperAdmin|Monitor')
+                    @role('Admin|SuperAdmin')
                     <x-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
                         Authorizations
                     </x-nav-link>
@@ -200,7 +200,7 @@
     </x-responsive-nav-link>
     @endrole
 
-    @role('Admin|SuperAdmin|Monitor')
+    @role('Admin|SuperAdmin')
     <x-responsive-nav-link :href="route('users.report')" :active="request()->routeIs('users.report')">
         Authorizations
     </x-responsive-nav-link>

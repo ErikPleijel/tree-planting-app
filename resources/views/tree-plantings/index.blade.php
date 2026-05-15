@@ -72,7 +72,12 @@
                         <td class="px-4 py-2">{{ $planting->plantingLocation->location ?? 'N/A' }}</td>
                         <td class="px-4 py-2">{{ $planting->treeType->name ?? 'N/A' }}</td>
                         <td class="px-4 py-2">{{ $planting->number_of_trees }}</td>
-                        <td class="px-4 py-2">{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
+                        <td class="px-4 py-2">
+                            {{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}
+                            @if($planting->statusRelation?->tree_planting_status === 'Verified' && $planting->statusUpdatedBy)
+                                <span class="text-gray-500 text-xs">by {{ $planting->statusUpdatedBy->name }}</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-2">
                             <div class="flex flex-wrap gap-1">
                                 <a href="{{ route('planting-locations.show', $planting->plantingLocation) }}" class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition-colors">View {{ $planting->plantingLocation->location ?? 'N/A' }}</a>

@@ -83,7 +83,6 @@
                                         <th class="px-4 py-2 border"></th>
                                         <th class="px-4 py-2 border">Trees</th>
                                         <th class="px-4 py-2 border">Status</th>
-                                        <th class="px-4 py-2 border">Verified by</th>
                                     </tr>
                                     </thead>
                                     <tbody>
@@ -93,8 +92,12 @@
                                             <td class="px-2 py-1 border">{{ $planting->planting_date->format('Y-m-d') }}</td>
                                             <td class="px-2 py-1 border text-right">{{ $planting->number_of_trees }}</td>
                                             <td class="px-2 py-1 border">{{ $planting->treeType->name ?? 'N/A' }}</td>
-                                            <td class="px-2 py-1 border">{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
-                                            <td class="px-2 py-1 border">{{ $planting->statusRelation?->tree_planting_status === 'Verified' ? ($planting->statusUpdatedBy?->name ?? '') : '' }}</td>
+                                            <td class="px-2 py-1 border">
+                                                {{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}
+                                                @if($planting->statusRelation?->tree_planting_status === 'Verified' && $planting->statusUpdatedBy)
+                                                    <span class="text-gray-500 text-xs">by {{ $planting->statusUpdatedBy->name }}</span>
+                                                @endif
+                                            </td>
                                         </tr>
                                     @endforeach
                                     </tbody>

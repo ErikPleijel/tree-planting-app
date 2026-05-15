@@ -88,20 +88,25 @@
                         <th class="px-2 py-1 whitespace-nowrap border-b">#</th>
                         <th class="px-2 py-1 whitespace-nowrap border-b">Tree</th>
                         <th class="px-2 py-1 whitespace-nowrap border-b">Years</th>
-                        <th class="px-2 py-1 whitespace-nowrap border-b">Status</th>
                         <th class="px-2 py-1 whitespace-nowrap border-b">Added By</th>
+                        <th class="px-2 py-1 whitespace-nowrap border-b">Status</th>
                         <th class="px-2 py-1 whitespace-nowrap text-center border-b">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach($plantingLocation->treePlantings()->orderBy('planting_date', 'desc')->get() as $planting)
+                    @foreach($plantingLocation->treePlantings()->with('statusUpdatedBy')->orderBy('planting_date', 'desc')->get() as $planting)
                         <tr class="@if($planting->status === 1) text-red-600 @elseif($planting->status === 2) text-green-600 @endif border-b">
                             <td class="px-2 py-1 whitespace-nowrap">{{ \Carbon\Carbon::parse($planting->planting_date)->format('Y-m-d') }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $planting->number_of_trees }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $planting->treeType->name ?? 'N/A' }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ number_format(\Carbon\Carbon::parse($planting->planting_date)->diffInDays(now()) / 365.25, 1) }}</td>
-                            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $planting->user->name ?? 'N/A' }}</td>
+                            <td class="px-2 py-1 whitespace-nowrap">
+                                {{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}
+                                @if($planting->statusRelation?->tree_planting_status === 'Verified' && $planting->statusUpdatedBy)
+                                    <span class="text-xs opacity-70">by {{ $planting->statusUpdatedBy->name }}</span>
+                                @endif
+                            </td>
                             <td class="px-2 py-1 whitespace-nowrap">
                                 <div class="flex flex-wrap justify-center gap-1">
                                     @role('Admin|SuperAdmin|Monitor|Grower')

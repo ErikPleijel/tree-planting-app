@@ -15,7 +15,7 @@ class TreePlantingController extends Controller
 
     public function index(Request $request)
     {
-        $query = \App\Models\TreePlanting::with(['plantingLocation', 'treeType', 'statusRelation'])
+        $query = \App\Models\TreePlanting::with(['plantingLocation', 'treeType', 'statusRelation', 'statusUpdatedBy'])
             ->join('tree_types', 'tree_plantings.tree_type_id', '=', 'tree_types.id')
             ->join('planting_locations', 'tree_plantings.planting_location_id', '=', 'planting_locations.id')
             ->select('tree_plantings.*');
