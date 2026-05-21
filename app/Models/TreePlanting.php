@@ -12,6 +12,7 @@ class TreePlanting extends Model
     protected $fillable = [
         'planting_date',
         'number_of_trees',
+        'biochar',
         'tree_type_id',
         'planting_location_id',
         'status',

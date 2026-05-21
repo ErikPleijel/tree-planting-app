@@ -47,6 +47,20 @@
                 </select>
             </div>
 
+            <!-- Biochar -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1" for="biochar">
+                    <span>Biochar</span>
+                </label>
+                <select id="biochar" name="biochar" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary">
+                    <option value="" @selected(old('biochar', $treePlanting->biochar) === null || old('biochar', $treePlanting->biochar) === '')>— None / Not recorded —</option>
+                    <option value="0.25" @selected(old('biochar', $treePlanting->biochar) == '0.25')>Minimal — 0.25 kg dry (~1 Liter)</option>
+                    <option value="0.50" @selected(old('biochar', $treePlanting->biochar) == '0.50')>Small tree — 0.5 kg dry (~2 Liters)</option>
+                    <option value="1.00" @selected(old('biochar', $treePlanting->biochar) == '1.00')>Medium tree — 1.0 kg dry (~4 Liters)</option>
+                    <option value="2.00" @selected(old('biochar', $treePlanting->biochar) == '2.00')>Large tree — 2.0 kg dry (~8 Liters)</option>
+                </select>
+            </div>
+
             <!-- Status -->
             @role('Admin|SuperAdmin|Monitor')
             <div>

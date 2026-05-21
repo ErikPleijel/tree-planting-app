@@ -48,7 +48,7 @@
             <a href="{{ route('home') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">HOME</a>
             @role('Admin|SuperAdmin|Monitor|Grower')
             <a href="{{ route('planting-locations.create') }}" class="bg-green-700 text-white px-4 py-2 text-sm rounded hover:bg-green-800 transition-colors">Add New Location</a>
-            <a href="{{ route('planting-locations.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Planting Locations</a>
+            <a href="{{ route('planting-locations.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Locations</a>
             @endrole
 
             @role('Admin|SuperAdmin|Monitor')

@@ -27,6 +27,19 @@ Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::
 Route::resource('inspections', \App\Http\Controllers\InspectionController::class)
     ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower|Grower']);
 
+// Planting Locations search JSON endpoint — must be before resource route to avoid {plantingLocation} binding conflict
+Route::get('/planting-locations/search', [\App\Http\Controllers\PlantingLocationController::class, 'search'])
+    ->middleware(['auth', 'role:Admin|SuperAdmin'])
+    ->name('planting-locations.search');
+
+// Move plantings between locations
+Route::middleware(['auth', 'role:Admin|SuperAdmin'])->group(function () {
+    Route::get('/planting-locations/{plantingLocation}/move', [\App\Http\Controllers\PlantingLocationController::class, 'moveForm'])
+        ->name('planting-locations.move-form');
+    Route::post('/planting-locations/{plantingLocation}/move', [\App\Http\Controllers\PlantingLocationController::class, 'executeMove'])
+        ->name('planting-locations.move');
+});
+
 // Planting Locations - Admin, SuperAdmin and Monitor only
 Route::resource('planting-locations', \App\Http\Controllers\PlantingLocationController::class)
     ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower']);

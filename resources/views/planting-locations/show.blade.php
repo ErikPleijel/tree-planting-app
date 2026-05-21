@@ -71,7 +71,12 @@
     <!-- Trees Planted -->
     <h2 class="text-2xl font-semibold mt-12 mb-3 text-center">Trees Planted</h2>
 
-    <div class="flex justify-end max-w-4xl mx-auto mt-6 mb-2">
+    <div class="flex justify-end max-w-4xl mx-auto mt-6 mb-2 gap-2">
+        @role('Admin|SuperAdmin')
+        <a href="{{ route('planting-locations.move-form', $plantingLocation) }}" class="bg-blue-600 text-white px-4 py-2 text-sm rounded hover:bg-blue-700 transition-colors">
+            Move Plantings
+        </a>
+        @endrole
         <a href="{{ route('tree-plantings.create', ['planting_location_id' => $plantingLocation->id]) }}" class="bg-primary text-white px-4 py-2 text-sm rounded hover:bg-green-700 transition-colors">
             ➕ New Tree Planting
         </a>
@@ -89,6 +94,7 @@
                         <th class="px-2 py-1 whitespace-nowrap border-b">Tree</th>
                         <th class="px-2 py-1 whitespace-nowrap border-b">Years</th>
                         <th class="px-2 py-1 whitespace-nowrap border-b">Added By</th>
+                        <th class="px-2 py-1 whitespace-nowrap border-b">Biochar</th>
                         <th class="px-2 py-1 whitespace-nowrap border-b">Status</th>
                         <th class="px-2 py-1 whitespace-nowrap text-center border-b">Actions</th>
                     </tr>
@@ -101,6 +107,17 @@
                             <td class="px-2 py-1 whitespace-nowrap">{{ $planting->treeType->name ?? 'N/A' }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ number_format(\Carbon\Carbon::parse($planting->planting_date)->diffInDays(now()) / 365.25, 1) }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $planting->user->name ?? 'N/A' }}</td>
+                            <td class="px-2 py-1 whitespace-nowrap">
+                                @php
+                                    $biocharLabels = [
+                                        '0.25' => 'Minimal — 0.25 kg',
+                                        '0.50' => 'Small tree — 0.5 kg',
+                                        '1.00' => 'Medium tree — 1.0 kg',
+                                        '2.00' => 'Large tree — 2.0 kg',
+                                    ];
+                                @endphp
+                                {{ $biocharLabels[(string) $planting->biochar] ?? '—' }}
+                            </td>
                             <td class="px-2 py-1 whitespace-nowrap">
                                 {{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}
                                 @if($planting->statusRelation?->tree_planting_status === 'Verified' && $planting->statusUpdatedBy)

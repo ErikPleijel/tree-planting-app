@@ -32,13 +32,21 @@
                    class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-center"> <!-- Add text-center -->
         </div>
 
+        <!-- Sort -->
+        <div class="w-[160px]">
+            <select name="sort" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-center">
+                <option value="name_asc" {{ request('sort', 'name_asc') === 'name_asc' ? 'selected' : '' }}>Name A → Z</option>
+                <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name Z → A</option>
+            </select>
+        </div>
+
         <!-- Filter Button -->
         <button type="submit" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
             Filter
         </button>
 
         <!-- Reset Button -->
-        @if(request()->hasAny(['division', 'search']))
+        @if(request()->hasAny(['division', 'search', 'sort']))
             <a href="{{ route('planting-locations.index') }}" class="text-gray-500 hover:text-gray-700 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors">
                 Reset
             </a>

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\PlantingLocation;
+use App\Models\TreePlanting;
 use Illuminate\Http\Request;
 use App\Services\MapMarkerService;
 
@@ -33,6 +34,9 @@ class PlantingLocationController extends Controller
         if ($request->filled('search')) {
             $query->where('location', 'like', '%' . $request->search . '%');
         }
+
+        $sort = $request->input('sort', 'name_asc');
+        $query->orderBy('location', $sort === 'name_desc' ? 'desc' : 'asc');
 
         $plantingLocations = $query
             ->withSum('treePlantings as total_trees', 'number_of_trees')
@@ -164,5 +168,69 @@ class PlantingLocationController extends Controller
     public function qrLabel(PlantingLocation $plantingLocation)
     {
         return view('planting-locations.qr-label', compact('plantingLocation'));
+    }
+
+    public function moveForm(PlantingLocation $plantingLocation)
+    {
+        $plantingLocation->load([
+            'treePlantings.treeType',
+            'treePlantings.statusRelation',
+            'treePlantings.user',
+            'treePlantings.statusUpdatedBy',
+        ]);
+
+        return view('planting-locations.move', compact('plantingLocation'));
+    }
+
+    public function executeMove(Request $request, PlantingLocation $plantingLocation)
+    {
+        $request->validate([
+            'planting_ids'   => 'required|array|min:1',
+            'planting_ids.*' => 'integer',
+            'destination_id' => 'required|integer|exists:App\Models\PlantingLocation,id',
+        ]);
+
+        if ((int) $request->destination_id === $plantingLocation->id) {
+            return back()->withErrors(['destination_id' => 'Destination must be a different location.']);
+        }
+
+        $validIds = $plantingLocation->treePlantings()
+            ->whereIn('id', $request->planting_ids)
+            ->pluck('id');
+
+        if ($validIds->isEmpty()) {
+            return back()->withErrors(['planting_ids' => 'No valid plantings selected.']);
+        }
+
+        $destination = PlantingLocation::findOrFail($request->destination_id);
+
+        TreePlanting::whereIn('id', $validIds)
+            ->update(['planting_location_id' => $destination->id]);
+
+        $count = $validIds->count();
+
+        return redirect()
+            ->route('planting-locations.show', $plantingLocation)
+            ->with('success', "{$count} planting(s) moved to {$destination->location}.");
+    }
+
+    public function search(Request $request)
+    {
+        $q       = $request->get('q', '');
+        $exclude = $request->get('exclude');
+
+        $locations = PlantingLocation::with('division')
+            ->where('location', 'like', '%' . $q . '%')
+            ->when($exclude, fn ($query) => $query->where('id', '!=', (int) $exclude))
+            ->orderBy('location')
+            ->limit(10)
+            ->get()
+            ->map(fn ($loc) => [
+                'id'       => $loc->id,
+                'location' => $loc->location,
+                'lga_name' => $loc->division->LGA_name ?? 'N/A',
+            ]);
+
+        return response()->json($locations);
     }
 }
