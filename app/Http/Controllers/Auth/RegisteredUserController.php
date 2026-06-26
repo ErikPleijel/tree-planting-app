@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class RegisteredUserController extends Controller
@@ -39,6 +40,15 @@ class RegisteredUserController extends Controller
             'country'              => ['nullable', 'string', 'max:100'],
             'profile_picture_file' => ['nullable', 'image', 'mimes:jpeg,jpg,png,webp', 'max:4096'],
         ]);
+
+        if ($request->filled('profile_picture_data')) {
+            $estimatedBytes = strlen($request->input('profile_picture_data')) * 0.75;
+            if ($estimatedBytes > 4 * 1024 * 1024) {
+                throw ValidationException::withMessages([
+                    'profile_picture_file' => 'Selfie image is too large (max 4 MB). Please retake with lower resolution.',
+                ]);
+            }
+        }
 
         $profilePicturePath = null;
 

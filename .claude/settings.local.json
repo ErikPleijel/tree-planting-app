@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Read(//mnt/c/xampp/htdocs/**)",
-      "Bash(php artisan *)"
+      "Bash(php artisan *)",
+      "Bash(ssh *)",
+      "PowerShell(& 'C:\\\\Users\\\\erikp\\\\.claude\\\\beep.bat')"
     ]
   }
 }
