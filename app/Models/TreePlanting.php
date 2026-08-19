@@ -54,6 +54,11 @@ class TreePlanting extends Model
         return $this->belongsTo(User::class, 'status_updated_by');
     }
 
+    public function measurements()
+    {
+        return $this->hasMany(TreePlantingMeasurement::class);
+    }
+
 public function division()
 {
     return $this->belongsTo(Division::class);

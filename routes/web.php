@@ -27,6 +27,25 @@ Route::resource('tree-plantings', \App\Http\Controllers\TreePlantingController::
 Route::resource('inspections', \App\Http\Controllers\InspectionController::class)
     ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower|Grower']);
 
+// Tree Planting Measurements — same roles as Inspections/TreePlantings can
+// record/edit; verifying is restricted to a smaller set below.
+Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(function () {
+    Route::get('/tree-plantings/{treePlanting}/measurements', [\App\Http\Controllers\TreePlantingMeasurementController::class, 'index'])
+        ->name('tree-planting-measurements.index');
+    Route::get('/tree-plantings/{treePlanting}/measurements/create', [\App\Http\Controllers\TreePlantingMeasurementController::class, 'create'])
+        ->name('tree-planting-measurements.create');
+    Route::post('/tree-plantings/{treePlanting}/measurements', [\App\Http\Controllers\TreePlantingMeasurementController::class, 'store'])
+        ->name('tree-planting-measurements.store');
+    Route::get('/tree-planting-measurements/{measurement}/edit', [\App\Http\Controllers\TreePlantingMeasurementController::class, 'edit'])
+        ->name('tree-planting-measurements.edit');
+    Route::put('/tree-planting-measurements/{measurement}', [\App\Http\Controllers\TreePlantingMeasurementController::class, 'update'])
+        ->name('tree-planting-measurements.update');
+});
+
+Route::patch('/tree-planting-measurements/{measurement}/verify', [\App\Http\Controllers\TreePlantingMeasurementController::class, 'verify'])
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor'])
+    ->name('tree-planting-measurements.verify');
+
 // Planting Locations search JSON endpoint — must be before resource route to avoid {plantingLocation} binding conflict
 Route::get('/planting-locations/search', [\App\Http\Controllers\PlantingLocationController::class, 'search'])
     ->middleware(['auth', 'role:Admin|SuperAdmin'])

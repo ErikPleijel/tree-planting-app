@@ -10,6 +10,97 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-19 — Phase 2: tree_planting_measurements, cohort-linked and repeatable
+
+**Context**
+
+Phase 2 of the MRV roadmap targets the gap the original audit flagged as
+needing genuine re-architecture, not just new columns: `Inspection` links
+only to `PlantingLocation`, never to a specific `TreePlanting` cohort, and
+has no structured measurement fields — only a free-text `comment` and a
+`verified` boolean. At a location with multiple cohorts (different species/
+dates/counts), there was no way to say which planting an inspection
+concerned, and no repeatable, typed time-series data (survival, height,
+DBH, canopy cover) existed anywhere in the codebase. The Phase 2
+investigation confirmed the `InspectionFactory` shows no sign of an
+abandoned attempt at a cohort link — this is new structure, not an
+extension of something half-built.
+
+**Decision**
+
+Added a new `tree_planting_measurements` table + `TreePlantingMeasurement`
+model, always linked to a specific `TreePlanting` via `tree_planting_id`,
+with typed columns (`trees_surviving`, `height_avg_cm`, `dbh_avg_cm`,
+`canopy_cover_pct`) instead of a free-text-only record. `Inspection` is
+**left entirely untouched** — it continues to serve its existing purpose
+(location-level narrative site visits) and is not deprecated, migrated, or
+replaced by this phase. The two now coexist: `Inspection` for "we visited
+this site and here's a note," `TreePlantingMeasurement` for "here's what we
+measured on this specific cohort."
+
+- **`tree_planting_id` cascades on delete — the deliberate opposite of
+  Phase 1's `change_logs.loggable_id`.** `change_logs` is unconstrained on
+  purpose so audit history survives a hard delete of its parent.
+  `tree_planting_measurements` cascades on purpose, for the opposite
+  reason: a measurement has no meaning independent of the planting it
+  measures — there's no value in a "trees surviving" count for a cohort
+  that no longer exists in the system. This is a considered contrast
+  between the two tables, not an inconsistency: `change_logs` protects a
+  fact ("this happened"), `tree_planting_measurements` protects a
+  first-class domain record that is meaningless without its parent.
+- **Recorder/verifier split**, enforced in the controller, not the model:
+  any of the four roles that can create Inspections
+  (Admin|SuperAdmin|Monitor|Grower) can record a measurement, but only
+  Admin|SuperAdmin|Monitor can verify one (`tree-planting-measurements.verify`
+  route, gated by route middleware — 403 for anyone else, consistent with
+  how `planting-locations.move` already gates by role at the route level
+  rather than in-controller). On top of the role gate, **a user can never
+  verify a measurement they recorded themselves**, regardless of role —
+  this closes the specific gap where an Admin or Monitor could both record
+  and self-attest to the same measurement, which would make "verified"
+  meaningless as a credibility signal. Violating this returns a redirect
+  with a validation error (`back()->withErrors(...)`), matching the
+  existing pattern used by `PlantingLocationController::executeMove` for
+  business-rule violations that aren't role/permission failures.
+  `verified_by_user_id`/`verified_at` are set via direct attribute
+  assignment + `save()` in the controller, not mass-assigned through
+  `update()`, so they can never be supplied by a caller through the
+  create/edit forms.
+- **Edits write to `change_logs`, reusing Phase 1's `ChangeLogger`
+  service** — no second audit mechanism was built. Both `update()` (action
+  `measurement_updated`, only the fields that actually changed) and
+  `verify()` (action `measurement_verified`) follow the same pattern
+  established in Phase 1: mutation and its `ChangeLog` write happen inside
+  one `DB::transaction()`, per the Phase 1 review fix. Creating a new
+  measurement does not write a `ChangeLog` entry — there's no prior state
+  to diff against, so the `tree_planting_measurements` row itself is the
+  complete record of what was initially recorded.
+- **Validation**: `measurement_date` must fall between the parent
+  `TreePlanting.planting_date` and today (a measurement can't predate the
+  planting it measures, or be dated in the future); `trees_surviving` is
+  capped at the parent's `number_of_trees` via a controller-level
+  validation rule, not a DB constraint, since `number_of_trees` could
+  itself change later and a hard DB check would go stale.
+- `tree_planting_id` has an explicit index (not left to chance) — the
+  original audit specifically called out `inspections.inspection_date`
+  shipping without one and going unnoticed; this phase doesn't repeat
+  that.
+- No change to `PublicPlantingLocationController` or the public show page
+  in this phase — measurement data is not public-facing yet. That's a
+  natural fit for the later public API/export phase, once both this
+  phase's data and the site-boundary work exist to expose together.
+
+**Reasoning**
+
+This is the one place the original audit explicitly called re-architecture
+rather than addition, and this decision treats it that way: a new table
+and model, not new columns bolted onto `Inspection`. Reusing `ChangeLogger`
+for edit history (rather than building a second audit mechanism) keeps
+Phase 1's investment paying off instead of forking the codebase's approach
+to auditability in two directions after only one phase.
+
+---
+
 ## 2026-08-19 — Phase 1: change_logs audit trail for move/coordinate/status edits
 
 **Context**

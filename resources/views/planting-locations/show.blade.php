@@ -127,6 +127,7 @@
                             <td class="px-2 py-1 whitespace-nowrap">
                                 <div class="flex flex-wrap justify-center gap-1">
                                     @role('Admin|SuperAdmin|Monitor|Grower')
+                                    <a href="{{ route('tree-planting-measurements.index', $planting) }}" class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition-colors">📏 Measurements</a>
                                     <a href="{{ route('tree-plantings.edit', $planting) }}" class="bg-yellow-500 text-white px-2 py-1 text-xs rounded hover:bg-yellow-600 transition-colors">Edit</a>
                                     @endrole
                                     @role('Admin|SuperAdmin')
