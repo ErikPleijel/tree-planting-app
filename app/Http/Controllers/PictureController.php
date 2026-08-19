@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Picture;
 use App\Models\PlantingLocation;
+use App\Services\ExifExtractor;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
@@ -24,9 +25,14 @@ class PictureController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'image_data'           => 'required',
             'planting_location_id' => 'required|exists:planting_locations,id',
+            // Submitted only if the browser's navigator.geolocation call
+            // (fired at the moment of capture) succeeded — canvas capture
+            // has no embedded EXIF to fall back on.
+            'captured_latitude'    => 'nullable|numeric|between:-90,90',
+            'captured_longitude'   => 'nullable|numeric|between:-180,180',
         ]);
 
         // Decode base64 image
@@ -40,13 +46,24 @@ class PictureController extends Controller
 
         Storage::disk('public')->put($path, $imageBinary);
 
-        Picture::create([
+        $attributes = [
             'user_id'              => auth()->id(),
-            'planting_location_id' => $request->planting_location_id,
+            'planting_location_id' => $validated['planting_location_id'],
             'path'                 => $path,
             'thumbnail'            => $path,
             'show_on_welcome'      => false,
-        ]);
+        ];
+
+        if (isset($validated['captured_latitude'], $validated['captured_longitude'])) {
+            $attributes['capture_source']      = 'device_geolocation';
+            $attributes['captured_latitude']   = $validated['captured_latitude'];
+            $attributes['captured_longitude']  = $validated['captured_longitude'];
+            // No independent embedded timestamp for a canvas capture —
+            // server receipt time is the closest available signal.
+            $attributes['captured_at']         = now();
+        }
+
+        Picture::create($attributes);
 
         return redirect()
             ->route('pictures.create', $request->planting_location_id)
@@ -68,7 +85,7 @@ class PictureController extends Controller
      *   - 1–10 files per request
      *   - Each file: image, max 8 MB, common web formats only
      */
-    public function uploadStore(Request $request, PlantingLocation $plantingLocation)
+    public function uploadStore(Request $request, PlantingLocation $plantingLocation, ExifExtractor $exifExtractor)
     {
         $request->validate([
             'photos'          => ['required', 'array', 'min:1', 'max:10'],
@@ -93,12 +110,26 @@ class PictureController extends Controller
         foreach ($request->file('photos') as $file) {
             $path = $file->store('pictures', 'public');
 
-            $plantingLocation->pictures()->create([
-                'user_id'              => Auth::id(),
-                'path'                 => $path,
-                'thumbnail'            => $path,
-                'show_on_welcome'      => $showOnWelcome,
-            ]);
+            $attributes = [
+                'user_id'         => Auth::id(),
+                'path'            => $path,
+                'thumbnail'       => $path,
+                'show_on_welcome' => $showOnWelcome,
+            ];
+
+            // Never blocks or fails the upload — ExifExtractor::extract()
+            // itself never throws, and returns all-nulls for anything
+            // missing/unreadable/malformed.
+            $exif = $exifExtractor->extract(Storage::disk('public')->path($path));
+
+            if ($exif['latitude'] !== null || $exif['longitude'] !== null || $exif['captured_at'] !== null) {
+                $attributes['capture_source']     = 'exif';
+                $attributes['captured_at']        = $exif['captured_at'];
+                $attributes['captured_latitude']  = $exif['latitude'];
+                $attributes['captured_longitude'] = $exif['longitude'];
+            }
+
+            $plantingLocation->pictures()->create($attributes);
 
             $count++;
         }

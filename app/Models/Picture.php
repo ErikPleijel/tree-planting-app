@@ -12,10 +12,15 @@ class Picture extends Model
         'path',
         'thumbnail',
         'show_on_welcome',
+        'captured_at',
+        'captured_latitude',
+        'captured_longitude',
+        'capture_source',
     ];
 
     protected $casts = [
         'show_on_welcome' => 'boolean',
+        'captured_at'     => 'datetime',
     ];
 
     public function user()

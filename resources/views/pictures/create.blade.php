@@ -15,6 +15,8 @@
             @csrf
             <input type="hidden" name="planting_location_id" value="{{ $plantingLocation->id }}">
             <input type="hidden" name="image_data" id="image_data">
+            <input type="hidden" name="captured_latitude" id="captured_latitude">
+            <input type="hidden" name="captured_longitude" id="captured_longitude">
 
             {{-- Live Preview --}}
             <div>
@@ -131,6 +133,22 @@
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
             canvas.classList.remove('hidden');
             imageDataInput.value = canvas.toDataURL('image/jpeg', 0.82);
+
+            // Canvas capture has no embedded EXIF to fall back on, so this
+            // is the only chance to record where the photo was taken.
+            // Never blocks capture/submission — if denied or unavailable,
+            // the hidden fields simply stay empty.
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        document.getElementById('captured_latitude').value = position.coords.latitude;
+                        document.getElementById('captured_longitude').value = position.coords.longitude;
+                    },
+                    () => {
+                        // Permission denied or unavailable — leave fields empty.
+                    }
+                );
+            }
         }
     </script>
 

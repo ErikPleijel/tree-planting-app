@@ -64,24 +64,56 @@ class PlantingLocationController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, ChangeLogger $changeLogger)
     {
         $validated = $request->validate([
-            'location'     => 'required|string|max:255',
-            'division_id'  => 'required|exists:division,id',
-            'status_id'    => 'required|exists:planting_location_status,id',
-            'comment'      => 'nullable|string',
-            'contributors' => 'nullable|string',
-            'latitude'     => 'nullable|numeric',
-            'longitude'    => 'nullable|numeric',
+            'location'            => 'required|string|max:255',
+            'division_id'         => 'required|exists:division,id',
+            'status_id'           => 'required|exists:planting_location_status,id',
+            'comment'             => 'nullable|string',
+            'contributors'        => 'nullable|string',
+            'latitude'            => 'nullable|numeric|between:-90,90',
+            'longitude'           => 'nullable|numeric|between:-180,180',
+            'capture_method'      => 'nullable|in:manual,gps_button',
+            'gps_accuracy_meters' => 'nullable|numeric|min:0',
         ]);
+
+        // Metadata about the coordinate-setting event itself, not real
+        // columns on PlantingLocation — pulled out before create() so
+        // they only ever reach the ChangeLog, never the model.
+        $captureMethod  = $validated['capture_method'] ?? null;
+        $accuracyMeters = $validated['gps_accuracy_meters'] ?? null;
+        unset($validated['capture_method'], $validated['gps_accuracy_meters']);
 
         $validated['user_id']      = auth()->id();
         $validated['contributors'] = $request->contributors
             ? strip_tags($request->contributors, '<p><br><strong><em><u><ol><ul><li><a><span>')
             : null;
 
-        $plantingLocation = PlantingLocation::create($validated);
+        $plantingLocation = DB::transaction(function () use ($validated, $captureMethod, $accuracyMeters, $changeLogger) {
+            $plantingLocation = PlantingLocation::create($validated);
+
+            // A location's very first coordinate-setting — likely the
+            // only one that ever happens for most locations — previously
+            // went entirely unlogged, since Phase 1 only instrumented
+            // update(). Skipped if no coordinates were actually provided.
+            if ($plantingLocation->latitude !== null && $plantingLocation->longitude !== null) {
+                $changeLogger->record(
+                    loggableType: 'PlantingLocation',
+                    loggableId: $plantingLocation->id,
+                    action: 'coordinates_set',
+                    old: null,
+                    new: [
+                        'latitude'        => $plantingLocation->latitude,
+                        'longitude'       => $plantingLocation->longitude,
+                        'capture_method'  => $captureMethod,
+                        'accuracy_meters' => $accuracyMeters,
+                    ],
+                );
+            }
+
+            return $plantingLocation;
+        });
 
         return redirect()
             ->route('planting-locations.show', $plantingLocation->id)
@@ -131,14 +163,20 @@ class PlantingLocationController extends Controller
     public function update(Request $request, ChangeLogger $changeLogger, PlantingLocation $plantingLocation)
     {
         $validated = $request->validate([
-            'location'     => 'required|string|max:255',
-            'division_id'  => 'required|exists:division,id',
-            'status_id'    => 'required|exists:planting_location_status,id',
-            'comment'      => 'nullable|string',
-            'contributors' => 'nullable|string',
-            'latitude'     => 'nullable|numeric|between:-90,90',
-            'longitude'    => 'nullable|numeric|between:-180,180',
+            'location'            => 'required|string|max:255',
+            'division_id'         => 'required|exists:division,id',
+            'status_id'           => 'required|exists:planting_location_status,id',
+            'comment'             => 'nullable|string',
+            'contributors'        => 'nullable|string',
+            'latitude'            => 'nullable|numeric|between:-90,90',
+            'longitude'           => 'nullable|numeric|between:-180,180',
+            'capture_method'      => 'nullable|in:manual,gps_button',
+            'gps_accuracy_meters' => 'nullable|numeric|min:0',
         ]);
+
+        $captureMethod  = $validated['capture_method'] ?? null;
+        $accuracyMeters = $validated['gps_accuracy_meters'] ?? null;
+        unset($validated['capture_method'], $validated['gps_accuracy_meters']);
 
         $validated['contributors'] = $request->contributors
             ? strip_tags($request->contributors, '<p><br><strong><em><u><ol><ul><li><a><span>')
@@ -148,7 +186,7 @@ class PlantingLocationController extends Controller
         $originalLongitude = $plantingLocation->longitude;
         $originalStatusId  = $plantingLocation->status_id;
 
-        DB::transaction(function () use ($plantingLocation, $validated, $changeLogger, $originalLatitude, $originalLongitude, $originalStatusId) {
+        DB::transaction(function () use ($plantingLocation, $validated, $changeLogger, $originalLatitude, $originalLongitude, $originalStatusId, $captureMethod, $accuracyMeters) {
             $plantingLocation->update($validated);
 
             $coordinatesChanged = (string) $originalLatitude !== (string) $plantingLocation->latitude
@@ -160,7 +198,12 @@ class PlantingLocationController extends Controller
                     loggableId: $plantingLocation->id,
                     action: 'coordinates_updated',
                     old: ['latitude' => $originalLatitude, 'longitude' => $originalLongitude],
-                    new: ['latitude' => $plantingLocation->latitude, 'longitude' => $plantingLocation->longitude],
+                    new: [
+                        'latitude'        => $plantingLocation->latitude,
+                        'longitude'       => $plantingLocation->longitude,
+                        'capture_method'  => $captureMethod,
+                        'accuracy_meters' => $accuracyMeters,
+                    ],
                 );
             }
 

@@ -10,6 +10,141 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-19 — Phase 4: GPS capture provenance, photo EXIF/geolocation provenance
+
+**Context**
+
+Phase 4 targets two related gaps the original audit flagged: GPS capture
+method and accuracy (`position.coords.accuracy`) were available from the
+browser's Geolocation API but never used anywhere in the codebase, and
+uploaded photos had no provenance data independent of the file itself. The
+Phase 4 investigation corrected two assumptions along the way worth
+recording here: there is no map-drag coordinate picker (the Leaflet map
+is a read-only preview, not an input device — only manual typing and the
+GPS button are real capture methods), and `position.coords.accuracy` was
+never read at all, not merely read-and-discarded.
+
+**Decision**
+
+- **GPS capture-method/accuracy lives in `change_logs`, not as columns on
+  `planting_locations`.** Capture method and accuracy describe *the act
+  of setting coordinates on one specific occasion*, not a durable
+  property of the location. If they lived on `planting_locations`
+  directly, the next coordinate edit — by any method — would silently
+  overwrite the previous method's record, which is exactly the kind of
+  loss Phase 1 exists to prevent. Explicitly out of scope for this
+  phase: no denormalized "current capture method" column on
+  `planting_locations` either — a future "GPS-verified" badge, if
+  wanted, should be computed from the latest relevant `change_logs` row,
+  not stored separately and risk drifting out of sync with the log that
+  is the actual source of truth.
+- **`PlantingLocationController::store()` now writes its own
+  `coordinates_set` entry** — Phase 1 only instrumented `update()`,
+  which meant a location's very first coordinate-setting (the *only*
+  one that happens for most locations, since most locations are never
+  re-pinned) went completely unlogged. This was a real gap, not a
+  deliberate omission: it's fixed here by wrapping `create()` +
+  the conditional `ChangeLogger::record()` call in `DB::transaction()`,
+  matching every other phase's atomicity rule, and skipping the log
+  entirely when neither latitude nor longitude was provided (no
+  coordinate event actually happened). The existing `coordinates_updated`
+  entry in `update()` gains `capture_method`/`accuracy_meters` in its
+  `new_values` only — there's no meaningful "old capture method" to
+  diff against, since this describes the act of the edit, not a prior
+  durable state.
+- **Photo EXIF data is plain columns directly on `pictures`**
+  (`captured_at`, `captured_latitude`, `captured_longitude`,
+  `capture_source`), not routed through `change_logs`, for the opposite
+  reason from the GPS decision above: EXIF data isn't describing an edit
+  to anything, it's an intrinsic property of the file, extracted once at
+  upload time. There's no before/after to diff — photos in this app
+  aren't edited in place, only deleted or toggled on `show_on_welcome`.
+  This is consistent with how `Picture` already stores other file-intrinsic
+  metadata (`path`, `thumbnail`) as plain columns.
+- **Two structurally different provenance mechanisms for the two photo
+  paths, because they're structurally different problems**:
+  - The file-upload path (`uploadStore()`) gets real files with
+    (possibly) real embedded EXIF, so a new `ExifExtractor` service
+    parses it after the file is stored — a thin wrapper around PHP's
+    native `exif_read_data()`, deliberately *not* `intervention/image`,
+    since the Phase 4 investigation confirmed that package's own EXIF
+    support is just this same native function under the hood; pulling
+    in the full decode pipeline for this alone wasn't justified.
+    `capture_source` is only set to `'exif'` when the extractor actually
+    finds something usable — a read that comes back empty leaves all
+    four fields null, not `'exif'` with nulls, so a null `capture_source`
+    reliably means "we don't know," never "we checked and it was empty."
+  - The canvas camera-capture path (`store()`) produces a
+    `canvas.toDataURL()` JPEG, which — per the investigation — has no
+    embedded EXIF by construction; the Canvas 2D API has no mechanism to
+    write it. There is nothing to extract server-side, so provenance
+    here has to come from a live `navigator.geolocation.getCurrentPosition()`
+    call fired client-side at the moment of capture, submitted as two
+    plain hidden fields (`captured_latitude`/`captured_longitude`).
+    `capture_source` is `'device_geolocation'` when both are present,
+    and `captured_at` is set to `now()` server-side, since a canvas
+    capture has no independent embedded timestamp — server receipt time
+    is the closest available signal, not a substitute for a real EXIF
+    timestamp.
+- **Captured photo coordinates are admin-only for this phase — not
+  public**, a deliberate contrast with Phase 3's `TreeType` fields, which
+  inherited the existing all-public default because nothing gated
+  `TreeType` from public view and there was no privacy reason to add a
+  gate. This case is different: a planting location's own coordinates
+  are a scoped, deliberate disclosure a contributor understands they're
+  making about a project site. A photo's embedded EXIF or
+  device-geolocation coordinates are an incidental disclosure — the
+  photo could be taken from, or near, a contributor's own home, and they
+  may not think about that when uploading a picture of a sapling.
+  `captured_latitude`/`captured_longitude`/`capture_source` are not
+  added to `/p/{public_code}` or any other public view in this phase.
+  Revisiting this later is a deliberate, separate decision, not a
+  default to fall into.
+- **EXIF extraction runs synchronously, inline, inside the upload
+  request** — no queued job. `ExifExtractor::extract()` never throws
+  (wrapped in try/catch internally, plus a `function_exists('exif_read_data')`
+  guard) and always degrades to all-null fields rather than failing the
+  upload, so the risk this decision accepts is added *latency* per
+  upload, not added *failure modes*. This is the first thing to revisit
+  if upload volume makes synchronous EXIF parsing a bottleneck — this
+  codebase already runs a queue worker as part of normal local dev
+  (`composer.json`'s `dev` script includes `queue:listen`), so moving
+  extraction into a queued job later that patches the `Picture` row
+  after the fact is a contained, low-risk follow-up, not new
+  infrastructure.
+- **Frontend capture-method tracking uses a module-level guard flag**
+  (`settingViaGps`) in both `create.blade.php` and `edit.blade.php`'s
+  JS, set true immediately before `getLocation()` writes `.value` on the
+  latitude/longitude fields and reset false immediately after, so the
+  shared `input` event listener can tell "the GPS button just set this"
+  apart from "the user just typed a correction" and revert
+  `capture_method` to `manual` only in the latter case. One technical
+  note worth recording: in standard DOM behavior, assigning
+  `element.value = ...` from JavaScript does **not** itself fire an
+  `input` event (only genuine user interaction, or an explicit
+  `dispatchEvent`, does) — so in practice the guard flag's "true" branch
+  is defensively unreachable under normal browser behavior today, since
+  `getLocation()` already calls `updateMapMarker()` directly rather than
+  relying on the listener to catch its own assignment. The flag is
+  implemented anyway, as specified, since it's harmless and guards
+  against any future code path (an autofill extension, a different
+  future input mechanism) that might genuinely dispatch that event.
+
+**Reasoning**
+
+Both mechanisms follow directly from the investigation's own read,
+adopted rather than re-derived: an event's metadata belongs where the
+event is already logged (Phase 1's `change_logs`), and a file's intrinsic
+property belongs where the file's other intrinsic properties already
+live (`pictures`' own columns). Keeping captured-photo coordinates out of
+the public view, while `TreeType`'s reference fields went public by
+default in Phase 3, is the first place in this roadmap where "public by
+default" was deliberately *not* the answer — worth remembering as
+precedent the next time a new field's public/private status isn't
+obvious from what came before it.
+
+---
+
 ## 2026-08-19 — Phase 3: biochar_batches entity, TreeType carbon reference fields
 
 **Context**

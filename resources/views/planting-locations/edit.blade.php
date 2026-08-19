@@ -136,6 +136,10 @@
                 </div>
             </div>
 
+            <!-- Coordinate provenance (not user-facing — set by JS below) -->
+            <input type="hidden" name="capture_method" id="capture_method" value="manual">
+            <input type="hidden" name="gps_accuracy_meters" id="gps_accuracy_meters" value="">
+
             <!-- 📍 GPS Button -->
             <div class="flex justify-end">
                 <button type="button" onclick="getLocation()"
@@ -168,6 +172,10 @@
 
     <script>
         let map, marker, quill;
+        // True only while getLocation() is assigning lat/lng itself, so
+        // the input listener below can tell "GPS button set this" apart
+        // from a genuine keystroke and not stomp on the method it just set.
+        let settingViaGps = false;
 
         function initMap() {
             const lat = parseFloat(document.getElementById('latitude').value) || 9.0820;
@@ -220,17 +228,38 @@
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    settingViaGps = true;
+
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
 
                     document.getElementById('latitude').value = lat.toFixed(6);
                     document.getElementById('longitude').value = lng.toFixed(6);
+                    document.getElementById('capture_method').value = 'gps_button';
+                    document.getElementById('gps_accuracy_meters').value = position.coords.accuracy;
+
                     updateMapMarker();
+
+                    settingViaGps = false;
                 },
                 () => {
                     alert("Unable to retrieve your location.");
                 }
             );
+        }
+
+        // Fires on both a genuine keystroke and (in principle) any
+        // script-dispatched 'input' event on these fields. If the GPS
+        // button is what's changing the value, settingViaGps is already
+        // true and this leaves capture_method/accuracy alone; otherwise
+        // it's a real correction, so the method reverts to manual.
+        function handleCoordinateInput() {
+            if (!settingViaGps) {
+                document.getElementById('capture_method').value = 'manual';
+                document.getElementById('gps_accuracy_meters').value = '';
+            }
+
+            updateMapMarker();
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -242,8 +271,8 @@
                 document.getElementById('contributors-input').value = quill.root.innerHTML;
             });
 
-            document.getElementById('latitude').addEventListener('input', updateMapMarker);
-            document.getElementById('longitude').addEventListener('input', updateMapMarker);
+            document.getElementById('latitude').addEventListener('input', handleCoordinateInput);
+            document.getElementById('longitude').addEventListener('input', handleCoordinateInput);
         });
     </script>
 </x-app-layout>
