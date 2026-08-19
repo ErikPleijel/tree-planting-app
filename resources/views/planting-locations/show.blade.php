@@ -63,6 +63,7 @@
             lng="{{ $plantingLocation->longitude }}"
             :zoom="10"
             :markers="$markers"
+            :boundary="$plantingLocation->boundary_geojson"
         />
     </div>
 

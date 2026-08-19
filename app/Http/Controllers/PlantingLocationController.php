@@ -7,6 +7,8 @@ use App\Models\TreePlanting;
 use Illuminate\Http\Request;
 use App\Services\MapMarkerService;
 use App\Services\ChangeLogger;
+use App\Services\GeoJsonPolygonValidator;
+use App\Services\GeometryFingerprint;
 use Illuminate\Support\Facades\DB;
 
 class PlantingLocationController extends Controller
@@ -64,8 +66,12 @@ class PlantingLocationController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request, ChangeLogger $changeLogger)
-    {
+    public function store(
+        Request $request,
+        ChangeLogger $changeLogger,
+        GeoJsonPolygonValidator $boundaryValidator,
+        GeometryFingerprint $fingerprinter
+    ) {
         $validated = $request->validate([
             'location'            => 'required|string|max:255',
             'division_id'         => 'required|exists:division,id',
@@ -85,12 +91,18 @@ class PlantingLocationController extends Controller
         $accuracyMeters = $validated['gps_accuracy_meters'] ?? null;
         unset($validated['capture_method'], $validated['gps_accuracy_meters']);
 
-        $validated['user_id']      = auth()->id();
-        $validated['contributors'] = $request->contributors
+        // Structural validation + auto-closing lives in a dedicated
+        // service rather than the standard rule array, since it's more
+        // than a simple rule chain can express.
+        $boundary = $boundaryValidator->validate($request->input('boundary_geojson'));
+
+        $validated['user_id']          = auth()->id();
+        $validated['contributors']     = $request->contributors
             ? strip_tags($request->contributors, '<p><br><strong><em><u><ol><ul><li><a><span>')
             : null;
+        $validated['boundary_geojson'] = $boundary;
 
-        $plantingLocation = DB::transaction(function () use ($validated, $captureMethod, $accuracyMeters, $changeLogger) {
+        $plantingLocation = DB::transaction(function () use ($validated, $captureMethod, $accuracyMeters, $changeLogger, $boundary, $fingerprinter) {
             $plantingLocation = PlantingLocation::create($validated);
 
             // A location's very first coordinate-setting — likely the
@@ -109,6 +121,18 @@ class PlantingLocationController extends Controller
                         'capture_method'  => $captureMethod,
                         'accuracy_meters' => $accuracyMeters,
                     ],
+                );
+            }
+
+            // Fingerprint only — never the raw coordinates array — per
+            // the investigation's flag about JSON column bloat.
+            if ($boundary !== null) {
+                $changeLogger->record(
+                    loggableType: 'PlantingLocation',
+                    loggableId: $plantingLocation->id,
+                    action: 'boundary_set',
+                    old: null,
+                    new: $fingerprinter->fingerprint($boundary),
                 );
             }
 
@@ -160,8 +184,13 @@ class PlantingLocationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ChangeLogger $changeLogger, PlantingLocation $plantingLocation)
-    {
+    public function update(
+        Request $request,
+        ChangeLogger $changeLogger,
+        PlantingLocation $plantingLocation,
+        GeoJsonPolygonValidator $boundaryValidator,
+        GeometryFingerprint $fingerprinter
+    ) {
         $validated = $request->validate([
             'location'            => 'required|string|max:255',
             'division_id'         => 'required|exists:division,id',
@@ -178,15 +207,24 @@ class PlantingLocationController extends Controller
         $accuracyMeters = $validated['gps_accuracy_meters'] ?? null;
         unset($validated['capture_method'], $validated['gps_accuracy_meters']);
 
-        $validated['contributors'] = $request->contributors
+        $boundary = $boundaryValidator->validate($request->input('boundary_geojson'));
+
+        $validated['contributors']     = $request->contributors
             ? strip_tags($request->contributors, '<p><br><strong><em><u><ol><ul><li><a><span>')
             : null;
+        $validated['boundary_geojson'] = $boundary;
 
         $originalLatitude  = $plantingLocation->latitude;
         $originalLongitude = $plantingLocation->longitude;
         $originalStatusId  = $plantingLocation->status_id;
+        $originalBoundary  = $plantingLocation->boundary_geojson;
 
-        DB::transaction(function () use ($plantingLocation, $validated, $changeLogger, $originalLatitude, $originalLongitude, $originalStatusId, $captureMethod, $accuracyMeters) {
+        DB::transaction(function () use (
+            $plantingLocation, $validated, $changeLogger,
+            $originalLatitude, $originalLongitude, $originalStatusId,
+            $captureMethod, $accuracyMeters,
+            $originalBoundary, $boundary, $fingerprinter
+        ) {
             $plantingLocation->update($validated);
 
             $coordinatesChanged = (string) $originalLatitude !== (string) $plantingLocation->latitude
@@ -214,6 +252,24 @@ class PlantingLocationController extends Controller
                     action: 'status_changed',
                     old: ['status_id' => $originalStatusId],
                     new: ['status_id' => $plantingLocation->status_id],
+                );
+            }
+
+            // Compare by fingerprint hash, not raw JSON string equality —
+            // semantically identical geometry can differ in incidental
+            // formatting (float precision, key order). Skipped entirely
+            // when nothing changed, same no-op protection Phase 2
+            // established for measurement edits.
+            $originalHash = $originalBoundary !== null ? $fingerprinter->fingerprint($originalBoundary)['hash'] : null;
+            $newHash      = $boundary !== null ? $fingerprinter->fingerprint($boundary)['hash'] : null;
+
+            if ($originalHash !== $newHash) {
+                $changeLogger->record(
+                    loggableType: 'PlantingLocation',
+                    loggableId: $plantingLocation->id,
+                    action: 'boundary_updated',
+                    old: $originalBoundary !== null ? $fingerprinter->fingerprint($originalBoundary) : null,
+                    new: $boundary !== null ? $fingerprinter->fingerprint($boundary) : null,
                 );
             }
         });

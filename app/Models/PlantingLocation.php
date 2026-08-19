@@ -19,6 +19,11 @@ class PlantingLocation extends Model
         'user_id',
         'status_id',
         'contributors',
+        'boundary_geojson',
+    ];
+
+    protected $casts = [
+        'boundary_geojson' => 'array',
     ];
 
     public function division()

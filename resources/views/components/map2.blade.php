@@ -43,5 +43,12 @@
             .addTo(map);
         @endforeach
         @endif
+
+        {{-- Boundary overlay: supplements the point marker(s) above, doesn't replace them --}}
+        @if(isset($boundary) && $boundary)
+        L.geoJSON(@json($boundary), {
+            style: { color: '#2d6118', weight: 2, fillColor: '#4a9030', fillOpacity: 0.15 }
+        }).addTo(map);
+        @endif
     });
 </script>

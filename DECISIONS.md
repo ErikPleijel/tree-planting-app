@@ -10,6 +10,141 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-19 — Phase 5: site boundary geometry — platform decision and implementation
+
+**Context**
+
+This is the one genuine platform decision in the MRV roadmap (storage
+engine / query capability), flagged as such from the start of the
+roadmap rather than an additive schema change like Phases 3-4. A
+dedicated investigation was run first to establish ground truth before
+deciding anything (see the Phase 5 investigation output). Key findings
+that drove this decision:
+
+- Production's actual MySQL version is **not stated anywhere in this
+  repository** — `CLAUDE.md` says only "MySQL on VPS," and
+  `docs/deployment.md` is effectively an empty placeholder ("See notes
+  Itacen_Mu Deployment") pointing at external notes not committed here.
+  No `deploy.sh`, no CI pipeline, no GitHub Actions exist in this repo
+  to infer it from either.
+- Local dev, on the machine this work was done on, actually runs
+  **MariaDB 10.4.32** via XAMPP (`.env` has `DB_CONNECTION=mysql`
+  pointed at `127.0.0.1:3306`) — not SQLite, despite `.env.example`'s
+  default and `CLAUDE.md`'s "SQLite used locally" claim. SQLite is
+  test-suite-only (`phpunit.xml`'s `:memory:` override).
+- The codebase is **genuinely greenfield** for this feature — no
+  polygon/boundary/GeoJSON/WKT/geometry code, no Leaflet.draw or any
+  drawing plugin, no shapefile/boundary data for Nigerian LGAs anywhere
+  in `storage/`, `database/`, or `resources/`, and `Division` (despite
+  its `LGA_name` implying real administrative boundaries exist
+  externally) has only ever stored a centroid point, never attempted to
+  ingest real boundary data.
+- **No overlap/proximity/duplicate-detection logic exists anywhere in
+  this app today**, and nothing in this project's own stated goals
+  (across all four prior phases and the original roadmap) describes an
+  in-app spatial query need (`ST_Intersects`-equivalent). What *is*
+  explicitly stated is Phase 7's own description: a read-only export
+  layer "so an independent party can pull raw data and verify it
+  directly" — i.e., store-and-export for someone else's GIS tooling, not
+  query-in-app.
+- At the project's stated target scale (hundreds of thousands to
+  low-millions of *trees*), the cohort model means `PlantingLocation`
+  row count — the table a boundary would live on — is realistically in
+  the **thousands to low tens of thousands**, not millions. A full table
+  scan over that many geometry rows is not a performance problem any
+  reasonable database struggles with.
+- Every raw-SQL usage in the app (`DB::raw`/`whereRaw`/`selectRaw`, five
+  call sites total) uses standard ANSI SQL (`MAX`, `SUM`, `CASE WHEN`) —
+  nothing MySQL-specific that would block a future engine change if one
+  were ever wanted.
+
+**Decision**
+
+**Boundaries are stored as a plain JSON column
+(`planting_locations.boundary_geojson`, Laravel's `json()` type,
+nullable), holding a single GeoJSON `Polygon` object — not native MySQL
+spatial types, not PostGIS/PostgreSQL, no new database software of any
+kind.** This works identically against the test suite's SQLite and this
+machine's local MariaDB 10.4.32, and against whatever production's real
+MySQL version turns out to be — a plain JSON column has no version floor
+to worry about, unlike native spatial types.
+
+Reasoning, weighed explicitly rather than defaulted into:
+- The investigation found **no documented need for in-app spatial
+  querying anywhere in this project** — the real, stated use case
+  (Phase 7) is retrieval and export for external verification, which a
+  plain JSON column serves exactly as well as a native geometry column
+  would. Choosing PostGIS to serve a query capability nothing in this
+  project has ever asked for would be solving a problem that doesn't
+  exist yet, at real cost (introducing PostgreSQL as a new piece of
+  infrastructure, an unconfirmed production migration, and permanent
+  added operational complexity) against a benefit (spatial query
+  performance) that doesn't apply at this scale even if the capability
+  were needed.
+- If a genuine in-app spatial query need materializes later — the
+  investigation named the concrete example, overlap/duplicate-claim
+  detection — that is a deliberate, visible, separately-justified
+  decision to make *at that time*, informed by whether it's actually
+  needed and what engine is actually available in production by then.
+  This phase does not foreclose that option (the boundary data itself is
+  captured either way); it just doesn't pay for spatial query capability
+  today that has no current consumer.
+- Production's actual database version being unconfirmed from this repo
+  is itself a reason to prefer the option that doesn't depend on it. A
+  plain JSON column works regardless of whether production turns out to
+  be MySQL 5.6 or 8.0 (spatial types would need at least 5.7) — the
+  decision doesn't require getting an answer to a question the codebase
+  itself can't currently answer.
+
+**Fingerprint, not full geometry, in `change_logs`**
+
+Boundary edits are logged through `ChangeLogger` the same way coordinate
+edits are (Phase 1's pattern), but `change_logs.old_values`/`new_values`
+never contain the raw coordinates array — only a `GeometryFingerprint`
+(`vertex_count`, `bounding_box`, and a deterministic `hash` of the
+normalized coordinates). A hand-drawn or GPS-survey-derived boundary can
+run to several KB as GeoJSON text; storing full before-and-after geometry
+on every correction, in an unindexed JSON column with no size cap, is a
+real bloat vector this phase deliberately avoids — the fingerprint is
+enough to prove *that* a boundary changed and roughly *how much*, without
+duplicating the entire shape into the audit trail on every edit. The
+current, full-fidelity boundary is always available on the
+`PlantingLocation` row itself; `change_logs` only needs to prove change
+occurred, consistent with its role everywhere else in this app.
+
+**Auto-close, don't reject, an unclosed ring**
+
+`GeoJsonPolygonValidator` auto-closes an unclosed outer ring (appending a
+copy of the first position) rather than rejecting the submission.
+Leaflet.draw's raw `toGeoJSON()` output and any manually-constructed
+GeoJSON can both plausibly omit the closing point — it's a trivially
+fixable, well-defined correction, not a meaningful validation failure
+worth punishing the user's submission over. The validator still rejects
+what actually can't be salvaged: fewer than 3 distinct vertices (not a
+polygon at all), non-numeric or out-of-range coordinates, and structural
+GeoJSON shape violations (wrong `type`, missing `coordinates`).
+
+**Single polygon, no holes, no multipolygons — this phase only**
+
+`boundary_geojson` stores exactly one outer ring. If a site's real shape
+later needs holes (e.g. an excluded inner area) or multiple disjoint
+parts, that's a deliberate, separately-scoped future extension — this
+phase does not build speculative support for shapes no current site
+actually needs, consistent with how every prior phase in this roadmap
+has scoped itself to the concrete, present need rather than a
+hypothetical future one.
+
+**Reasoning**
+
+This is the most consequential decision in the roadmap so far because
+it's the one genuine platform choice rather than an additive schema
+change — and the investigation's job was to make sure that choice got
+made on real evidence (actual codebase state, actual stated use case,
+actual scale) rather than on the assumption that "boundaries" implies
+"spatial database." It didn't, here, and the decision reflects that.
+
+---
+
 ## 2026-08-19 — Phase 4: GPS capture provenance, photo EXIF/geolocation provenance
 
 **Context**

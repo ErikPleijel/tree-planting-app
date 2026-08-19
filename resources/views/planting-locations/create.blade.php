@@ -100,6 +100,26 @@
                 <div id="map" class="rounded border" style="height: 300px;"></div>
             </div>
 
+            <!-- 🔷 Site Boundary (optional) -->
+            <div class="mt-2">
+                <div class="flex items-center justify-between mb-1">
+                    <label class="block text-sm font-medium text-gray-700">
+                        <span class="font-semibold">Site Boundary (optional)</span>
+                    </label>
+                    <button type="button" onclick="clearBoundary()"
+                            class="text-xs text-red-600 hover:text-red-800 underline">
+                        Clear Boundary
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 mb-1">
+                    Use the polygon tool (⬠) in the map's top-right corner to trace the site's boundary. Optional — leave blank if you only want the point above.
+                </p>
+                <input type="hidden" name="boundary_geojson" id="boundary_geojson" value="">
+                @error('boundary_geojson')
+                <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                @enderror
+            </div>
+
             <!-- Latitude & Longitude -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -157,14 +177,18 @@
 
     <!-- Leaflet -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet.draw (polygon boundary editor) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
     <!-- Quill -->
     <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     <script src="https://cdn.quilljs.com/1.3.6/quill.js"></script>
 
     <script>
         let map, marker, quill;
+        let drawnItems, drawControl;
         // True only while getLocation() is assigning lat/lng itself, so
         // the input listener below can tell "GPS button set this" apart
         // from a genuine keystroke and not stomp on the method it just set.
@@ -181,6 +205,61 @@
             }).addTo(map);
 
             marker = L.marker([lat, lng]).addTo(map);
+
+            initBoundaryDrawing();
+        }
+
+        // Exactly one polygon per location: CREATED clears any prior
+        // drawn shape before adding the new one, so a second polygon
+        // never coexists with the first.
+        function initBoundaryDrawing() {
+            drawnItems = new L.FeatureGroup();
+            map.addLayer(drawnItems);
+
+            drawControl = new L.Control.Draw({
+                draw: {
+                    polygon: {
+                        allowIntersection: false,
+                        showArea: true,
+                    },
+                    polyline: false,
+                    rectangle: false,
+                    circle: false,
+                    circlemarker: false,
+                    marker: false,
+                },
+                edit: {
+                    featureGroup: drawnItems,
+                    remove: true,
+                },
+            });
+            map.addControl(drawControl);
+
+            map.on(L.Draw.Event.CREATED, function (event) {
+                drawnItems.clearLayers();
+                drawnItems.addLayer(event.layer);
+                syncBoundaryField();
+            });
+
+            map.on(L.Draw.Event.EDITED, syncBoundaryField);
+            map.on(L.Draw.Event.DELETED, syncBoundaryField);
+        }
+
+        function syncBoundaryField() {
+            const layers = drawnItems.getLayers();
+            const field = document.getElementById('boundary_geojson');
+
+            if (layers.length === 0) {
+                field.value = '';
+                return;
+            }
+
+            field.value = JSON.stringify(layers[0].toGeoJSON().geometry);
+        }
+
+        function clearBoundary() {
+            drawnItems.clearLayers();
+            document.getElementById('boundary_geojson').value = '';
         }
 
         function initQuill() {
