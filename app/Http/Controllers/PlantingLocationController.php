@@ -6,6 +6,8 @@ use App\Models\PlantingLocation;
 use App\Models\TreePlanting;
 use Illuminate\Http\Request;
 use App\Services\MapMarkerService;
+use App\Services\ChangeLogger;
+use Illuminate\Support\Facades\DB;
 
 class PlantingLocationController extends Controller
 {
@@ -126,7 +128,7 @@ class PlantingLocationController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, PlantingLocation $plantingLocation)
+    public function update(Request $request, ChangeLogger $changeLogger, PlantingLocation $plantingLocation)
     {
         $validated = $request->validate([
             'location'     => 'required|string|max:255',
@@ -134,15 +136,44 @@ class PlantingLocationController extends Controller
             'status_id'    => 'required|exists:planting_location_status,id',
             'comment'      => 'nullable|string',
             'contributors' => 'nullable|string',
-            'latitude'     => 'nullable|numeric',
-            'longitude'    => 'nullable|numeric',
+            'latitude'     => 'nullable|numeric|between:-90,90',
+            'longitude'    => 'nullable|numeric|between:-180,180',
         ]);
 
         $validated['contributors'] = $request->contributors
             ? strip_tags($request->contributors, '<p><br><strong><em><u><ol><ul><li><a><span>')
             : null;
 
-        $plantingLocation->update($validated);
+        $originalLatitude  = $plantingLocation->latitude;
+        $originalLongitude = $plantingLocation->longitude;
+        $originalStatusId  = $plantingLocation->status_id;
+
+        DB::transaction(function () use ($plantingLocation, $validated, $changeLogger, $originalLatitude, $originalLongitude, $originalStatusId) {
+            $plantingLocation->update($validated);
+
+            $coordinatesChanged = (string) $originalLatitude !== (string) $plantingLocation->latitude
+                || (string) $originalLongitude !== (string) $plantingLocation->longitude;
+
+            if ($coordinatesChanged) {
+                $changeLogger->record(
+                    loggableType: 'PlantingLocation',
+                    loggableId: $plantingLocation->id,
+                    action: 'coordinates_updated',
+                    old: ['latitude' => $originalLatitude, 'longitude' => $originalLongitude],
+                    new: ['latitude' => $plantingLocation->latitude, 'longitude' => $plantingLocation->longitude],
+                );
+            }
+
+            if ((int) $originalStatusId !== (int) $plantingLocation->status_id) {
+                $changeLogger->record(
+                    loggableType: 'PlantingLocation',
+                    loggableId: $plantingLocation->id,
+                    action: 'status_changed',
+                    old: ['status_id' => $originalStatusId],
+                    new: ['status_id' => $plantingLocation->status_id],
+                );
+            }
+        });
 
         return redirect()
             ->route('planting-locations.show', $plantingLocation)
@@ -182,7 +213,7 @@ class PlantingLocationController extends Controller
         return view('planting-locations.move', compact('plantingLocation'));
     }
 
-    public function executeMove(Request $request, PlantingLocation $plantingLocation)
+    public function executeMove(Request $request, ChangeLogger $changeLogger, PlantingLocation $plantingLocation)
     {
         $request->validate([
             'planting_ids'   => 'required|array|min:1',
@@ -194,20 +225,37 @@ class PlantingLocationController extends Controller
             return back()->withErrors(['destination_id' => 'Destination must be a different location.']);
         }
 
-        $validIds = $plantingLocation->treePlantings()
+        // Fetch id + current planting_location_id before the mass update
+        // overwrites it, so each row's move can be logged individually.
+        $validPlantings = $plantingLocation->treePlantings()
             ->whereIn('id', $request->planting_ids)
-            ->pluck('id');
+            ->get(['id', 'planting_location_id']);
 
-        if ($validIds->isEmpty()) {
+        if ($validPlantings->isEmpty()) {
             return back()->withErrors(['planting_ids' => 'No valid plantings selected.']);
         }
 
         $destination = PlantingLocation::findOrFail($request->destination_id);
 
-        TreePlanting::whereIn('id', $validIds)
-            ->update(['planting_location_id' => $destination->id]);
+        DB::transaction(function () use ($validPlantings, $destination, $changeLogger) {
+            TreePlanting::whereIn('id', $validPlantings->pluck('id'))
+                ->update(['planting_location_id' => $destination->id]);
 
-        $count = $validIds->count();
+            // One ChangeLog row per moved planting (not one per batch), so
+            // "was this specific planting ever moved" can be answered
+            // directly without re-deriving it from a batch record.
+            foreach ($validPlantings as $planting) {
+                $changeLogger->record(
+                    loggableType: 'TreePlanting',
+                    loggableId: $planting->id,
+                    action: 'moved',
+                    old: ['planting_location_id' => $planting->planting_location_id],
+                    new: ['planting_location_id' => $destination->id],
+                );
+            }
+        });
+
+        $count = $validPlantings->count();
 
         return redirect()
             ->route('planting-locations.show', $plantingLocation)

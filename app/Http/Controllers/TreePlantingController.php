@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\TreePlanting;
 use App\Models\TreeType;
 use Illuminate\Http\Request;
+use App\Services\ChangeLogger;
+use Illuminate\Support\Facades\DB;
 
 class TreePlantingController extends Controller
 {
@@ -65,7 +67,7 @@ class TreePlantingController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(\Illuminate\Http\Request $request)
+    public function store(\Illuminate\Http\Request $request, ChangeLogger $changeLogger)
     {
         $validated = $request->validate([
             'planting_date' => 'required|date',
@@ -85,7 +87,20 @@ class TreePlantingController extends Controller
 
         $validated['status_updated_by'] = auth()->id();
 
-        \App\Models\TreePlanting::create($validated);
+        $treePlanting = DB::transaction(function () use ($validated, $changeLogger) {
+            $treePlanting = \App\Models\TreePlanting::create($validated);
+
+            // Records the starting point of this planting's status history.
+            $changeLogger->record(
+                loggableType: 'TreePlanting',
+                loggableId: $treePlanting->id,
+                action: 'status_set',
+                old: null,
+                new: ['status' => $treePlanting->status],
+            );
+
+            return $treePlanting;
+        });
 
         return redirect()
             ->route('planting-locations.show', $validated['planting_location_id'])
@@ -123,7 +138,7 @@ class TreePlantingController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(\Illuminate\Http\Request $request, \App\Models\TreePlanting $treePlanting)
+    public function update(\Illuminate\Http\Request $request, ChangeLogger $changeLogger, \App\Models\TreePlanting $treePlanting)
     {
         $validated = $request->validate([
             'planting_date' => 'required|date',
@@ -139,11 +154,26 @@ class TreePlantingController extends Controller
             $validated['status'] = $treePlanting->status;
         }
 
-        if ((int) $validated['status'] !== (int) $treePlanting->status) {
+        $originalStatus = $treePlanting->status;
+        $statusChanged  = (int) $validated['status'] !== (int) $treePlanting->status;
+
+        if ($statusChanged) {
             $validated['status_updated_by'] = auth()->id();
         }
 
-        $treePlanting->update($validated);
+        DB::transaction(function () use ($treePlanting, $validated, $statusChanged, $originalStatus, $changeLogger) {
+            $treePlanting->update($validated);
+
+            if ($statusChanged) {
+                $changeLogger->record(
+                    loggableType: 'TreePlanting',
+                    loggableId: $treePlanting->id,
+                    action: 'status_changed',
+                    old: ['status' => $originalStatus],
+                    new: ['status' => $treePlanting->status],
+                );
+            }
+        });
 
         return redirect()
             ->route('planting-locations.show', $treePlanting->planting_location_id)
