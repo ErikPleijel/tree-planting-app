@@ -72,7 +72,6 @@ class TreePlantingController extends Controller
         $validated = $request->validate([
             'planting_date' => 'required|date',
             'number_of_trees' => 'required|integer|min:1',
-            'biochar' => 'nullable|in:0.25,0.50,1.00,2.00',
             'tree_type_id' => 'required|exists:tree_types,id',
             'planting_location_id' => 'required|exists:planting_locations,id',
             'status' => 'required|exists:tree_planting_status,id',
@@ -143,7 +142,6 @@ class TreePlantingController extends Controller
         $validated = $request->validate([
             'planting_date' => 'required|date',
             'number_of_trees' => 'required|integer|min:1',
-            'biochar' => 'nullable|in:0.25,0.50,1.00,2.00',
             'tree_type_id' => 'required|exists:tree_types,id',
             'planting_location_id' => 'required|exists:planting_locations,id',
             'status' => 'required|exists:tree_planting_status,id',

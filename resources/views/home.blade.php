@@ -194,7 +194,12 @@
                     <div class="text-center p-4">
                         <div class="text-sm text-gray-500 mb-2">Biochar Applied</div>
                         <div class="text-4xl font-bold text-amber-700 mb-2">{{ number_format(\App\Models\TreePlanting::whereNotNull('biochar')->selectRaw('SUM(number_of_trees * biochar) as total')->value('total') ?? 0) }}</div>
-                        <div class="text-sm text-gray-600">kg dry weight</div>
+                        <div class="text-sm text-gray-600">kg dry weight (legacy estimate)</div>
+                    </div>
+                    <div class="text-center p-4">
+                        <div class="text-sm text-gray-500 mb-2">Biochar Recorded</div>
+                        <div class="text-4xl font-bold text-amber-700 mb-2">{{ number_format(\App\Models\BiocharBatch::sum('quantity_kg')) }}</div>
+                        <div class="text-sm text-gray-600">kg (tracked batches)</div>
                     </div>
                 </div>
             </div>

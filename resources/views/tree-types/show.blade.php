@@ -34,6 +34,32 @@
             @endif
         </div>
 
+        @if($treeType->wood_density_kg_m3 || $treeType->carbon_fraction)
+            <div class="border border-gray-200 rounded-lg p-5 bg-gray-50 mt-6">
+                <h2 class="text-sm font-semibold uppercase tracking-wide text-gray-500 mb-3">Growth / Carbon Reference Data</h2>
+
+                <dl class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    @if($treeType->wood_density_kg_m3)
+                        <div>
+                            <dt class="text-gray-500">Wood Density</dt>
+                            <dd class="text-gray-800 font-medium">{{ $treeType->wood_density_kg_m3 }} kg/m³</dd>
+                        </div>
+                    @endif
+
+                    @if($treeType->carbon_fraction)
+                        <div>
+                            <dt class="text-gray-500">Carbon Fraction</dt>
+                            <dd class="text-gray-800 font-medium">{{ $treeType->carbon_fraction }}</dd>
+                        </div>
+                    @endif
+                </dl>
+
+                @if($treeType->source_reference)
+                    <p class="mt-3 text-xs text-gray-500">Source: {{ $treeType->source_reference }}</p>
+                @endif
+            </div>
+        @endif
+
         <div class="mt-6 text-sm text-gray-500">
             Created: {{ $treeType->created_at->format('d M Y H:i') }}<br>
             Updated: {{ $treeType->updated_at->format('d M Y H:i') }}

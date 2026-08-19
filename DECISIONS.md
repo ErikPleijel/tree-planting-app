@@ -10,6 +10,112 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-19 — Phase 3: biochar_batches entity, TreeType carbon reference fields
+
+**Context**
+
+Phase 3 targets two additive gaps from the original audit. Biochar was a
+single `decimal(4,2)` column directly on `tree_plantings`, constrained to
+four dropdown values labeled by tree-size category ("Minimal — 0.25 kg
+dry," "Large tree — 2.0 kg dry"). The Phase 3 investigation found this
+column is actually a **per-tree rate**, not a total quantity — the
+homepage stat computes `SUM(number_of_trees * biochar)` to arrive at a
+total, which only works because of that rate design. `TreeType` had zero
+fields beyond `name`/`latin_name`/`description`, and the investigation
+confirmed everything on it is already fully public on `/p/{public_code}`
+with no gating mechanism to hold new fields back if that's ever wanted.
+
+**Decision**
+
+- **`biochar_batches` is a new, independently-locatable table**, not a
+  restructuring of the old column. `quantity_kg` is an actual total
+  applied, not a rate — the semantic fix the investigation flagged as
+  necessary. A batch links via nullable `planting_location_id` and
+  nullable `tree_planting_id`; the controller requires at least one to be
+  present (a batch must be locatable somewhere), and when `tree_planting_id`
+  is given, `planting_location_id` is derived from it server-side rather
+  than trusted from the request, so the two can never contradict each
+  other.
+- **The old `tree_plantings.biochar` column is frozen, not migrated.**
+  No backfill, no conversion into `biochar_batches` rows, no schema
+  change to the column itself. It simply stops being written to: the
+  dropdown is removed from the tree-planting create/edit form, and (a
+  deliberate small extension beyond the literal Phase 3 brief, flagged
+  here rather than done silently) the `biochar` validation rule was also
+  removed from `TreePlantingController::store`/`update`, so the backend
+  can no longer accept a write to it either — leaving the rule in place
+  after removing its only UI entry point would have been the same kind
+  of unused-acceptance-surface landmine the Phase 2 review caught with
+  `verified_by_user_id` in `$fillable`. Historical display of old values
+  (`planting-locations/show.blade.php`'s `$biocharLabels` mapping, the
+  legacy homepage stat) is untouched, since it's read-only display of
+  frozen data, not new entry.
+- **Three-way delete-behavior contrast, now spanning three phases** —
+  worth stating explicitly as a deliberate spectrum, not drift:
+  - `change_logs` (Phase 1): `loggable_id` **unconstrained**, no FK at
+    all. An audit record must outlive the row it describes.
+  - `tree_planting_measurements` (Phase 2): `tree_planting_id`
+    **cascades**. A measurement has no meaning independent of the
+    planting it measures — delete the planting, the measurement should
+    go with it.
+  - `biochar_batches` (Phase 3): both FKs **`nullOnDelete`**. A batch
+    represents real material that was produced and applied — deleting
+    the `TreePlanting` it happened to be linked to shouldn't erase the
+    fact that the material existed and was used; the batch just becomes
+    unlinked from that specific planting event, falling back to whatever
+    location link (if any) it still has.
+
+  Each choice follows from what the row *represents*: a fact about
+  something else (unconstrained), a measurement of a specific thing
+  (cascade), or a real-world event that merely references other records
+  for context (nullOnDelete).
+- **No `ChangeLogger` verify/recorder-split for biochar batches** — the
+  investigation's own read was that a biochar batch is asserted once,
+  like a `TreePlanting`, not repeatedly attested to by a second party
+  like a `TreePlantingMeasurement`. `ChangeLogger` is wired into
+  `BiocharBatchController::update()` the same way as
+  `PlantingLocationController::update()` from Phase 1 — diff the tracked
+  fields (`quantity_kg`, `source`, `batch_reference`, `application_date`,
+  `notes`), log only what changed, wrap the update and the log write in
+  one `DB::transaction()`. Phase 2's separate verified-by-someone-else
+  mechanism was deliberately not built here.
+- **`TreeType.source_reference` is required whenever either new numeric
+  field is populated**, enforced via `required_with` in
+  `TreeTypeController`, not a DB constraint — the columns themselves stay
+  nullable so existing species with neither value yet remain valid rows.
+  A number without a citation isn't useful for credibility work, so the
+  form can't produce that state going forward, even though the schema
+  technically allows it for now (import-photo compatibility with older
+  species that were entered before this phase).
+- **New fields inherit the existing all-public default** on
+  `/p/{public_code}` — `wood_density_kg_m3`, `carbon_fraction`, and
+  `source_reference` render in the "About the trees" section, with the
+  citation shown directly alongside the numbers it supports rather than
+  hidden or omitted, per the investigation's finding that nothing
+  currently gates TreeType fields from public view.
+- **The new homepage stat is additive, not a replacement.** The legacy
+  `SUM(number_of_trees * biochar)` stat is untouched in its own tile;
+  the new `BiocharBatch::sum('quantity_kg')` stat sits next to it with
+  a distinct label ("legacy estimate" vs. "tracked batches"), so a
+  reader doesn't assume the two numbers should be added — one is an
+  inferred rate-based estimate from historical data, the other is an
+  actual recorded quantity from a structurally different table, and
+  combining them would misrepresent both.
+
+**Reasoning**
+
+Both changes were classified additive in the original audit, and this
+entry keeps them that way: nothing about the existing `tree_plantings`
+schema or historical biochar data changes, and `TreeType`'s existing
+three fields are untouched. The delete-behavior spectrum across three
+phases now gives future work (and future readers of this log) a concrete
+set of precedents to reason from — new tables should ask "does this
+represent a fact about another row, a measurement of it, or a real thing
+that references it," and pick accordingly, rather than defaulting to
+whatever the last table did.
+
+---
+
 ## 2026-08-19 — Phase 2: tree_planting_measurements, cohort-linked and repeatable
 
 **Context**

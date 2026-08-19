@@ -80,6 +80,9 @@
         <a href="{{ route('tree-plantings.create', ['planting_location_id' => $plantingLocation->id]) }}" class="bg-primary text-white px-4 py-2 text-sm rounded hover:bg-green-700 transition-colors">
             ➕ New Tree Planting
         </a>
+        <a href="{{ route('biochar-batches.index', $plantingLocation) }}" class="bg-amber-700 text-white px-4 py-2 text-sm rounded hover:bg-amber-800 transition-colors">
+            🌰 Biochar Batches
+        </a>
     </div>
     @if($plantingLocation->treePlantings->isEmpty())
         <p class="text-center text-sm text-gray-500">No tree plantings recorded yet.</p>

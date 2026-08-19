@@ -515,6 +515,20 @@
                         @else
                             <div class="empty-state">No description available.</div>
                         @endif
+
+                        @if($treeType->wood_density_kg_m3 || $treeType->carbon_fraction)
+                            <div class="tree-info-description" style="margin-top: 0.6rem;">
+                                @if($treeType->wood_density_kg_m3)
+                                    <div>Wood density: {{ $treeType->wood_density_kg_m3 }} kg/m³</div>
+                                @endif
+                                @if($treeType->carbon_fraction)
+                                    <div>Carbon fraction: {{ $treeType->carbon_fraction }}</div>
+                                @endif
+                                @if($treeType->source_reference)
+                                    <div class="empty-state" style="margin-top: 0.3rem;">Source: {{ $treeType->source_reference }}</div>
+                                @endif
+                            </div>
+                        @endif
                     </div>
                 @endforeach
             </div>

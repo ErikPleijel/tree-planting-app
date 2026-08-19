@@ -25,11 +25,7 @@ class TreeTypeController extends Controller
 
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'latin_name' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validate($this->rules());
 
         TreeType::create($validated);
 
@@ -50,11 +46,7 @@ class TreeTypeController extends Controller
 
     public function update(Request $request, TreeType $treeType)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'latin_name' => ['nullable', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validate($this->rules());
 
         $treeType->update($validated);
 
@@ -76,5 +68,23 @@ class TreeTypeController extends Controller
         return redirect()
             ->route('tree-types.index')
             ->with('success', 'Tree type deleted successfully.');
+    }
+
+    /**
+     * source_reference is required whenever either numeric reference
+     * field is populated — enforced here, not at the DB level, since the
+     * columns must stay nullable for existing species that have neither
+     * value yet.
+     */
+    private function rules(): array
+    {
+        return [
+            'name'               => ['required', 'string', 'max:255'],
+            'latin_name'         => ['nullable', 'string', 'max:255'],
+            'description'        => ['nullable', 'string'],
+            'wood_density_kg_m3' => ['nullable', 'numeric', 'min:0'],
+            'carbon_fraction'    => ['nullable', 'numeric', 'min:0', 'max:1'],
+            'source_reference'   => ['nullable', 'string', 'required_with:wood_density_kg_m3,carbon_fraction'],
+        ];
     }
 }

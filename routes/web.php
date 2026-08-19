@@ -46,6 +46,22 @@ Route::patch('/tree-planting-measurements/{measurement}/verify', [\App\Http\Cont
     ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor'])
     ->name('tree-planting-measurements.verify');
 
+// Biochar Batches — same roles as Inspections/TreePlantings/Measurements.
+Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(function () {
+    Route::get('/planting-locations/{plantingLocation}/biochar-batches', [\App\Http\Controllers\BiocharBatchController::class, 'index'])
+        ->name('biochar-batches.index');
+    Route::get('/biochar-batches/create', [\App\Http\Controllers\BiocharBatchController::class, 'create'])
+        ->name('biochar-batches.create');
+    Route::post('/biochar-batches', [\App\Http\Controllers\BiocharBatchController::class, 'store'])
+        ->name('biochar-batches.store');
+    Route::get('/biochar-batches/{biocharBatch}/edit', [\App\Http\Controllers\BiocharBatchController::class, 'edit'])
+        ->name('biochar-batches.edit');
+    Route::put('/biochar-batches/{biocharBatch}', [\App\Http\Controllers\BiocharBatchController::class, 'update'])
+        ->name('biochar-batches.update');
+    Route::delete('/biochar-batches/{biocharBatch}', [\App\Http\Controllers\BiocharBatchController::class, 'destroy'])
+        ->name('biochar-batches.destroy');
+});
+
 // Planting Locations search JSON endpoint — must be before resource route to avoid {plantingLocation} binding conflict
 Route::get('/planting-locations/search', [\App\Http\Controllers\PlantingLocationController::class, 'search'])
     ->middleware(['auth', 'role:Admin|SuperAdmin'])

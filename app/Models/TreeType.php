@@ -10,6 +10,9 @@ class TreeType extends Model
         'name',
         'latin_name',
         'description',
+        'wood_density_kg_m3',
+        'carbon_fraction',
+        'source_reference',
     ];
 
     public function treePlantings()
