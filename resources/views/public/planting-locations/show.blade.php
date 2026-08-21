@@ -464,7 +464,7 @@
             <p class="empty-state">No planting records yet.</p>
         @else
             <div class="planting-list">
-                @foreach($plantingLocation->treePlantings()->orderBy('planting_date', 'desc')->get() as $planting)
+                @foreach($plantingLocation->treePlantings()->with('contributors')->orderBy('planting_date', 'desc')->get() as $planting)
                     <div class="planting-item">
                         <div>
                             <div class="planting-date">
@@ -473,6 +473,19 @@
                                 {{ number_format(\Carbon\Carbon::parse($planting->planting_date)->diffInDays(now()) / 365.25, 1) }} yrs ago
                             </div>
                             <div class="planting-tree">{{ $planting->treeType->name ?? 'Unknown species' }}</div>
+                            @if($planting->contributors->isNotEmpty())
+                                <div class="empty-state" style="margin-top: 0.3rem;">
+                                    🤝
+                                    @foreach($planting->contributors as $contributor)
+                                        @if($contributor->website)
+                                            <a href="{{ $contributor->website }}" target="_blank" rel="noopener noreferrer">{{ $contributor->name }}</a>
+                                        @else
+                                            {{ $contributor->name }}
+                                        @endif
+                                        @if(!$loop->last), @endif
+                                    @endforeach
+                                </div>
+                            @endif
                         </div>
                         <div style="text-align:right; flex-shrink:0; margin-left:1rem;">
                             <div class="planting-count-num">{{ $planting->number_of_trees }}</div>
@@ -559,11 +572,12 @@
         @endif
     </div>
 
-    <!-- Contributors -->
+    <!-- Legacy site-wide note (frozen field, predates per-planting contributors below) -->
     @if($plantingLocation->contributors)
         <div class="section-card">
-            <h2>Contributors</h2>
+            <h2>About This Site</h2>
             <div class="section-divider"></div>
+            <p class="empty-state" style="margin-bottom: 0.75rem;">A general note about this site, as written by its organizers.</p>
             <div class="contributors-body">
                 {!! $plantingLocation->contributors !!}
             </div>

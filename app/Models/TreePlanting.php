@@ -59,6 +59,13 @@ class TreePlanting extends Model
         return $this->hasMany(TreePlantingMeasurement::class);
     }
 
+    public function contributors()
+    {
+        return $this->belongsToMany(Contributor::class)
+            ->withPivot('note')
+            ->withTimestamps();
+    }
+
 public function division()
 {
     return $this->belongsTo(Division::class);

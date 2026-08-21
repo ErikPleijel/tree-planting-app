@@ -10,6 +10,144 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-19 — Phase 6: structured Contributor model, attached to TreePlanting
+
+**Context**
+
+Phase 6 replaces the unstructured funder/partner story with a real
+`Contributor` entity — but attached at a different level than the
+original roadmap framing assumed. The roadmap's one-line description
+("Replace the free-text contributor blob with a structured
+Contributor/Organization model + pivot to planting events") already said
+"planting events," but the Phase 6 investigation's own framing leaned
+toward `PlantingLocation`-level attachment as the default reading. The
+actual decision made here is a **correction**: contributors attach to a
+specific `TreePlanting` (many-to-many), not to the `PlantingLocation` as
+a whole.
+
+**Decision: attach to TreePlanting, not PlantingLocation**
+
+A planting event is often a real-world gathering — a specific date, a
+specific group of trees, often several organizations physically present
+and involved in that one event. A site that has hosted multiple planting
+days over its lifetime may have had entirely different organizations
+involved each time (the March planting funded by one foundation, an
+independently-organized June planting by a different partner). Attaching
+contributors at the `PlantingLocation` level would flatten that history
+into one undifferentiated site-wide list, unable to say which
+organization was actually present at which event — exactly the kind of
+information loss this roadmap has spent five phases eliminating
+elsewhere (Phase 1's audit trail, Phase 2's cohort-linked measurements).
+Attaching to `TreePlanting` instead keeps that distinction intact, and is
+consistent with how this app already treats `TreePlanting` — not
+`PlantingLocation` — as the unit multiple other structured records
+attach to (`tree_planting_measurements` in Phase 2, `biochar_batches`'
+nullable link in Phase 3).
+
+**The legacy `PlantingLocation.contributors` field is frozen, not
+migrated.** There is no reliable way to parse historical narrative HTML
+prose into structured `Contributor` records — the investigation found no
+sample content anywhere in the codebase to even attempt a parsing
+strategy against, and free text written by a human for a human to read
+is not the kind of input a deterministic migration script can safely
+convert into discrete name/website/email fields without silently
+inventing structure that was never really there. The column, its Quill.js
+editor, its `strip_tags()` sanitization, and all three of its rendering
+sites (public page, admin show page, and the dead
+`planting-location-card.blade.php` component) are untouched by this
+phase. It continues to serve exactly its current purpose: a general,
+free-form site-level note. On the public page, its heading changed from
+"Contributors" to "About This Site" with a one-line clarifying caption —
+a minimal-friction relabel, not a restructuring — specifically so it
+reads as clearly distinct from the new per-planting-event structured
+section below it, rather than looking like a duplicate or a conflicting
+source of truth for the same information.
+
+**The pivot's place in the delete-behavior spectrum.** Across five
+phases, delete behavior has been a deliberate, considered choice each
+time, not a default:
+- `change_logs` (Phase 1): unconstrained — an audit record outlives the
+  row it describes.
+- `tree_planting_measurements` (Phase 2): cascades — a measurement has
+  no meaning independent of its planting.
+- `biochar_batches` (Phase 3): `nullOnDelete` on both links — real
+  material survives even if its planting-event link is removed.
+- `contributor_tree_planting` (this phase): **cascades on the
+  `tree_planting_id` side, restricts on the `contributor_id` side** —
+  the first pivot in this spectrum with two different behaviors on its
+  two foreign keys, because the two sides mean genuinely different
+  things. Deleting a `TreePlanting` should take its attachment records
+  with it (an attachment has no meaning independent of the event it
+  documents, same reasoning as Phase 2's cascade). Deleting a
+  `Contributor` while it's still attached to anything is blocked outright
+  — same `RESTRICT` precedent already established by
+  `TreeType`/`tree_type_id` on `tree_plantings` (`TreeTypeController::destroy`'s
+  existing "cannot delete while in use" guard, mirrored exactly by
+  `ContributorController::destroy`).
+
+**`contributor_updated` vs. `contributor_attached`/`contributor_detached`
+are deliberately separate `ChangeLog` concerns, not one.** Correcting a
+contributor's own name or contact details ("we misspelled this
+organization's name") is a different fact from an event-participation
+change ("this organization was, or wasn't, actually involved in this
+specific planting"). Conflating them into one log action would make it
+impossible to later distinguish "the organization's identity was
+corrected" from "the organization's involvement in this specific event
+was added or removed" when reading the audit trail back. `contributor_updated`
+lives on `Contributor` (`ContributorController::update()`, `BiocharBatch`-style
+tracked-field diff); `contributor_attached`/`contributor_detached` live on
+`TreePlanting` (`TreePlantingContributorController`), each carrying a
+**name snapshot** at the moment of attachment/detachment specifically so
+a later correction to the `Contributor`'s own name doesn't retroactively
+change what an old attachment/detachment log entry appears to say.
+
+**Narrower gate on the registry, broader gate on attach/detach.**
+`ContributorController`'s own CRUD routes (creating, editing, deleting
+`Contributor` records — managing the shared organization registry
+itself) are gated `Admin|SuperAdmin` only. `TreePlantingContributorController`'s
+attach/detach routes, and the `contributors.search` typeahead endpoint
+they depend on, are gated to the broader `Admin|SuperAdmin|Monitor|Grower`
+group already used for recording measurements and biochar batches.
+The reasoning: correcting the shared registry affects every planting
+event that organization is attached to across the whole platform, so it
+warrants the narrower gate already used elsewhere for genuinely
+platform-wide changes; attaching an existing, already-vetted contributor
+to one specific event you're already permitted to edit is a much smaller
+blast radius, matching the existing planting-event-level action pattern.
+
+**Deliberately not built in this phase: cross-site aggregation.** No
+"everything Organization X has funded across the whole platform" view or
+endpoint exists after this phase. The investigation flagged this
+specifically as a materially bigger public-disclosure decision than an
+additive schema change — turning a collection of per-event facts into an
+aggregated, queryable funder profile changes what's actually being
+disclosed, even though each individual fact was already visible. That
+decision belongs with Phase 7's deliberate public-API scope discussion,
+if it happens at all, not as an incidental side effect of adding the
+`Contributor` model here.
+
+**Known pre-existing issue, not touched in this pass.** The investigation
+found `resources/views/components/planting-location-card.blade.php` is
+dead code (not included by any parent view) with a broken route
+reference (`planting-locations.public.show`, which doesn't exist — the
+real route is `public.planting-locations.show`). Left as-is, flagged
+here for a future pass, same treatment as the dead `MapMarkerService`
+filter flagged in Phase 1.
+
+**Reasoning**
+
+The core correction here — cohort-level attachment instead of
+site-level — is the single most consequential decision in this phase,
+and it came directly from recognizing that a planting event, not a
+location, is the thing that actually has a "who was there" answer in the
+real world. Every other decision in this entry (the freeze-don't-migrate
+call, the split delete behavior, the split ChangeLog actions, the tiered
+role gates) follows from treating `TreePlanting` as the right unit once
+that correction was made, consistent with the pattern this roadmap has
+followed since Phase 2.
+
+---
+
 ## 2026-08-19 — Phase 5: site boundary geometry — platform decision and implementation
 
 **Context**

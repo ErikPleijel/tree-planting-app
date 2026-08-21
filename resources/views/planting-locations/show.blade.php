@@ -104,11 +104,18 @@
                     </tr>
                     </thead>
                     <tbody>
-                    @foreach($plantingLocation->treePlantings()->with('statusUpdatedBy')->orderBy('planting_date', 'desc')->get() as $planting)
+                    @foreach($plantingLocation->treePlantings()->with(['statusUpdatedBy', 'contributors'])->orderBy('planting_date', 'desc')->get() as $planting)
                         <tr class="@if($planting->status === 1) text-red-600 @elseif($planting->status === 2) text-green-600 @endif border-b">
                             <td class="px-2 py-1 whitespace-nowrap">{{ \Carbon\Carbon::parse($planting->planting_date)->format('Y-m-d') }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $planting->number_of_trees }}</td>
-                            <td class="px-2 py-1 whitespace-nowrap">{{ $planting->treeType->name ?? 'N/A' }}</td>
+                            <td class="px-2 py-1 whitespace-nowrap">
+                                {{ $planting->treeType->name ?? 'N/A' }}
+                                @if($planting->contributors->isNotEmpty())
+                                    <div class="text-xs text-gray-500 font-normal">
+                                        🤝 {{ $planting->contributors->pluck('name')->join(', ') }}
+                                    </div>
+                                @endif
+                            </td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ number_format(\Carbon\Carbon::parse($planting->planting_date)->diffInDays(now()) / 365.25, 1) }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">{{ $planting->user->name ?? 'N/A' }}</td>
                             <td class="px-2 py-1 whitespace-nowrap">
@@ -132,6 +139,7 @@
                                 <div class="flex flex-wrap justify-center gap-1">
                                     @role('Admin|SuperAdmin|Monitor|Grower')
                                     <a href="{{ route('tree-planting-measurements.index', $planting) }}" class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition-colors">📏 Measurements</a>
+                                    <a href="{{ route('tree-planting-contributors.index', $planting) }}" class="bg-teal-600 text-white px-2 py-1 text-xs rounded hover:bg-teal-700 transition-colors">🤝 Contributors ({{ $planting->contributors->count() }})</a>
                                     <a href="{{ route('tree-plantings.edit', $planting) }}" class="bg-yellow-500 text-white px-2 py-1 text-xs rounded hover:bg-yellow-600 transition-colors">Edit</a>
                                     @endrole
                                     @role('Admin|SuperAdmin')

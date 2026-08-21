@@ -170,3 +170,26 @@ Route::middleware(['auth', 'role:Admin|SuperAdmin'])->group(function () {
     Route::delete('/tree-types/{treeType}', [TreeTypeController::class, 'destroy'])->name('tree-types.destroy');
 });
 Route::get('/tree-types/{treeType}', [TreeTypeController::class, 'show'])->name('tree-types.show');
+
+// Contributors registry — managing the organization registry itself is
+// more sensitive than attaching one to a specific event, so it gets a
+// narrower gate (Admin|SuperAdmin only) than the attach/detach routes
+// below. Search must come before the resource route to avoid a
+// {contributor} binding conflict, same pattern as planting-locations.search.
+Route::get('/contributors/search', [\App\Http\Controllers\ContributorController::class, 'search'])
+    ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])
+    ->name('contributors.search');
+Route::resource('contributors', \App\Http\Controllers\ContributorController::class)
+    ->except(['show'])
+    ->middleware(['auth', 'role:Admin|SuperAdmin']);
+
+// Attach/detach contributors on a specific TreePlanting — broader gate,
+// matches the existing pattern for measurements/biochar batches.
+Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(function () {
+    Route::get('/tree-plantings/{treePlanting}/contributors', [\App\Http\Controllers\TreePlantingContributorController::class, 'index'])
+        ->name('tree-planting-contributors.index');
+    Route::post('/tree-plantings/{treePlanting}/contributors', [\App\Http\Controllers\TreePlantingContributorController::class, 'attach'])
+        ->name('tree-planting-contributors.attach');
+    Route::delete('/tree-plantings/{treePlanting}/contributors/{contributor}', [\App\Http\Controllers\TreePlantingContributorController::class, 'detach'])
+        ->name('tree-planting-contributors.detach');
+});
