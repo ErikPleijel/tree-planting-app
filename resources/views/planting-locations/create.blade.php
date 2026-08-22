@@ -92,6 +92,47 @@
                 @enderror
             </div>
 
+            <!-- Latitude & Longitude -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="latitude">
+                        <span>Latitude</span>
+                    </label>
+                    <input type="text" id="latitude" name="latitude"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                           value="{{ old('latitude') }}">
+
+                    @error('latitude')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1" for="longitude">
+                        <span>Longitude</span>
+                    </label>
+                    <input type="text" id="longitude" name="longitude"
+                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+                           value="{{ old('longitude') }}">
+
+                    @error('longitude')
+                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                    @enderror
+                </div>
+            </div>
+
+            <!-- Coordinate provenance (not user-facing — set by JS below) -->
+            <input type="hidden" name="capture_method" id="capture_method" value="manual">
+            <input type="hidden" name="gps_accuracy_meters" id="gps_accuracy_meters" value="">
+
+            <!-- 📍 GPS Button -->
+            <div class="flex justify-end">
+                <button type="button" onclick="getLocation()"
+                        class="bg-blue-500 text-white px-4 py-2 text-sm rounded hover:bg-blue-600 transition-colors mb-2">
+                    📍 Get location from phone GPS
+                </button>
+            </div>
+
             <!-- 🗺️ Map Preview -->
             <div class="mt-4">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -133,13 +174,6 @@
                         🧭 Show my position
                     </button>
 
-                    {{-- Only shown once a boundary polygon exists — see updateCenterButtonVisibility() --}}
-                    <button type="button" id="center-in-polygon-btn" onclick="centerMarkerInPolygon()"
-                            style="display: none;"
-                            class="bg-gray-500 text-white px-4 py-2 text-sm rounded hover:bg-gray-600 transition-colors">
-                        ⬠ Center marker in polygon
-                    </button>
-
                     <button type="button" id="adjust-position-btn" onclick="enterPositionMode()"
                             class="bg-blue-500 text-white px-4 py-2 text-sm rounded hover:bg-blue-600 transition-colors">
                         🎯 Adjust marker position
@@ -177,47 +211,6 @@
                 @error('boundary_geojson')
                 <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
                 @enderror
-            </div>
-
-            <!-- Latitude & Longitude -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" for="latitude">
-                        <span>Latitude</span>
-                    </label>
-                    <input type="text" id="latitude" name="latitude"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                           value="{{ old('latitude') }}">
-
-                    @error('latitude')
-                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1" for="longitude">
-                        <span>Longitude</span>
-                    </label>
-                    <input type="text" id="longitude" name="longitude"
-                           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
-                           value="{{ old('longitude') }}">
-
-                    @error('longitude')
-                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                    @enderror
-                </div>
-            </div>
-
-            <!-- Coordinate provenance (not user-facing — set by JS below) -->
-            <input type="hidden" name="capture_method" id="capture_method" value="manual">
-            <input type="hidden" name="gps_accuracy_meters" id="gps_accuracy_meters" value="">
-
-            <!-- 📍 GPS Button -->
-            <div class="flex justify-end">
-                <button type="button" onclick="getLocation()"
-                        class="bg-blue-500 text-white px-4 py-2 text-sm rounded hover:bg-blue-600 transition-colors mb-2">
-                    📍 Get location from phone GPS
-                </button>
             </div>
 
             <!-- Buttons -->
@@ -325,20 +318,15 @@
                 drawnItems.clearLayers();
                 drawnItems.addLayer(event.layer);
                 syncBoundaryField();
-                updateCenterButtonVisibility();
             });
 
             map.on(L.Draw.Event.EDITED, function () {
                 syncBoundaryField();
-                updateCenterButtonVisibility();
             });
 
             map.on(L.Draw.Event.DELETED, function () {
                 syncBoundaryField();
-                updateCenterButtonVisibility();
             });
-
-            updateCenterButtonVisibility();
         }
 
         function syncBoundaryField() {
@@ -356,7 +344,6 @@
         function clearBoundary() {
             drawnItems.clearLayers();
             document.getElementById('boundary_geojson').value = '';
-            updateCenterButtonVisibility();
         }
 
         function initQuill() {
@@ -498,89 +485,6 @@
             const submitBtn = document.getElementById('submit-btn');
             submitBtn.disabled = false;
             submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-        }
-
-        // ------------------------------------------------------------
-        // Feature 2: "Center marker in polygon" — moves the marker to
-        // the drawn boundary's centroid.
-        // ------------------------------------------------------------
-
-        // Area-weighted centroid (shoelace formula), using lng as x and
-        // lat as y. Returns null for a degenerate (zero-area) ring, e.g.
-        // a polygon accidentally drawn as a straight line.
-        function polygonCentroid(latlngs) {
-            let area = 0, cx = 0, cy = 0;
-            const n = latlngs.length;
-
-            for (let i = 0; i < n; i++) {
-                const p1 = latlngs[i];
-                const p2 = latlngs[(i + 1) % n];
-                const cross = (p1.lng * p2.lat) - (p2.lng * p1.lat);
-                area += cross;
-                cx += (p1.lng + p2.lng) * cross;
-                cy += (p1.lat + p2.lat) * cross;
-            }
-
-            area = area / 2;
-            if (Math.abs(area) < 1e-12) {
-                return null;
-            }
-
-            return L.latLng(cy / (6 * area), cx / (6 * area));
-        }
-
-        // Ray-casting point-in-polygon test. Used to guard against the
-        // area centroid landing outside a concave (non-convex) boundary.
-        function isPointInPolygon(point, latlngs) {
-            let inside = false;
-            const n = latlngs.length;
-
-            for (let i = 0, j = n - 1; i < n; j = i++) {
-                const xi = latlngs[i].lng, yi = latlngs[i].lat;
-                const xj = latlngs[j].lng, yj = latlngs[j].lat;
-
-                const intersects = ((yi > point.lat) !== (yj > point.lat)) &&
-                    (point.lng < (xj - xi) * (point.lat - yi) / (yj - yi) + xi);
-
-                if (intersects) inside = !inside;
-            }
-
-            return inside;
-        }
-
-        function centerMarkerInPolygon() {
-            const layers = drawnItems.getLayers();
-            if (layers.length === 0) {
-                return;
-            }
-
-            const latlngs = layers[0].getLatLngs()[0]; // outer ring
-            let center = polygonCentroid(latlngs);
-
-            // Concave shapes can push the true area centroid outside the
-            // boundary. Falling back to the bounding-box center isn't
-            // guaranteed to land inside either, but for the simple site
-            // boundaries this tool is used for it reliably ends up closer
-            // to "the middle" than leaving an out-of-shape point in place.
-            if (!center || !isPointInPolygon(center, latlngs)) {
-                center = layers[0].getBounds().getCenter();
-            }
-
-            document.getElementById('latitude').value = center.lat.toFixed(6);
-            document.getElementById('longitude').value = center.lng.toFixed(6);
-            document.getElementById('capture_method').value = 'polygon_centroid';
-            document.getElementById('gps_accuracy_meters').value = '';
-
-            marker.setLatLng(center);
-            map.panTo(center);
-        }
-
-        function updateCenterButtonVisibility() {
-            const btn = document.getElementById('center-in-polygon-btn');
-            if (!btn) return;
-
-            const hasBoundary = drawnItems && drawnItems.getLayers().length > 0;
-            btn.style.display = hasBoundary ? 'inline-block' : 'none';
         }
 
         // ------------------------------------------------------------

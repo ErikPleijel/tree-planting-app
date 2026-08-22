@@ -57,6 +57,23 @@
         </div>
     </div>
 
+    <div class="max-w-2xl mx-auto mt-6 p-4 bg-white shadow rounded-lg text-center">
+        <h2 class="text-xl font-semibold text-gray-700 mb-2">Area &amp; Planting Density</h2>
+        <p class="text-gray-600 mb-1">
+            <span class="font-semibold">Total trees:</span> {{ $plantingLocation->treePlantings->sum('number_of_trees') }}
+        </p>
+        @if($plantingLocation->boundary_geojson)
+            <p class="text-gray-600 mb-1">
+                <span class="font-semibold">Area:</span> <span id="area-ha">—</span>
+            </p>
+            <p class="text-gray-600">
+                <span class="font-semibold">Density:</span> <span id="density-per-ha">—</span>
+            </p>
+        @else
+            <p class="text-gray-500 italic text-sm">No boundary drawn — area unavailable.</p>
+        @endif
+    </div>
+
     <div class="mx-auto w-full max-w-xl px-4 mt-10">
         <x-map2
             lat="{{ $plantingLocation->latitude }}"
@@ -367,5 +384,48 @@
         @else
             <p class="text-center text-gray-500 mb-10">No pictures uploaded yet.</p>
         @endif
+
+    {{-- Leaflet.draw — loaded only for L.GeometryUtil.geodesicArea() below.
+         This page is read-only (no drawing controls/edit handles/draw event
+         listeners initialized), unlike create/edit.blade.php's use of this
+         same library. Not added to map2.blade.php itself, so the public
+         /p/{public_code} page (which also renders that component) is
+         unaffected. --}}
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Read directly from a PHP-rendered value rather than reaching
+            // into map2.blade.php's own (separate, independent) map init —
+            // same pattern create/edit.blade.php use for their own boundary
+            // data.
+            const boundary = @json($plantingLocation->boundary_geojson);
+            if (!boundary) {
+                return;
+            }
+
+            const totalTrees = {{ $plantingLocation->treePlantings->sum('number_of_trees') }};
+
+            // Same pattern the removed centerMarkerInPolygon() in
+            // create/edit.blade.php used to reach a polygon's outer ring
+            // from GeoJSON: wrap it as a Leaflet layer and read getLatLngs().
+            const layer = L.geoJSON(boundary).getLayers()[0];
+            if (!layer) {
+                return;
+            }
+
+            const latlngs = layer.getLatLngs()[0]; // outer ring
+            const areaSqMeters = L.GeometryUtil.geodesicArea(latlngs);
+            const areaHectares = areaSqMeters / 10000;
+
+            document.getElementById('area-ha').textContent = areaHectares.toFixed(1) + ' ha';
+
+            if (areaHectares > 0) {
+                const density = totalTrees / areaHectares;
+                document.getElementById('density-per-ha').textContent = density.toFixed(1) + ' trees/ha';
+            }
+        });
+    </script>
 
 </x-app-layout>
