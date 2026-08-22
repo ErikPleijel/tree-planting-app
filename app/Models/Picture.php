@@ -16,11 +16,13 @@ class Picture extends Model
         'captured_latitude',
         'captured_longitude',
         'capture_source',
+        'consent_confirmed_at',
     ];
 
     protected $casts = [
-        'show_on_welcome' => 'boolean',
-        'captured_at'     => 'datetime',
+        'show_on_welcome'      => 'boolean',
+        'captured_at'          => 'datetime',
+        'consent_confirmed_at' => 'datetime',
     ];
 
     public function user()

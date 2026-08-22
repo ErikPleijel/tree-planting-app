@@ -46,7 +46,8 @@ it('records exif provenance on a file-uploaded photo when the ExifExtractor find
 
     $this->actingAs($this->owner)
         ->post(route('pictures.upload.store', $this->location), [
-            'photos' => [$file],
+            'photos'            => [$file],
+            'consent_confirmed' => '1',
         ])
         ->assertRedirect(route('planting-locations.show', $this->location));
 
@@ -70,7 +71,8 @@ it('leaves all provenance fields null when the ExifExtractor finds nothing usabl
 
     $this->actingAs($this->owner)
         ->post(route('pictures.upload.store', $this->location), [
-            'photos' => [$file],
+            'photos'            => [$file],
+            'consent_confirmed' => '1',
         ])
         ->assertRedirect(route('planting-locations.show', $this->location));
 
@@ -89,6 +91,7 @@ it('records device-geolocation provenance on a camera-captured photo when coordi
             'planting_location_id' => $this->location->id,
             'captured_latitude'    => 3.456789,
             'captured_longitude'   => -12.987654,
+            'consent_confirmed'    => '1',
         ])
         ->assertRedirect();
 
@@ -105,6 +108,7 @@ it('leaves all provenance fields null on a camera-captured photo when no coordin
         ->post(route('pictures.store'), [
             'image_data'           => 'data:image/jpeg;base64,'.base64_encode('fake-image-bytes'),
             'planting_location_id' => $this->location->id,
+            'consent_confirmed'    => '1',
         ])
         ->assertRedirect();
 

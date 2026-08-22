@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\PlantingLocation;
+use App\Services\PhotoLocationMarkerService;
 
 class PublicPlantingLocationController extends Controller
 {
-    public function show(string $public_code)
+    public function show(string $public_code, PhotoLocationMarkerService $photoMarkerService)
     {
         $plantingLocation = PlantingLocation::with([
             'division',
@@ -30,6 +31,13 @@ class PublicPlantingLocationController extends Controller
             ];
         }
 
-        return view('public.planting-locations.show', compact('plantingLocation', 'markers'));
+        // Public since the decision recorded in DECISIONS.md: "Photo
+        // capture-location markers now public on both pages" — a deliberate
+        // reversal of Phase 4's original admin-only stance for captured
+        // photo coordinates specifically (EXIF extraction/storage itself is
+        // unchanged; only the display-scope decision moved).
+        $photos = $photoMarkerService->build($plantingLocation);
+
+        return view('public.planting-locations.show', compact('plantingLocation', 'markers', 'photos'));
     }
 }

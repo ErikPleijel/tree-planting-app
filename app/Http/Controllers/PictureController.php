@@ -33,6 +33,10 @@ class PictureController extends Controller
             // has no embedded EXIF to fall back on.
             'captured_latitude'    => 'nullable|numeric|between:-90,90',
             'captured_longitude'   => 'nullable|numeric|between:-180,180',
+            'consent_confirmed'    => 'required|accepted',
+        ], [
+            'consent_confirmed.required' => 'Please confirm the consent statement before uploading.',
+            'consent_confirmed.accepted' => 'Please confirm the consent statement before uploading.',
         ]);
 
         // Decode base64 image
@@ -47,11 +51,12 @@ class PictureController extends Controller
         Storage::disk('public')->put($path, $imageBinary);
 
         $attributes = [
-            'user_id'              => auth()->id(),
-            'planting_location_id' => $validated['planting_location_id'],
-            'path'                 => $path,
-            'thumbnail'            => $path,
-            'show_on_welcome'      => false,
+            'user_id'               => auth()->id(),
+            'planting_location_id'  => $validated['planting_location_id'],
+            'path'                  => $path,
+            'thumbnail'             => $path,
+            'show_on_welcome'       => false,
+            'consent_confirmed_at'  => now(),
         ];
 
         if (isset($validated['captured_latitude'], $validated['captured_longitude'])) {
@@ -88,33 +93,38 @@ class PictureController extends Controller
     public function uploadStore(Request $request, PlantingLocation $plantingLocation, ExifExtractor $exifExtractor)
     {
         $request->validate([
-            'photos'          => ['required', 'array', 'min:1', 'max:10'],
-            'photos.*'        => [
+            'photos'             => ['required', 'array', 'min:1', 'max:10'],
+            'photos.*'           => [
                 'required',
                 'image',
                 'mimes:jpeg,jpg,png,webp,gif',
                 'max:8192',      // 8 MB in KB
             ],
-            'show_on_welcome' => ['nullable', 'boolean'],
+            'show_on_welcome'    => ['nullable', 'boolean'],
+            'consent_confirmed'  => ['required', 'accepted'],
         ], [
-            'photos.required'  => 'Please select at least one photo.',
-            'photos.max'       => 'You may upload a maximum of 10 photos at a time.',
-            'photos.*.image'   => 'All files must be images.',
-            'photos.*.mimes'   => 'Allowed formats: JPG, PNG, WEBP, GIF.',
-            'photos.*.max'     => 'Each photo must be under 8 MB.',
+            'photos.required'            => 'Please select at least one photo.',
+            'photos.max'                 => 'You may upload a maximum of 10 photos at a time.',
+            'photos.*.image'             => 'All files must be images.',
+            'photos.*.mimes'             => 'Allowed formats: JPG, PNG, WEBP, GIF.',
+            'photos.*.max'               => 'Each photo must be under 8 MB.',
+            'consent_confirmed.required' => 'Please confirm the consent statement before uploading.',
+            'consent_confirmed.accepted' => 'Please confirm the consent statement before uploading.',
         ]);
 
         $showOnWelcome = $request->boolean('show_on_welcome', false);
+        $consentConfirmedAt = now();
         $count = 0;
 
         foreach ($request->file('photos') as $file) {
             $path = $file->store('pictures', 'public');
 
             $attributes = [
-                'user_id'         => Auth::id(),
-                'path'            => $path,
-                'thumbnail'       => $path,
-                'show_on_welcome' => $showOnWelcome,
+                'user_id'               => Auth::id(),
+                'path'                  => $path,
+                'thumbnail'             => $path,
+                'show_on_welcome'       => $showOnWelcome,
+                'consent_confirmed_at'  => $consentConfirmedAt,
             ];
 
             // Never blocks or fails the upload — ExifExtractor::extract()

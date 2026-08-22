@@ -87,6 +87,23 @@
                 </label>
             </div>
 
+            {{-- Consent attestation (required) --}}
+            <div class="mt-3 flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+                <input
+                    type="checkbox"
+                    id="consentConfirmed"
+                    name="consent_confirmed"
+                    value="1"
+                    required
+                    class="mt-0.5 w-4 h-4 accent-green-600 cursor-pointer"
+                >
+                <label for="consentConfirmed" class="text-sm text-gray-700 cursor-pointer select-none">
+                    I confirm this photo does not show identifiable individuals, or that any
+                    identifiable individuals shown have consented to appear in publicly shared
+                    project materials.
+                </label>
+            </div>
+
             {{-- Actions --}}
             <div class="mt-6 flex flex-col sm:flex-row gap-3">
                 <button

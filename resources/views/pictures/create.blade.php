@@ -9,6 +9,18 @@
         </div>
     @endif
 
+    {{-- Server-side validation errors --}}
+    @if($errors->any())
+        <div class="bg-red-50 border border-red-300 text-red-700 rounded-lg px-4 py-3 mb-4 max-w-md mx-auto text-sm">
+            <p class="font-semibold mb-1">Please fix the following:</p>
+            <ul class="list-disc list-inside space-y-0.5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <div class="flex justify-center items-center min-h-screen bg-gray-50 px-4">
         <form id="photoForm" action="{{ route('pictures.store') }}" method="POST" enctype="multipart/form-data"
               class="bg-white shadow-md rounded-lg p-6 w-full max-w-md space-y-4">
@@ -36,6 +48,23 @@
             <div>
                 <label class="block mb-2 text-sm font-medium text-gray-700">Captured Preview</label>
                 <canvas id="previewCanvas" class="hidden border rounded w-full"></canvas>
+            </div>
+
+            {{-- Consent attestation (required) --}}
+            <div class="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-3">
+                <input
+                    type="checkbox"
+                    id="consentConfirmed"
+                    name="consent_confirmed"
+                    value="1"
+                    required
+                    class="mt-0.5 w-4 h-4 accent-green-600 cursor-pointer"
+                >
+                <label for="consentConfirmed" class="text-xs text-gray-700 cursor-pointer select-none">
+                    I confirm this photo does not show identifiable individuals, or that any
+                    identifiable individuals shown have consented to appear in publicly shared
+                    project materials.
+                </label>
             </div>
 
             {{-- Submit --}}

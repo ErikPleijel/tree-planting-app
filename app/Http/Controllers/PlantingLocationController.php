@@ -9,6 +9,7 @@ use App\Services\MapMarkerService;
 use App\Services\ChangeLogger;
 use App\Services\GeoJsonPolygonValidator;
 use App\Services\GeometryFingerprint;
+use App\Services\PhotoLocationMarkerService;
 use Illuminate\Support\Facades\DB;
 
 class PlantingLocationController extends Controller
@@ -150,6 +151,7 @@ class PlantingLocationController extends Controller
     public function show(
         Request $request,
         MapMarkerService $markerService,
+        PhotoLocationMarkerService $photoMarkerService,
         PlantingLocation $plantingLocation
     ) {
         $filters = [
@@ -166,7 +168,13 @@ class PlantingLocationController extends Controller
             'treePlantings.statusRelation',
         ]);
 
-        return view('planting-locations.show', compact('plantingLocation', 'markers'));
+        // Now also rendered on the public page (PublicPlantingLocationController::show
+        // builds the same data via the same service) — a deliberate reversal of
+        // Phase 4's original admin-only stance for captured photo coordinates.
+        // See DECISIONS.md: "Photo capture-location markers now public on both pages".
+        $photos = $photoMarkerService->build($plantingLocation);
+
+        return view('planting-locations.show', compact('plantingLocation', 'markers', 'photos'));
     }
 
     /**

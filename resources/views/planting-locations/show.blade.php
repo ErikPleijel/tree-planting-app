@@ -64,6 +64,7 @@
             :zoom="10"
             :markers="$markers"
             :boundary="$plantingLocation->boundary_geojson"
+            :photos="$photos"
         />
     </div>
 
@@ -245,6 +246,14 @@
 
         <!-- Photos -->
         <h2 class="text-2xl font-semibold mt-12 mb-3 text-center">Photos</h2>
+
+        {{-- Moderation reminder for admins reviewing existing content — separate
+             from the upload-time consent checkbox, which covers new uploads only. --}}
+        <p class="max-w-2xl mx-auto text-center text-xs text-gray-500 mb-4 px-4">
+            Review uploaded photos regularly. Remove any that are irrelevant, inappropriate,
+            or show identifiable individuals without confirmed consent.
+        </p>
+
         <div class="flex flex-wrap justify-center items-center gap-3 mb-6 mt-4">
 
             {{-- Camera capture (existing) --}}

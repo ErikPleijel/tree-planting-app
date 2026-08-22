@@ -607,6 +607,7 @@
                     :zoom="10"
                     :markers="$markers"
                     :boundary="$plantingLocation->boundary_geojson"
+                    :photos="$photos"
                 />
             </div>
         </div>

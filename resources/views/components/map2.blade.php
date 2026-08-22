@@ -63,11 +63,65 @@
         @endforeach
         @endif
 
-        {{-- Boundary overlay: supplements the point marker(s) above, doesn't replace them --}}
+        {{-- Boundary overlay: supplements the point marker(s) above, doesn't replace them.
+             Matches the edit page's polygon appearance for visual consistency: '#3388ff'
+             is Leaflet's own core default Path color, and is also leaflet-draw@1.0.4's
+             shapeOptions.color default (confirmed against both libraries' source, the
+             same versions loaded via CDN in create/edit.blade.php) — so it's what the
+             edit page's boundary already renders as, whether freshly drawn or loaded from
+             an existing geometry. Also confirmed high-contrast against both basemaps. --}}
         @if(isset($boundary) && $boundary)
         L.geoJSON(@json($boundary), {
-            style: { color: '#2d6118', weight: 2, fillColor: '#4a9030', fillOpacity: 0.15 }
+            style: { color: '#3388ff', weight: 3, opacity: 1, fillColor: '#3388ff', fillOpacity: 0.2 }
         }).addTo(map);
+        @endif
+
+        {{-- Photo capture-location markers. Rendered on BOTH the admin show
+             page and the public /p/{public_code} page — see DECISIONS.md,
+             "Photo capture-location markers now public on both pages" — so
+             this only cares whether a non-empty :photos prop was passed,
+             not which controller built it. Red for a photo inside the
+             boundary, or where there's no boundary to check against at
+             all; violet for one flagged outside — a visually-distinct
+             color chosen specifically to be spottable across the whole map
+             at a glance, not just after clicking each marker individually. --}}
+        @if(isset($photos) && count($photos))
+        const photoIconInside = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        const photoIconOutside = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-violet.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        @foreach($photos as $photo)
+        L.marker([{{ $photo['lat'] }}, {{ $photo['lng'] }}], {
+            icon: {{ $photo['inside_boundary'] === false ? 'photoIconOutside' : 'photoIconInside' }}
+        }).bindPopup(`
+            <div style="min-width:150px">
+                <a href="{{ $photo['full_url'] }}" target="_blank" rel="noopener">
+                    <img src="{{ $photo['thumb_url'] }}" style="width:100%;max-width:150px;display:block;margin-bottom:6px;border-radius:4px;">
+                </a>
+                <div style="font-size:12px;">{{ $photo['captured_at'] ?? 'Unknown date' }}</div>
+                @if($photo['capture_source_label'])
+                <div style="font-size:12px;color:#555;">{{ $photo['capture_source_label'] }}</div>
+                @endif
+                @if($photo['inside_boundary'] === false)
+                <div style="font-size:12px;color:#b91c1c;font-weight:600;margin-top:6px;">⚠️ This photo's location is outside the mapped site boundary</div>
+                @endif
+            </div>
+        `).addTo(map);
+        @endforeach
         @endif
     });
 </script>

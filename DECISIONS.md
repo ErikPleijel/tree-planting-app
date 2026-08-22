@@ -10,6 +10,190 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-22 — Photo capture-location markers now public on both pages, plus an upload-time consent attestation
+
+**Context**
+
+This revises the decision recorded immediately below ("Photo
+capture-location markers + boundary flagging on the admin map"), made
+earlier the same day. After discussion, the scope changed: photo
+location markers are now shown on **both** the admin planting-location
+show page and the public `/p/{public_code}` page, not admin-only. This
+entry records that as an explicit, deliberate reversal — not a silent
+overwrite of the earlier call.
+
+**Decision: reverse Phase 4's admin-only stance for captured photo
+coordinates specifically, and add a consent mitigation that didn't
+exist when that stance was made**
+
+- **What's actually being reversed.** Phase 4 decided captured photo
+  coordinates (`captured_latitude`/`captured_longitude`) were an
+  incidental disclosure — unlike a project site's own coordinates, which
+  a contributor deliberately shares, a photo's location could
+  accidentally be a contributor's own home — and kept them out of every
+  public view. This reverses *that specific display-scope decision*,
+  and only that: Phase 4's EXIF extraction, device-geolocation capture,
+  and storage are completely unchanged. The data was always being
+  captured; what changes is where it's shown.
+- **Why the reversal is justified now, not just convenient.** Two things
+  are different from when Phase 4 made its original call: (1) visibility
+  of on-the-ground project activity is core to what this app is for —
+  the whole point of `/p/{public_code}` is letting an outside party see
+  real evidence a planting happened where it's claimed to have happened,
+  and photo location is exactly that kind of evidence; (2) admin already
+  reviews and moderates every photo before it stays up (delete/
+  toggle-welcome are both already-existing admin actions on every
+  photo), so there's an existing human review step this can lean on,
+  which is a materially different situation than "arbitrary uploads go
+  instantly and irreversibly public with zero review."
+- **A required consent attestation checkbox is the actual mitigation for
+  the risk Phase 4 originally flagged** — not a technical fix (no face
+  detection or blurring; out of scope, this is a human-judgment
+  approach), but a point where the uploader has to affirmatively assert
+  the photo doesn't show identifiable people, or that anyone shown has
+  consented to appear in public materials. `pictures.consent_confirmed_at`
+  is a new nullable timestamp, set from the request the moment the
+  checkbox is validated `accepted` — required on both the camera-capture
+  path (`PictureController::store`) and the file-upload path
+  (`PictureController::uploadStore`, one shared timestamp per batch,
+  since one checkbox covers the whole batch as one attestation act).
+  **Deliberately not backfilled or retroactively required**: existing
+  photos keep `consent_confirmed_at = null` forever and continue to
+  display and behave exactly as before — this is a going-forward
+  practice, not a retroactive gate that would either block legitimate
+  existing content or require fabricating an attestation that never
+  actually happened.
+- **A short, static moderation reminder was added to the admin show page
+  near the photos section** ("Review uploaded photos regularly. Remove
+  any that are irrelevant, inappropriate, or show identifiable
+  individuals without confirmed consent.") — deliberately separate from
+  the upload-time checkbox. The checkbox is a one-time attestation by
+  the uploader at the moment of upload; the reminder is an ongoing
+  prompt for whoever's reviewing the gallery later, since the checkbox
+  by itself doesn't guarantee an uploader's judgment was correct.
+- **Jurisdiction-agnostic language, deliberately.** This app is already
+  used across multiple African countries, each with its own data
+  protection framework and its own specific rules (e.g. around
+  biometric/facial data, or parental consent for minors). No UI text,
+  validation message, or code comment names a specific country's law —
+  the checkbox label and every related string state the underlying
+  principle (identifiable individuals need to have consented) without
+  claiming compliance with, or citing, any one jurisdiction's statute.
+  This app has no country-detection or jurisdiction-specific logic, and
+  this feature doesn't add any.
+- **Shared `PhotoLocationMarkerService`, not duplicated logic.** Both
+  `PlantingLocationController::show` and
+  `PublicPlantingLocationController::show` now need the identical
+  annotated-photo-list construction (filter to photos with captured
+  coordinates, compute the point-in-polygon inside/outside/null flag,
+  build the popup fields), so that logic moved into one service both
+  controllers call, rather than copy-pasting the same mapping in two
+  places.
+- **Point-in-polygon (`app/Services/PointInPolygon.php`) is unchanged
+  from the original design**: server-side PHP ray-casting against the
+  outer ring only (this app's boundary_geojson never has holes or
+  multiple rings), null — never a default false — when there's no
+  boundary to check against, and PHP rather than client-side JS
+  specifically because this codebase has no JS test infrastructure and
+  a PHP service can be unit-tested directly, including against a
+  concave polygon shape that actually exercises ray-casting rather than
+  a bounding-box approximation.
+- **Two marker colors, unchanged**: red (reusing the existing
+  `leaflet-color-markers` icon set) for a photo inside the boundary or
+  where there's no boundary to check against; violet for one flagged
+  outside — visible across the whole map at a glance, not just after
+  clicking each marker.
+
+**Test suite note**
+
+The feature test that previously asserted the public page never exposes
+this data was replaced, not deleted silently — `tests/Feature/PhotoLocationBoundaryTest.php`
+carries an explicit comment at that point in the file explaining the
+assertion was correct for the *previous* version of this decision and
+has been intentionally inverted, so a future reader diffing test history
+doesn't mistake it for an uncaught privacy regression.
+
+**Reasoning**
+
+The core judgment call here is that "visible, but with a real consent
+step and existing human review" is a better tradeoff for this app's
+actual purpose than "hidden everywhere, with no mitigation because the
+data was never going to be shown." Recording this as an explicit
+reversal — rather than silently treating the current scope as if it
+were always the plan — keeps this log doing its job: a future reader
+should be able to see that Phase 4 made one call, and this decision
+deliberately made a different one for a stated reason, not that the
+project simply drifted.
+
+---
+
+## 2026-08-22 — Photo capture-location markers + boundary flagging on the admin map (standalone improvement, not a roadmap phase)
+
+**Context**
+
+Builds on two existing pieces without changing either: Phase 4's
+`Picture.captured_latitude`/`captured_longitude`/`captured_at`/
+`capture_source` (captured but, until now, never surfaced anywhere) and
+Phase 5's `PlantingLocation.boundary_geojson`. The goal is to make it
+visible at a glance, on the admin map, when a photo's captured location
+doesn't actually fall within the site's mapped boundary — e.g. a photo
+uploaded from off-site, or a location whose EXIF/GPS is unreliable.
+
+**Decision: admin-only, enforced by never building the data for the public path**
+
+- **This extends Phase 4's own privacy rationale, not a new judgment
+  call.** Phase 4 already decided captured photo coordinates are an
+  incidental disclosure (could be a contributor's own home) and kept
+  them out of every public view. Rendering them as map markers is a much
+  more visible form of exposure than a hidden column ever was, so the
+  same boundary applies with more force, not less.
+- **The enforcement point is `PlantingLocationController::show()`
+  building the annotated `$photos` list and passing it to `<x-map2>`
+  — `PublicPlantingLocationController::show()` was read, confirmed, and
+  left completely untouched.** `map2.blade.php`'s new marker/popup block
+  is gated on `isset($photos) && count($photos)`, so the public page
+  (which never sets that prop) renders exactly as it did before this
+  change — not a hidden flag that could be flipped, but data that
+  genuinely never leaves the admin controller. A feature test asserts
+  the public page's own view data has no `photos` key at all, and that
+  the rendered HTML contains neither the raw captured coordinates nor
+  any of `captured_latitude`/`captured_longitude`/`inside_boundary`/the
+  warning copy — a regression guard against this being added to the
+  public view by mistake later.
+- **Point-in-polygon runs server-side in PHP (`app/Services/PointInPolygon.php`),
+  not client-side JS.** This codebase has no JS test infrastructure
+  (confirmed again during the Mapbox toggle work) — a PHP service is
+  directly unit-testable with Pest, including against a deliberately
+  non-rectangular (concave, L-shaped) polygon to actually exercise
+  ray-casting rather than a simpler bounding-box approximation a
+  rectangle-only test could pass by accident. It also means the
+  inside/outside flag ships to the browser as a plain boolean already
+  computed, not geometry the client has to re-derive.
+- **`null` means "no boundary to check against," never a default
+  `false`.** A location with no `boundary_geojson` yet has nothing to
+  violate — flagging every one of its photos "outside" would be a false
+  problem signal with no basis, so the flag is only ever computed when
+  `$plantingLocation->boundary_geojson !== null`.
+- **Two marker colors, not one plus a popup-only warning.** Red (reusing
+  the same `leaflet-color-markers` icon set already loaded for the
+  existing green location marker — no new asset) for a photo inside the
+  boundary, or where there's no boundary at all to check against; violet
+  for one flagged outside. The point is a problem being visible across
+  the whole map at a glance — a popup-only warning would require
+  clicking every marker individually to find it, which defeats the
+  purpose for a location with many photos.
+
+**Reasoning**
+
+This is scoped as a standalone read-only view over two phases' existing
+data, not a new phase — no schema change, no change to EXIF extraction
+or boundary editing. The only genuinely consequential decision is the
+privacy one, and it's deliberately enforced at the one place it actually
+matters (the public controller never building the data), verified by a
+test that would fail if that guarantee were ever broken.
+
+---
+
 ## 2026-08-22 — Mapbox satellite imagery toggle (standalone improvement, not a roadmap phase)
 
 **Context**
