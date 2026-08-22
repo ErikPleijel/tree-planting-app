@@ -10,6 +10,82 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-22 — Adjacent PlantingLocations on the show/edit maps (standalone improvement, not a roadmap phase)
+
+**Context**
+
+No proximity/nearby-location query existed anywhere in this codebase
+before this (confirmed during the Phase 5 investigation) — this is new
+logic, not wiring up something partial. The goal is purely visual
+orientation: when viewing or editing one location's map, see other
+locations nearby as dimmed context, without leaving the page.
+
+**Decision**
+
+- **Bounding box, not true circular distance.** "Adjacent" means falling
+  inside a plain latitude/longitude bounding box sized to roughly a
+  configured radius (default 10km) — not Haversine/great-circle distance,
+  and not any spatial database feature. Same reasoning as Phase 5's
+  choice to keep `boundary_geojson` a plain JSON column rather than adopt
+  spatial storage: nothing in this app has a confirmed need for precise
+  distance math, and a bounding box is enough for "show me what's roughly
+  nearby on a map I'm already looking at." The radius
+  (`NearbyLocationFinder::DEFAULT_RADIUS_KM`) and the result cap
+  (`NearbyLocationFinder::DEFAULT_LIMIT`, 50 — a defensive limit against a
+  dense cluster producing an unbounded response) are named class
+  constants, not magic numbers buried in the query, specifically so
+  they're easy to find and change later.
+- **Longitude delta accounts for latitude, guarded near the poles.**
+  Longitude degrees cover less ground distance further from the equator,
+  so the bounding box's longitude half-width is divided by
+  `cos(latitude in radians)`. That cosine is clamped away from zero
+  before dividing — not because this app's real-world data (Nigeria,
+  Kenya, and similar) will ever be anywhere near the poles, but because
+  an unguarded division there would silently blow up rather than fail
+  predictably, and guarding it costs nothing.
+- **Admin-only scope: `planting-locations/show.blade.php` (via
+  `map2.blade.php`'s new `:neighbors` prop) and
+  `planting-locations/edit.blade.php` (its own separate inline Leaflet
+  init) only.** Not `create.blade.php` (no existing location to be
+  "adjacent" to yet), and deliberately not the public page —
+  `PublicPlantingLocationController` was not touched, so this data is
+  simply never built or passed there, the same enforcement pattern
+  already established for the photo-consent-checkbox admin/public split.
+- **Minimal data per neighbor: id, name, latitude, longitude,
+  boundary_geojson — nothing else.** No status, division, comment, or
+  contributor data crosses into the neighbor list, even though all of it
+  is already visible elsewhere to the same admin viewer — the point is
+  "here's roughly what else is nearby," not a second copy of that
+  location's own detail page.
+- **Visually distinct from the current location's own styling either
+  way it currently looks.** The current location's own boundary style
+  was changed by a separate, earlier task the same day (from a dark
+  green to `#3388ff`, matching the edit page's Leaflet.draw color) — this
+  work re-read `map2.blade.php`'s actual current state rather than
+  assuming the color from memory, and picked a gray
+  (`#9ca3af`, thin weight, low/no fill) that's distinct from that blue,
+  from the green "this location" marker, and from the red/violet photo
+  markers layered on the same map. Neighbor markers reuse the existing
+  `leaflet-color-markers` grey variant — no new asset. Popups are just
+  the neighbor's name, linked to its own admin show page.
+- **`edit.blade.php` duplicates map2's neighbor-rendering logic rather
+  than sharing it**, consistent with how this file already duplicates
+  (rather than reuses) map2's OSM/satellite-toggle setup from the
+  earlier Mapbox task — this file has never shared Leaflet
+  initialization with the `map2` component, and this doesn't change that
+  existing pattern.
+
+**Reasoning**
+
+Like the two entries immediately above this one, this is scoped as a
+standalone, additive UI improvement rather than a roadmap phase — no
+schema change, and nothing about an existing location's own data or
+rendering is touched. The bounding-box approach mirrors Phase 5's own
+precedent for not reaching for spatial-database machinery until a real
+need for precise distance math actually exists.
+
+---
+
 ## 2026-08-22 — Photo capture-location markers now public on both pages, plus an upload-time consent attestation
 
 **Context**

@@ -123,5 +123,39 @@
         `).addTo(map);
         @endforeach
         @endif
+
+        {{-- Adjacent PlantingLocations (dimmed context, not the current
+             location). Admin-only — only ever present when the caller
+             passes a non-empty :neighbors prop (the public page never
+             does). Gray marker (kept distinct from the current location's
+             own green marker); boundary uses the same blue/fill as the
+             current location's own '#3388ff' boundary above, but with a
+             faint stroke opacity so it reads as background context rather
+             than the shape being edited. Popup is just the neighbor's
+             name, linked to its own show page. --}}
+        @if(isset($neighbors) && count($neighbors))
+        const neighborIcon = L.icon({
+            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        @foreach($neighbors as $neighbor)
+        L.marker([{{ $neighbor['latitude'] }}, {{ $neighbor['longitude'] }}], {
+            icon: neighborIcon
+        }).bindPopup(`<a href="{{ route('planting-locations.show', $neighbor['id']) }}">{{ $neighbor['location'] }}</a>`)
+          .addTo(map);
+
+        @if(!empty($neighbor['boundary_geojson']))
+        L.geoJSON(@json($neighbor['boundary_geojson']), {
+            style: { color: '#3388ff', weight: 2.5, opacity: 0.35, fillColor: '#3388ff', fillOpacity: 0.2 }
+        }).bindPopup(`<a href="{{ route('planting-locations.show', $neighbor['id']) }}">{{ $neighbor['location'] }}</a>`)
+          .addTo(map);
+        @endif
+        @endforeach
+        @endif
     });
 </script>

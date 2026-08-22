@@ -65,6 +65,7 @@
             :markers="$markers"
             :boundary="$plantingLocation->boundary_geojson"
             :photos="$photos"
+            :neighbors="$neighbors"
         />
     </div>
 

@@ -227,6 +227,65 @@
             marker = L.marker([lat, lng]).addTo(map);
 
             initBoundaryDrawing();
+            renderNeighbors();
+        }
+
+        {{-- Adjacent PlantingLocations (dimmed context, not the current
+             location) — admin-only, this edit page and the show page's
+             map2.blade.php only, not create.blade.php or the public page.
+             This file already duplicates its own Leaflet setup rather than
+             sharing map2.blade.php's, so this mirrors that same pattern
+             rather than reusing map2's rendering code. --}}
+        @php
+            $neighborsForJs = $neighbors->map(fn ($n) => [
+                'id'               => $n->id,
+                'location'         => $n->location,
+                'latitude'         => $n->latitude,
+                'longitude'        => $n->longitude,
+                'boundary_geojson' => $n->boundary_geojson,
+                'url'              => route('planting-locations.show', $n->id),
+            ]);
+        @endphp
+        const neighbors = @json($neighborsForJs);
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function renderNeighbors() {
+            if (!neighbors || neighbors.length === 0) {
+                return;
+            }
+
+            const neighborIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-grey.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            neighbors.forEach(function (neighbor) {
+                const popupHtml = '<a href="' + neighbor.url + '">' + escapeHtml(neighbor.location) + '</a>';
+
+                L.marker([neighbor.latitude, neighbor.longitude], { icon: neighborIcon })
+                    .bindPopup(popupHtml)
+                    .addTo(map);
+
+                // Same blue/fill as the current location's own boundary
+                // style ('#3388ff', matched to Leaflet.draw's default
+                // elsewhere on this page), but a faint stroke opacity so it
+                // reads as background context rather than the shape being
+                // edited.
+                if (neighbor.boundary_geojson) {
+                    L.geoJSON(neighbor.boundary_geojson, {
+                        style: { color: '#3388ff', weight: 2.5, opacity: 0.35, fillColor: '#3388ff', fillOpacity: 0.2 }
+                    }).bindPopup(popupHtml).addTo(map);
+                }
+            });
         }
 
         // Exactly one polygon per location: CREATED clears any prior

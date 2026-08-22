@@ -9,6 +9,7 @@ use App\Services\MapMarkerService;
 use App\Services\ChangeLogger;
 use App\Services\GeoJsonPolygonValidator;
 use App\Services\GeometryFingerprint;
+use App\Services\NearbyLocationFinder;
 use App\Services\PhotoLocationMarkerService;
 use Illuminate\Support\Facades\DB;
 
@@ -152,6 +153,7 @@ class PlantingLocationController extends Controller
         Request $request,
         MapMarkerService $markerService,
         PhotoLocationMarkerService $photoMarkerService,
+        NearbyLocationFinder $nearbyLocationFinder,
         PlantingLocation $plantingLocation
     ) {
         $filters = [
@@ -174,18 +176,24 @@ class PlantingLocationController extends Controller
         // See DECISIONS.md: "Photo capture-location markers now public on both pages".
         $photos = $photoMarkerService->build($plantingLocation);
 
-        return view('planting-locations.show', compact('plantingLocation', 'markers', 'photos'));
+        // Admin-only context, shown on this page and the edit form only —
+        // not the public page. See DECISIONS.md: "Adjacent PlantingLocations
+        // on the show/edit maps".
+        $neighbors = $nearbyLocationFinder->find($plantingLocation);
+
+        return view('planting-locations.show', compact('plantingLocation', 'markers', 'photos', 'neighbors'));
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(PlantingLocation $plantingLocation)
+    public function edit(NearbyLocationFinder $nearbyLocationFinder, PlantingLocation $plantingLocation)
     {
         return view('planting-locations.edit', [
             'plantingLocation' => $plantingLocation,
             'divisions'        => \App\Models\Division::all(),
             'statuses'         => \App\Models\PlantingLocationStatus::all(),
+            'neighbors'        => $nearbyLocationFinder->find($plantingLocation),
         ]);
     }
 
