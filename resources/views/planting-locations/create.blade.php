@@ -2,7 +2,7 @@
     <div class="max-w-2xl mx-auto mt-10 p-6 bg-white shadow-md rounded-lg">
         <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">Add Planting Location</h1>
 
-        <form method="POST" action="{{ route('planting-locations.store') }}" class="space-y-4">
+        <form id="add-location-form" method="POST" action="{{ route('planting-locations.store') }}" class="space-y-4">
             @csrf
 
             <!-- Location Name -->
@@ -97,7 +97,66 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     <span class="font-semibold">Map Preview</span>
                 </label>
-                <div id="map" class="rounded border" style="height: 300px;"></div>
+
+                {{-- relative wrapper so the fixed crosshair can be absolutely
+                     positioned over the map during "adjust position" mode --}}
+                <div class="relative">
+                    <div id="map" class="rounded border" style="height: 459px;"></div>
+
+                    {{-- Fixed pin, always dead-center over the map. Only
+                         shown while positioningMode is active. The tip of
+                         the pin (not its center) marks the true coordinate,
+                         so it's anchored bottom-center via the transform. --}}
+                    <div id="position-crosshair"
+                         class="pointer-events-none"
+                         style="display: none; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%); z-index: 1000; font-size: 2.25rem; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.45));">
+                        📍
+                    </div>
+                </div>
+
+                {{-- Out-of-bounds warning for the live "my position" tracker.
+                     Only shown while tracking is active and the live fix
+                     falls outside the current map view. --}}
+                <div id="my-position-warning"
+                     style="display: none; align-items: center; justify-content: space-between; gap: 0.5rem;"
+                     class="mt-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                    <span id="my-position-warning-text"></span>
+                    <button type="button" onclick="centerMapOnMyPosition()"
+                            class="text-indigo-600 hover:text-indigo-800 underline whitespace-nowrap">
+                        Center map here
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-end gap-2 mt-2">
+                    <button type="button" id="my-position-btn" onclick="toggleMyPositionTracking()"
+                            class="bg-indigo-500 text-white px-4 py-2 text-sm rounded hover:bg-indigo-600 transition-colors">
+                        🧭 Show my position
+                    </button>
+
+                    {{-- Only shown once a boundary polygon exists — see updateCenterButtonVisibility() --}}
+                    <button type="button" id="center-in-polygon-btn" onclick="centerMarkerInPolygon()"
+                            style="display: none;"
+                            class="bg-gray-500 text-white px-4 py-2 text-sm rounded hover:bg-gray-600 transition-colors">
+                        ⬠ Center marker in polygon
+                    </button>
+
+                    <button type="button" id="adjust-position-btn" onclick="enterPositionMode()"
+                            class="bg-blue-500 text-white px-4 py-2 text-sm rounded hover:bg-blue-600 transition-colors">
+                        🎯 Adjust marker position
+                    </button>
+
+                    <div id="positioning-controls" style="display: none;" class="items-center gap-2">
+                        <span class="text-xs text-gray-500">Pan the map so the pin marks the spot, then:</span>
+                        <button type="button" onclick="confirmPosition()"
+                                class="bg-green-600 text-white px-4 py-2 text-sm rounded hover:bg-green-700 transition-colors">
+                            ✅ Confirm position
+                        </button>
+                        <button type="button" onclick="cancelPositionMode()"
+                                class="border border-gray-300 text-gray-700 px-4 py-2 text-sm rounded hover:bg-gray-50 transition-colors">
+                            ✖ Cancel
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- 🔷 Site Boundary (optional) -->
@@ -163,7 +222,7 @@
 
             <!-- Buttons -->
             <div class="flex justify-end space-x-2 pt-4">
-                <button type="submit"
+                <button type="submit" id="submit-btn"
                         class="bg-primary text-white px-6 py-3 rounded hover:bg-green-700 transition-colors">
                     Save Location
                 </button>
@@ -193,6 +252,22 @@
         // the input listener below can tell "GPS button set this" apart
         // from a genuine keystroke and not stomp on the method it just set.
         let settingViaGps = false;
+
+        // "Adjust marker position" mode state. While active, the real
+        // marker is hidden and a fixed crosshair sits at the map's visual
+        // center; panning the map moves the effective point. Confirming
+        // reads map.getCenter() and writes it back to the marker/inputs;
+        // cancelling restores whatever was there before the mode started.
+        let positioningMode = false;
+        let prePositionState = null;
+
+        // "Show my position" live tracker state. myPositionMarker is a
+        // separate marker from the location `marker` above and from the
+        // #position-crosshair element — purely informational, never
+        // written back to the latitude/longitude inputs or capture_method.
+        let myPositionWatchId = null;
+        let myPositionMarker = null;
+        let lastMyPosition = null;
 
         function initMap() {
             const lat = parseFloat(document.getElementById('latitude').value) || 9.0820;
@@ -250,10 +325,20 @@
                 drawnItems.clearLayers();
                 drawnItems.addLayer(event.layer);
                 syncBoundaryField();
+                updateCenterButtonVisibility();
             });
 
-            map.on(L.Draw.Event.EDITED, syncBoundaryField);
-            map.on(L.Draw.Event.DELETED, syncBoundaryField);
+            map.on(L.Draw.Event.EDITED, function () {
+                syncBoundaryField();
+                updateCenterButtonVisibility();
+            });
+
+            map.on(L.Draw.Event.DELETED, function () {
+                syncBoundaryField();
+                updateCenterButtonVisibility();
+            });
+
+            updateCenterButtonVisibility();
         }
 
         function syncBoundaryField() {
@@ -271,6 +356,7 @@
         function clearBoundary() {
             drawnItems.clearLayers();
             document.getElementById('boundary_geojson').value = '';
+            updateCenterButtonVisibility();
         }
 
         function initQuill() {
@@ -340,11 +426,307 @@
             updateMapMarker();
         }
 
+        // ------------------------------------------------------------
+        // Feature 1: "Adjust marker position" — pan-the-map-under-a-
+        // fixed-pin flow, similar to Google Maps' pin-drop UX.
+        // ------------------------------------------------------------
+
+        function enterPositionMode() {
+            if (positioningMode) return;
+            positioningMode = true;
+
+            prePositionState = {
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value,
+                captureMethod: document.getElementById('capture_method').value,
+                gpsAccuracy: document.getElementById('gps_accuracy_meters').value,
+            };
+
+            marker.setOpacity(0);
+            document.getElementById('position-crosshair').style.display = 'block';
+            document.getElementById('adjust-position-btn').style.display = 'none';
+            document.getElementById('positioning-controls').style.display = 'flex';
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            // Start the pin exactly where the real marker currently is,
+            // so "adjust" begins from the existing position rather than
+            // wherever the map happened to be scrolled/zoomed to.
+            map.panTo(marker.getLatLng());
+        }
+
+        function confirmPosition() {
+            const center = map.getCenter();
+
+            document.getElementById('latitude').value = center.lat.toFixed(6);
+            document.getElementById('longitude').value = center.lng.toFixed(6);
+            document.getElementById('capture_method').value = 'map_center_adjust';
+            document.getElementById('gps_accuracy_meters').value = '';
+
+            marker.setLatLng(center);
+            exitPositionMode();
+        }
+
+        function cancelPositionMode() {
+            if (prePositionState) {
+                document.getElementById('latitude').value = prePositionState.latitude;
+                document.getElementById('longitude').value = prePositionState.longitude;
+                document.getElementById('capture_method').value = prePositionState.captureMethod;
+                document.getElementById('gps_accuracy_meters').value = prePositionState.gpsAccuracy;
+
+                const lat = parseFloat(prePositionState.latitude);
+                const lng = parseFloat(prePositionState.longitude);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    marker.setLatLng([lat, lng]);
+                }
+            }
+
+            exitPositionMode();
+        }
+
+        function exitPositionMode() {
+            positioningMode = false;
+            prePositionState = null;
+
+            marker.setOpacity(1);
+            document.getElementById('position-crosshair').style.display = 'none';
+            document.getElementById('adjust-position-btn').style.display = '';
+            document.getElementById('positioning-controls').style.display = 'none';
+
+            const submitBtn = document.getElementById('submit-btn');
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+
+        // ------------------------------------------------------------
+        // Feature 2: "Center marker in polygon" — moves the marker to
+        // the drawn boundary's centroid.
+        // ------------------------------------------------------------
+
+        // Area-weighted centroid (shoelace formula), using lng as x and
+        // lat as y. Returns null for a degenerate (zero-area) ring, e.g.
+        // a polygon accidentally drawn as a straight line.
+        function polygonCentroid(latlngs) {
+            let area = 0, cx = 0, cy = 0;
+            const n = latlngs.length;
+
+            for (let i = 0; i < n; i++) {
+                const p1 = latlngs[i];
+                const p2 = latlngs[(i + 1) % n];
+                const cross = (p1.lng * p2.lat) - (p2.lng * p1.lat);
+                area += cross;
+                cx += (p1.lng + p2.lng) * cross;
+                cy += (p1.lat + p2.lat) * cross;
+            }
+
+            area = area / 2;
+            if (Math.abs(area) < 1e-12) {
+                return null;
+            }
+
+            return L.latLng(cy / (6 * area), cx / (6 * area));
+        }
+
+        // Ray-casting point-in-polygon test. Used to guard against the
+        // area centroid landing outside a concave (non-convex) boundary.
+        function isPointInPolygon(point, latlngs) {
+            let inside = false;
+            const n = latlngs.length;
+
+            for (let i = 0, j = n - 1; i < n; j = i++) {
+                const xi = latlngs[i].lng, yi = latlngs[i].lat;
+                const xj = latlngs[j].lng, yj = latlngs[j].lat;
+
+                const intersects = ((yi > point.lat) !== (yj > point.lat)) &&
+                    (point.lng < (xj - xi) * (point.lat - yi) / (yj - yi) + xi);
+
+                if (intersects) inside = !inside;
+            }
+
+            return inside;
+        }
+
+        function centerMarkerInPolygon() {
+            const layers = drawnItems.getLayers();
+            if (layers.length === 0) {
+                return;
+            }
+
+            const latlngs = layers[0].getLatLngs()[0]; // outer ring
+            let center = polygonCentroid(latlngs);
+
+            // Concave shapes can push the true area centroid outside the
+            // boundary. Falling back to the bounding-box center isn't
+            // guaranteed to land inside either, but for the simple site
+            // boundaries this tool is used for it reliably ends up closer
+            // to "the middle" than leaving an out-of-shape point in place.
+            if (!center || !isPointInPolygon(center, latlngs)) {
+                center = layers[0].getBounds().getCenter();
+            }
+
+            document.getElementById('latitude').value = center.lat.toFixed(6);
+            document.getElementById('longitude').value = center.lng.toFixed(6);
+            document.getElementById('capture_method').value = 'polygon_centroid';
+            document.getElementById('gps_accuracy_meters').value = '';
+
+            marker.setLatLng(center);
+            map.panTo(center);
+        }
+
+        function updateCenterButtonVisibility() {
+            const btn = document.getElementById('center-in-polygon-btn');
+            if (!btn) return;
+
+            const hasBoundary = drawnItems && drawnItems.getLayers().length > 0;
+            btn.style.display = hasBoundary ? 'inline-block' : 'none';
+        }
+
+        // ------------------------------------------------------------
+        // Feature 3: "Show my position" — live GPS tracker for walking
+        // a site boundary outdoors. Uses watchPosition (not
+        // getCurrentPosition) so the marker updates continuously. Never
+        // auto-pans the map except via the explicit "Center map here"
+        // link in the out-of-bounds warning, and never touches the
+        // latitude/longitude inputs or capture_method — it's read-only
+        // display. The marker is non-interactive so it can't swallow
+        // map clicks that Leaflet.draw relies on for drawing/editing.
+        // ------------------------------------------------------------
+
+        function myPositionIcon() {
+            return L.divIcon({
+                className: 'my-position-marker',
+                html: '<div style="width:14px;height:14px;border-radius:50%;background:#2563eb;border:2px solid #fff;box-shadow:0 0 0 2px #2563eb,0 1px 3px rgba(0,0,0,0.5);"></div>',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7],
+            });
+        }
+
+        function toggleMyPositionTracking() {
+            if (myPositionWatchId !== null) {
+                stopMyPositionTracking();
+            } else {
+                startMyPositionTracking();
+            }
+        }
+
+        function startMyPositionTracking() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            document.getElementById('my-position-btn').textContent = '⏹ Stop tracking';
+
+            myPositionWatchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const latlng = L.latLng(position.coords.latitude, position.coords.longitude);
+
+                    if (!myPositionMarker) {
+                        myPositionMarker = L.marker(latlng, {
+                            icon: myPositionIcon(),
+                            interactive: false,
+                            keyboard: false,
+                        }).addTo(map);
+                    } else {
+                        myPositionMarker.setLatLng(latlng);
+                    }
+
+                    updateMyPositionWarning(latlng);
+                },
+                () => {
+                    stopMyPositionTracking();
+                    alert("Unable to track your location.");
+                },
+                { enableHighAccuracy: true }
+            );
+        }
+
+        function stopMyPositionTracking() {
+            if (myPositionWatchId !== null) {
+                navigator.geolocation.clearWatch(myPositionWatchId);
+                myPositionWatchId = null;
+            }
+
+            if (myPositionMarker) {
+                map.removeLayer(myPositionMarker);
+                myPositionMarker = null;
+            }
+
+            hideMyPositionWarning();
+
+            const btn = document.getElementById('my-position-btn');
+            if (btn) btn.textContent = '🧭 Show my position';
+        }
+
+        function updateMyPositionWarning(latlng) {
+            if (map.getBounds().contains(latlng)) {
+                hideMyPositionWarning();
+                return;
+            }
+
+            const center = map.getCenter();
+            const distance = haversineDistanceMeters(center, latlng);
+            const direction = compassDirection(center, latlng);
+
+            const distanceLabel = distance < 1000
+                ? (Math.round(distance / 10) * 10) + ' m'
+                : (distance / 1000).toFixed(1) + ' km';
+
+            lastMyPosition = latlng;
+
+            document.getElementById('my-position-warning-text').textContent =
+                'Your position is ' + distanceLabel + ' ' + direction + ' of map area.';
+            document.getElementById('my-position-warning').style.display = 'flex';
+        }
+
+        function hideMyPositionWarning() {
+            document.getElementById('my-position-warning').style.display = 'none';
+            lastMyPosition = null;
+        }
+
+        // The only place in this feature that moves the map — an
+        // explicit user action from the warning, never automatic.
+        function centerMapOnMyPosition() {
+            if (lastMyPosition) {
+                map.panTo(lastMyPosition);
+            }
+        }
+
+        function haversineDistanceMeters(a, b) {
+            const R = 6371000;
+            const toRad = (deg) => deg * Math.PI / 180;
+            const dLat = toRad(b.lat - a.lat);
+            const dLng = toRad(b.lng - a.lng);
+            const lat1 = toRad(a.lat);
+            const lat2 = toRad(b.lat);
+
+            const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+            return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+        }
+
+        function compassDirection(from, to) {
+            const toRad = (deg) => deg * Math.PI / 180;
+            const toDeg = (rad) => rad * 180 / Math.PI;
+
+            const lat1 = toRad(from.lat);
+            const lat2 = toRad(to.lat);
+            const dLng = toRad(to.lng - from.lng);
+
+            const y = Math.sin(dLng) * Math.cos(lat2);
+            const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+            const bearing = (toDeg(Math.atan2(y, x)) + 360) % 360;
+
+            const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+            return directions[Math.round(bearing / 45) % 8];
+        }
+
         window.addEventListener('DOMContentLoaded', () => {
             initMap();
             initQuill();
 
-            document.querySelector('form').addEventListener('submit', function () {
+            document.getElementById('add-location-form').addEventListener('submit', function () {
                 document.getElementById('contributors-input').value = quill.root.innerHTML;
             });
 

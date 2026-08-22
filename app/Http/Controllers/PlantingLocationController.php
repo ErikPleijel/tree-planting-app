@@ -82,7 +82,7 @@ class PlantingLocationController extends Controller
             'contributors'        => 'nullable|string',
             'latitude'            => 'nullable|numeric|between:-90,90',
             'longitude'           => 'nullable|numeric|between:-180,180',
-            'capture_method'      => 'nullable|in:manual,gps_button',
+            'capture_method'      => 'nullable|in:manual,gps_button,map_center_adjust,polygon_centroid',
             'gps_accuracy_meters' => 'nullable|numeric|min:0',
         ]);
 
@@ -215,7 +215,7 @@ class PlantingLocationController extends Controller
             'contributors'        => 'nullable|string',
             'latitude'            => 'nullable|numeric|between:-90,90',
             'longitude'           => 'nullable|numeric|between:-180,180',
-            'capture_method'      => 'nullable|in:manual,gps_button',
+            'capture_method'      => 'nullable|in:manual,gps_button,map_center_adjust,polygon_centroid',
             'gps_accuracy_meters' => 'nullable|numeric|min:0',
         ]);
 

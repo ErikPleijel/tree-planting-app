@@ -61,7 +61,7 @@
         <x-map2
             lat="{{ $plantingLocation->latitude }}"
             lng="{{ $plantingLocation->longitude }}"
-            :zoom="10"
+            :zoom="12"
             :markers="$markers"
             :boundary="$plantingLocation->boundary_geojson"
             :photos="$photos"
