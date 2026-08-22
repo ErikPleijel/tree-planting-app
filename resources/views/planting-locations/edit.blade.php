@@ -209,9 +209,20 @@
 
             map = L.map('map').setView([lat, lng], 13);
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors'
             }).addTo(map);
+
+            if (window.mapboxAccessToken) {
+                const satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}{r}?access_token=' + window.mapboxAccessToken, {
+                    attribution: '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                    tileSize: 512,
+                    zoomOffset: -1,
+                    maxZoom: 20
+                });
+
+                L.control.layers({ 'Street': osmLayer, 'Satellite': satelliteLayer }).addTo(map);
+            }
 
             marker = L.marker([lat, lng]).addTo(map);
 

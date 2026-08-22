@@ -10,6 +10,156 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-22 — Mapbox satellite imagery toggle (standalone improvement, not a roadmap phase)
+
+**Context**
+
+Not part of the numbered MRV roadmap — a UI/tooling improvement so a
+boundary polygon (Phase 5's Leaflet.draw feature, on the create/edit
+forms) can be drawn against visible terrain/tree cover instead of a
+blank OpenStreetMap street layer. Also available on the single-location
+map used by the admin show page and the public `/p/{public_code}` page
+(`map2.blade.php`). Deliberately not extended to the multi-marker
+overview map (`map.blade.php`, homepage/stats) — that can be done later
+the same way if wanted.
+
+**Decision: Mapbox raster tiles via plain `L.tileLayer`, token-gated, no new dependency**
+
+- **Mapbox over Esri or Google.** Esri's terms/free-tier imagery access
+  are currently in flux/being migrated, making them an unstable base to
+  build on. Raw Google satellite tiles are prohibited by Google's ToS
+  without their full JS API plus billing — a materially bigger
+  integration than a single tile layer. Mapbox's raster tile terms are
+  clear and stable, and (per the investigation before implementing)
+  works through a plain `L.tileLayer` URL exactly like the existing OSM
+  layer — no new JS package (no `mapbox-gl`) needed.
+- **`satellite-streets-v12`, not plain `satellite-v9`** — imagery with a
+  road/label overlay, meaningfully more usable for on-the-ground site
+  work than unlabeled imagery alone.
+- **Graceful no-token fallback is the default, not an edge case.** No
+  `MAPBOX_ACCESS_TOKEN` existed in this project before this change.
+  `window.mapboxAccessToken` (set once from `config('services.mapbox.access_token')`)
+  gates both the satellite tile layer's construction and the
+  `L.control.layers` toggle — with no token, nothing beyond today's
+  OSM-only behavior is added: no empty control, no console error.
+- **Token exposure had to be adapted from the original single-injection
+  plan.** The plan was to inject `window.mapboxAccessToken` once in
+  `layouts/app.blade.php`, since Leaflet is already loaded there. That
+  works for the admin show page and the create/edit forms, but
+  `public/planting-locations/show.blade.php` (the `/p/{public_code}`
+  page) turned out to be a **standalone HTML document that does not
+  extend `layouts/app.blade.php`** — it loads Leaflet itself via
+  `map2.blade.php`'s own `@once` block. The token is therefore also set
+  inside that same `@once` block, so the public page is self-sufficient;
+  on the admin show page this runs redundantly alongside the layout's
+  own injection, which is harmless since both set the same value.
+- **Scope: `map2.blade.php` + create/edit forms only**, matching each
+  file's existing independent Leaflet init (create/edit still don't
+  reuse `map2.blade.php`, per the pre-existing structure flagged in the
+  Phase 5 investigation). The homepage/stats overview map
+  (`map.blade.php`) is untouched. The pre-existing redundant Leaflet CDN
+  loading across multiple files (also flagged in Phase 5) is unrelated
+  to this change and was not touched.
+
+**Reasoning**
+
+This is scoped as a standalone, additive UI change rather than a
+roadmap phase because it changes nothing about the data model or
+storage — it only gives the existing Phase 5 boundary-drawing tool a
+better visual reference to draw against, config-gated so its absence
+(no token) reproduces today's behavior exactly.
+
+---
+
+## 2026-08-21 — Phase 7: public GeoJSON/API export layer — investigated, deliberately deferred
+
+**Context**
+
+Phase 7 (the roadmap's final phase: a read-only public API/export layer
+exposing cohorts, measurements, and boundaries so an independent party
+can pull raw data and verify it directly) was investigated in full —
+current public exposure via `/p/{public_code}`, the deliberate
+non-exposure decisions made by Phases 1-6, existing API/routing
+infrastructure, rate limiting, pagination patterns, and data-shape
+options. No code changed as part of this investigation.
+
+**Decision: defer implementation**
+
+Every prior phase (1-6) changed internal app behavior only — a wrong
+call was fixable by another internal PR at any time, at zero external
+coordination cost. A public API is qualitatively different: once
+external tooling depends on a JSON shape, changing that shape breaks
+someone else's integration, with no way to even know who's affected.
+Building this speculatively, before a real external consumer exists to
+shape it against, risks guessing wrong on a decision that's expensive to
+reverse. Better to build it when an actual external party — an auditor,
+a certification body, a specific integration need — is asking for it,
+so the shape is driven by a real requirement instead of a guess.
+
+**Key findings preserved for whenever this is picked back up**
+
+1. **Non-exposure checklist, to re-check at implementation time:**
+   - `Picture.captured_latitude`/`captured_longitude`/`capture_source`
+     must **never** be exposed — Phase 4's documented privacy rationale
+     still applies (a photo's embedded location can be a contributor's
+     own home, not the project site).
+   - Individual staff/volunteer identity —
+     `TreePlantingMeasurement.verified_by_user_id`, any other `*.user_id`
+     field, `TreePlanting.status_updated_by` — has never been made
+     public anywhere in this app and needs its own deliberate decision,
+     not a default. This is a different kind of disclosure than
+     `Contributor.name` (an organization's identity, already
+     deliberately made public by Phase 6). If measurement verification
+     status is ever exposed, the verified boolean and the identity of
+     who verified it are separable questions — the boolean carries the
+     credibility signal Phase 7 exists to provide; the name doesn't need
+     to come with it.
+   - Already safe to expose as JSON, because it's already fully public
+     today on `/p/{public_code}`, just not machine-readable: `TreeType`
+     reference fields, `boundary_geojson`, `Contributor` name/website,
+     planting counts/dates/species, location lat/lng.
+   - Not currently public at all — a genuinely new disclosure if a
+     future implementation includes it: `TreePlantingMeasurement` data
+     (survival/growth records) and biochar batch data. Neither has ever
+     reached a public-facing view.
+2. **No existing API scaffolding of any kind** — no `routes/api.php`, no
+   API middleware group registered in `bootstrap/app.php`, no
+   Sanctum or other API-auth package installed, no versioning convention
+   anywhere in the codebase.
+3. **No rate limiting exists on any public route today** —
+   `/p/{public_code}` can currently be hit at unlimited rate. This gap
+   predates Phase 7 and is independent of it, but a public bulk-export
+   API raises the stakes on fixing it.
+4. **Pagination is the only pattern used anywhere in this app** — every
+   list-producing controller paginates; there is zero precedent for an
+   unbounded "everything" response. At current scale a single
+   unpaginated response is borderline defensible, but introducing
+   pagination later as a breaking change to a live external contract is
+   worse than building it in from day one.
+5. **Two distinct likely consumers need genuinely different shapes** — a
+   GIS auditor wants one clean `PlantingLocation`-rooted GeoJSON
+   `FeatureCollection` (boundary as geometry, everything else nested in
+   `properties`); a data-analyst auditor wants flat, cross-location
+   tabular access (e.g. every `TreePlantingMeasurement` platform-wide)
+   that a nested-per-location response makes awkward. "One combined
+   endpoint" was not resolved as sufficient for both use cases — this is
+   an open question for the eventual implementation discussion, not
+   something this investigation settled.
+6. **If/when built: version from day one** (e.g. `/v1/...`), in a
+   separate `Api\` namespace rather than added onto
+   `PublicPlantingLocationController` (which serves Blade views — a
+   different response contract and different concerns). Low cost to do
+   now, expensive to retrofit onto a live external contract later.
+
+**Status**
+
+Not started. Revisit when a concrete external consumer or requirement —
+an auditor, a certification body, a specific integration request —
+makes the actual shape and access needs concrete, rather than building
+speculatively.
+
+---
+
 ## 2026-08-19 — Phase 6: structured Contributor model, attached to TreePlanting
 
 **Context**

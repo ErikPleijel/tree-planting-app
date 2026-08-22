@@ -2,6 +2,14 @@
 @once
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    {{-- This component is also rendered standalone on the public
+         /p/{public_code} page, which does not extend layouts/app.blade.php
+         and so never receives that layout's token injection — set it here
+         too so satellite view works there as well. Same value either way,
+         so re-setting it when app.blade.php already has is harmless. --}}
+    <script>
+        window.mapboxAccessToken = @json(config('services.mapbox.access_token'));
+    </script>
 @endonce
 
 {{-- Map container --}}
@@ -18,9 +26,20 @@
             maxWidth: 200
         }).addTo(map);
 
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        const osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
+
+        if (window.mapboxAccessToken) {
+            const satelliteLayer = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/{z}/{x}/{y}{r}?access_token=' + window.mapboxAccessToken, {
+                attribution: '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+                tileSize: 512,
+                zoomOffset: -1,
+                maxZoom: 20
+            });
+
+            L.control.layers({ 'Street': osmLayer, 'Satellite': satelliteLayer }).addTo(map);
+        }
 
         // Define single marker icon
         const defaultIcon = L.icon({
