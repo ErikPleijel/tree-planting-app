@@ -92,11 +92,6 @@
     <h2 class="text-2xl font-semibold mt-12 mb-3 text-center">Trees Planted</h2>
 
     <div class="flex justify-end max-w-4xl mx-auto mt-6 mb-2 gap-2">
-        @role('Admin|SuperAdmin')
-        <a href="{{ route('planting-locations.move-form', $plantingLocation) }}" class="bg-blue-600 text-white px-4 py-2 text-sm rounded hover:bg-blue-700 transition-colors">
-            Move Plantings
-        </a>
-        @endrole
         <a href="{{ route('tree-plantings.create', ['planting_location_id' => $plantingLocation->id]) }}" class="bg-primary text-white px-4 py-2 text-sm rounded hover:bg-green-700 transition-colors">
             ➕ New Tree Planting
         </a>

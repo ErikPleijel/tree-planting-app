@@ -10,6 +10,31 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-22 — Removed "Move Plantings" button from planting-locations show page
+
+Removed the "Move Plantings" link from `show.blade.php` (was lines 95-99) —
+the button and its `@role('Admin|SuperAdmin')` gate only, nothing else.
+The underlying feature is unchanged and fully intact:
+
+- Routes: `planting-locations.move-form` (GET) and `planting-locations.move`
+  (POST), `routes/web.php:71-75`, still role-gated (`auth`,
+  `role:Admin|SuperAdmin`) and reachable by direct URL.
+- Controller: `PlantingLocationController::moveForm()` / `::executeMove()`,
+  including the `ChangeLogger`-based audit trail (action `'moved'`) — this
+  is the same audit-trail integration documented earlier in this file as
+  part of the Phase 1 MRV design; unaffected by this change.
+- View: `move.blade.php`, unchanged.
+- Tests: `tests/Feature/ChangeLogTest.php:67-101`, hit the route directly
+  and don't depend on the button's markup; still pass.
+
+Reason: the move-plantings workflow wasn't proving necessary in day-to-day
+use, and the button was adding clutter to the show page's action row.
+Rather than delete the feature (routes, controller, audit logging, tests),
+it's kept intact and reachable by direct URL for an Admin/SuperAdmin who
+needs it — just no longer surfaced as a button. If it turns out to be
+unused entirely going forward, a future decision can revisit whether to
+remove it properly (route, controller, view, tests) rather than just hide it.
+
 ## 2026-08-22 — Adjacent PlantingLocations on the show/edit maps (standalone improvement, not a roadmap phase)
 
 **Context**
