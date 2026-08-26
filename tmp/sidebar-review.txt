@@ -1,0 +1,544 @@
+===== resources/views/layouts/app.blade.php =====
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="emerald">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+
+        {{-- Add favicon links here --}}
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+        {{-- For better compatibility across devices, you can add multiple formats --}}
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+
+        <title>ItacenMu.org Planting trees, growing futures in Afica.</title>
+        <!-- ... rest of your head section ... -->
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        {{-- Leaflet CSS --}}
+        <!-- Leaflet CSS -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+        <!-- Leaflet JS -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script>
+            window.mapboxAccessToken = @json(config('services.mapbox.access_token'));
+        </script>
+        <script src="//unpkg.com/alpinejs" defer></script>
+
+        <!-- Scripts -->
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </head>
+    <body class="font-sans antialiased">
+        @include('partials.header')
+
+        <div class="min-h-screen bg-gray-100 sm:flex sm:items-start">
+            @include('layouts.navigation')
+
+            <div class="flex-1 min-w-0">
+                <!-- Page Heading -->
+                @isset($header)
+                    <header class="bg-white shadow">
+                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endisset
+
+                <!-- Page Content -->
+                <main>
+                    {{ $slot }}
+                </main>
+            </div>
+        </div>
+
+        @include('partials.footer')
+    </body>
+</html>
+
+===== resources/views/layouts/navigation.blade.php =====
+{{--
+    Orchestrates two renderings of the same nav data (see
+    layouts/partials/nav-items.blade.php and layouts/partials/user-menu.blade.php):
+      - sm:+  a persistent vertical sidebar (<aside>), sticky while scrolling.
+      - <sm   a mobile top bar with a left-aligned hamburger that opens a
+              left-sliding off-canvas drawer.
+    x-data is scoped to this whole block so the hamburger button and the
+    drawer/backdrop share the same `open` state.
+--}}
+<div x-data="{ open: false }">
+    {{-- Mobile top bar: hamburger on the LEFT --}}
+    <div class="flex items-center h-14 px-4 bg-white border-b border-gray-100 sm:hidden">
+        <button @click="open = true" aria-label="Open navigation menu"
+                class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+            <svg class="h-7 w-7" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+    </div>
+
+    {{-- Desktop sidebar (sm:+), sticky for the height of the viewport --}}
+    <aside class="hidden sm:flex sm:flex-col sm:w-64 sm:shrink-0 sm:sticky sm:top-0 sm:h-screen sm:overflow-y-auto bg-white border-r border-gray-100 px-3 py-4">
+        <nav class="flex-1 space-y-1">
+            @include('layouts.partials.nav-items', ['linkComponent' => 'sidebar-link'])
+        </nav>
+
+        @include('layouts.partials.user-menu')
+    </aside>
+
+    {{-- Mobile off-canvas drawer + backdrop --}}
+    <div x-show="open" class="fixed inset-0 z-40 sm:hidden" style="display: none;" x-cloak>
+        <div x-show="open"
+             x-transition:enter="transition-opacity ease-linear duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-black/50"
+             @click="open = false"
+             style="display: none;">
+        </div>
+
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="-translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="-translate-x-full"
+             class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg flex flex-col px-3 py-4 overflow-y-auto"
+             style="display: none;">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <span class="font-semibold text-gray-700">Menu</span>
+                <button @click="open = false" aria-label="Close navigation menu"
+                        class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="flex-1 space-y-1" @click="open = false">
+                @include('layouts.partials.nav-items', ['linkComponent' => 'responsive-nav-link'])
+            </nav>
+
+            @include('layouts.partials.user-menu')
+        </div>
+    </div>
+</div>
+
+===== resources/views/layouts/partials/nav-items.blade.php =====
+{{--
+    Shared nav link list — included by both the desktop sidebar and the
+    mobile drawer in layouts/navigation.blade.php, so the two surfaces
+    can never drift out of sync on items, order, or role gating.
+
+    Expects a $linkComponent variable ('x-sidebar-link' or
+    'x-responsive-nav-link') naming which Blade component to render each
+    link with, since the two surfaces use different link styling.
+--}}
+<x-dynamic-component :component="$linkComponent" :href="route('home')" :active="request()->routeIs('home')">
+    HOME
+</x-dynamic-component>
+
+@role('Admin|SuperAdmin|Monitor|Grower')
+<x-dynamic-component :component="$linkComponent" :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+    Dashboard
+</x-dynamic-component>
+@endrole
+
+<x-dynamic-component :component="$linkComponent" :href="route('stats.map')" :active="request()->routeIs('stats.map')">
+    Map
+</x-dynamic-component>
+
+<x-dynamic-component :component="$linkComponent" :href="route('stats.stats1')" :active="request()->routeIs('stats.stats1')">
+    Statistics
+</x-dynamic-component>
+
+@role('Admin|SuperAdmin|Monitor|Grower')
+<x-dynamic-component :component="$linkComponent" :href="route('planting-locations.index')" :active="request()->routeIs('planting-locations.*')">
+    Locations
+</x-dynamic-component>
+@endrole
+
+@role('Admin|SuperAdmin|Monitor')
+<x-dynamic-component :component="$linkComponent" :href="route('tree-plantings.index')" :active="request()->routeIs('tree-plantings.*')">
+    Plantings
+</x-dynamic-component>
+@endrole
+
+@role('Admin|SuperAdmin|Monitor')
+<x-dynamic-component :component="$linkComponent" :href="route('inspections.index')" :active="request()->routeIs('inspections.*')">
+    Inspections
+</x-dynamic-component>
+@endrole
+
+<x-dynamic-component :component="$linkComponent" :href="route('tree-types.index')" :active="request()->routeIs('tree-types.*')">
+    Tree Types
+</x-dynamic-component>
+
+@role('Admin|SuperAdmin')
+<x-dynamic-component :component="$linkComponent" :href="route('users.report')" :active="request()->routeIs('users.report')">
+    Authorizations
+</x-dynamic-component>
+@endrole
+
+@auth
+<x-dynamic-component :component="$linkComponent" :href="route('team.index')" :active="request()->routeIs('team.index')">
+    The Team
+</x-dynamic-component>
+@endauth
+
+===== resources/views/layouts/partials/user-menu.blade.php =====
+{{--
+    Shared profile/role/logout footer — the single consolidated
+    implementation used by both the desktop sidebar and the mobile
+    drawer (previously two separate implementations: a dropdown on
+    desktop, an always-expanded block on mobile).
+--}}
+@auth
+    <div class="border-t border-gray-200 pt-4">
+        <div class="px-3">
+            <div class="font-medium text-sm text-gray-800">{{ Auth::user()->name }}</div>
+            <div class="font-medium text-sm mt-1">
+                @role('Admin|SuperAdmin|Monitor|Grower')
+                    <span class="bg-primary text-primary-content px-2 py-1 rounded inline-block">{{ Auth::user()->roles->first()->name }}</span>
+                @else
+                    <span class="bg-yellow-200 px-2 py-1 rounded inline-block">Unassigned</span>
+                @endrole
+            </div>
+        </div>
+
+        <div class="mt-3 space-y-1">
+            <x-sidebar-link :href="route('profile.edit')">
+                {{ __('Profile') }}
+            </x-sidebar-link>
+
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <x-sidebar-link :href="route('logout')"
+                                 onclick="event.preventDefault(); this.closest('form').submit();">
+                    {{ __('Log Out') }}
+                </x-sidebar-link>
+            </form>
+        </div>
+    </div>
+@else
+    <div class="border-t border-gray-200 pt-4 px-3 space-y-1">
+        <x-sidebar-link :href="route('login')">
+            {{ __('Log in') }}
+        </x-sidebar-link>
+        @if (Route::has('register'))
+            <x-sidebar-link :href="route('register')">
+                {{ __('Register') }}
+            </x-sidebar-link>
+        @endif
+    </div>
+@endauth
+
+===== resources/views/components/sidebar-link.blade.php =====
+@props(['active' => false])
+
+@php
+$classes = $active
+            ? 'flex items-center px-3 py-2 rounded-md text-sm font-medium bg-primary text-primary-content'
+            : 'flex items-center px-3 py-2 rounded-md text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition duration-150 ease-in-out';
+@endphp
+
+<a {{ $attributes->merge(['class' => $classes]) }}>
+    {{ $slot }}
+</a>
+
+===== resources/views/components/responsive-nav-link.blade.php =====
+@props(['active'])
+
+@php
+$classes = ($active ?? false)
+            ? 'block w-full ps-3 pe-4 py-2 border-l-4 border-primary text-start text-base font-medium text-primary bg-primary/10 focus:outline-none focus:text-primary focus:bg-primary/20 focus:border-primary transition duration-150 ease-in-out'
+            : 'block w-full ps-3 pe-4 py-2 border-l-4 border-transparent text-start text-base font-medium text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-300 focus:outline-none focus:text-gray-800 focus:bg-gray-50 focus:border-gray-300 transition duration-150 ease-in-out';
+@endphp
+
+<a {{ $attributes->merge(['class' => $classes]) }}>
+    {{ $slot }}
+</a>
+
+===== Full test suite run (composer run test) =====
+> @php artisan config:clear --ansi
+
+   INFO  Configuration cache cleared successfully.  
+
+> @php artisan test
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true                                                    0.08s  
+
+   PASS  Tests\Unit\ExifExtractorDmsConversionTest
+  ✓ it converts a Southern-hemisphere DMS coordinate to a negative deci… 0.03s  
+  ✓ it converts a Western-hemisphere DMS coordinate to a negative decimal degree
+  ✓ it converts a Northern/Eastern DMS coordinate to a positive decimal degree
+  ✓ it returns null when the DMS array has fewer than three components
+
+   PASS  Tests\Unit\GeometryFingerprintTest
+  ✓ it produces the same hash for two differently-formatted representat… 0.01s  
+  ✓ it produces a different hash when even one vertex differs            0.01s  
+  ✓ it counts vertices excluding the duplicate closing point
+  ✓ it computes a bounding box matching the outer ring extents
+
+   PASS  Tests\Unit\PointInPolygonTest
+  ✓ it returns true for a point clearly inside a simple rectangular pol… 0.01s  
+  ✓ it returns false for a point clearly outside a simple rectangular polygon
+  ✓ it resolves a point inside the notch of a concave L-shaped polygon as outside
+  ✓ it resolves points inside each leg of a concave L-shaped polygon as inside
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                         1.69s  
+  ✓ users can authenticate using the login screen                        0.30s  
+  ✓ users can not authenticate with invalid password                     0.36s  
+  ✓ users can logout                                                     0.17s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                            0.23s  
+  ✓ email can be verified                                                0.23s  
+  ✓ email is not verified with invalid hash                              0.31s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                              0.22s  
+  ✓ password can be confirmed                                            0.19s  
+  ✓ password is not confirmed with invalid password                      0.37s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                           0.26s  
+  ✓ reset password link can be requested                                 0.36s  
+  ✓ reset password screen can be rendered                                0.44s  
+  ✓ password can be reset with valid token                               0.40s  
+
+   PASS  Tests\Feature\Auth\PasswordUpdateTest
+  ✓ password can be updated                                              0.15s  
+  ✓ correct password must be provided to update password                 0.15s  
+
+   FAIL  Tests\Feature\Auth\RegistrationTest
+  ✓ registration screen can be rendered                                  0.22s  
+  ⨯ new users can register                                               0.16s  
+
+   PASS  Tests\Feature\BiocharBatchTest
+  ✓ it derives planting_location_id automatically when only tree_planti… 0.32s  
+  ✓ it accepts a batch linked only to a planting_location with no speci… 0.30s  
+  ✓ it rejects a batch with neither planting_location_id nor tree_plant… 0.29s  
+  ✓ it nulls out tree_planting_id when the parent planting is deleted,…  0.20s  
+  ✓ it logs a change entry with correct old/new values when quantity_kg… 0.23s  
+
+   PASS  Tests\Feature\BoundaryGeojsonTest
+  ✓ it stores a valid boundary and logs boundary_set with the correct f… 0.29s  
+  ✓ it does not log boundary_set when no boundary is provided on create  0.25s  
+  ✓ it logs boundary_updated with only fingerprint fields (no raw coord… 0.15s  
+  ✓ it does not log boundary_updated when the same shape is resubmitted… 0.14s  
+  ✓ it rejects a boundary with fewer than 3 distinct vertices            0.10s  
+  ✓ it accepts an unclosed ring and saves it correctly auto-closed       0.13s  
+  ✓ it rejects a ring shaped like [A, B, A] that collapses to only 2 di… 0.13s  
+  ✓ it rejects an out-of-range coordinate within the polygon             0.12s  
+
+   PASS  Tests\Feature\ChangeLogTest
+  ✓ it creates one change log row per moved planting with correct old/n… 0.14s  
+  ✓ it logs multiple moved plantings as separate rows, not one combined… 0.12s  
+  ✓ it logs a coordinates change only when latitude/longitude actually…  0.15s  
+  ✓ it logs coordinate and status changes as two separate rows when bot… 0.14s  
+  ✓ it logs a tree planting status change with correct old/new values a… 0.11s  
+  ✓ it rejects out-of-range latitude and longitude values                0.12s  
+  ✓ it preserves changed_by_name after the acting user is deleted        0.11s  
+  ✓ it ignores a caller-supplied created_at and always stamps the real…  0.13s  
+  ✓ it keeps change log rows after the parent record is hard-deleted vi… 0.13s  
+
+   PASS  Tests\Feature\ContributorTest
+  ✓ it attaches an existing contributor and logs contributor_attached w… 0.14s  
+  ✓ it attaches a brand-new contributor created inline in the same requ… 0.15s  
+  ✓ it rejects attaching the same contributor twice to the same plantin… 0.15s  
+  ✓ it returns the same friendly duplicate-attachment error when two re… 0.16s  
+  ✓ it detaches a contributor and logs contributor_detached              0.14s  
+  ✓ it logs contributor_updated with correct old/new values, and a no-o… 0.15s  
+  ✓ it blocks deleting a contributor that has at least one attachment    0.12s  
+  ✓ it cascades pivot rows when the TreePlanting is deleted, contrastin… 0.13s  
+  ✓ it renders attached contributors per TreePlanting on the public pag… 0.18s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ it returns a successful response                                     0.14s  
+
+   PASS  Tests\Feature\GpsProvenanceTest
+  ✓ it logs a coordinates_set change entry with capture method and accu… 0.20s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.21s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.32s  
+  ✓ it rejects out-of-range latitude and longitude values on create      0.24s  
+  ✓ it does not log a coordinates_set entry when creating a location wi… 0.19s  
+  ✓ it logs coordinates_updated with capture_method/accuracy_meters in…  0.16s  
+  ✓ it logs coordinates_updated with capture_method map_center_adjust i… 0.27s  
+  ✓ it logs coordinates_updated with capture_method polygon_centroid in… 0.25s  
+
+   PASS  Tests\Feature\NearbyLocationFinderTest
+  ✓ it returns a location that falls within the bounding box             0.32s  
+  ✓ it excludes a location that is clearly outside the bounding box      0.20s  
+  ✓ it never includes the current location in its own results            0.21s  
+  ✓ it excludes locations with null latitude/longitude without erroring  0.20s  
+  ✓ it returns an empty collection, not an error, when the current loca… 0.17s  
+  ✓ it caps results at the configured limit even when more locations ma… 0.12s  
+  ✓ it returns an empty collection, not an error, when nothing else is…  0.11s  
+  ✓ it includes only id, location, latitude, longitude, and boundary_ge… 0.10s  
+  ✓ it renders the admin show page successfully with a nearby neighbor…  0.52s  
+  ✓ it renders the edit page successfully with a nearby neighbor that h… 0.31s  
+
+   PASS  Tests\Feature\PhotoLocationBoundaryTest
+  ✓ it includes photos with captured coordinates and excludes photos wi… 0.25s  
+  ✓ it flags a photo whose captured coordinates fall inside the boundar… 0.26s  
+  ✓ it flags a photo whose captured coordinates fall outside the bounda… 0.40s  
+  ✓ it gives a photo a null flag, not false, when the location has no b… 0.31s  
+  ✓ it includes the same captured-coordinate photo data on the public p… 0.42s  
+  ✓ it flags a photo on the public page as outside the boundary the sam… 0.45s  
+
+   PASS  Tests\Feature\PictureConsentTest
+  ✓ it rejects a camera-captured photo upload when consent is not confi… 0.58s  
+  ✓ it creates a camera-captured photo with consent_confirmed_at set wh… 0.31s  
+  ✓ it rejects a device-upload photo batch when consent is not confirme… 0.34s  
+  ✓ it creates device-uploaded photos with consent_confirmed_at set whe… 0.28s  
+  ✓ it still displays and behaves normally for an existing photo with a… 0.35s  
+
+   PASS  Tests\Feature\PictureProvenanceTest
+  ✓ it records exif provenance on a file-uploaded photo when the ExifEx… 0.24s  
+  ✓ it leaves all provenance fields null when the ExifExtractor finds n… 0.22s  
+  ✓ it records device-geolocation provenance on a camera-captured photo… 0.21s  
+  ✓ it leaves all provenance fields null on a camera-captured photo whe… 0.20s  
+
+   PASS  Tests\Feature\ProfileTest
+  ✓ profile page is displayed                                            0.50s  
+  ✓ profile information can be updated                                   0.15s  
+  ✓ email verification status is unchanged when the email address is un… 0.13s  
+  ✓ user can delete their account                                        0.17s  
+  ✓ correct password must be provided to delete account                  0.14s  
+
+   PASS  Tests\Feature\TreePlantingMeasurementTest
+  ✓ it links a measurement to the specific tree planting it was recorde… 0.64s  
+  ✓ it rejects trees_surviving greater than the plantings number_of_tre… 0.33s  
+  ✓ it rejects a measurement_date before the plantings planting_date     0.35s  
+  ✓ it lets a grower create a measurement but rejects them from verifyi… 0.54s  
+  ✓ it does not allow a privileged user to verify a measurement they re… 0.28s  
+  ✓ it sets verified_by_user_id and verified_at and writes a change log… 0.30s  
+  ✓ it logs only the fields that actually changed when editing a measur… 0.28s  
+  ✓ it editing a verified measurement resets its verification and logs…  0.30s  
+  ✓ it does not reset verification or log anything when a no-op edit re… 0.27s  
+  ✓ it cascades measurement deletion when the parent tree planting is d… 0.24s  
+
+   PASS  Tests\Feature\TreeTypeCarbonFieldsTest
+  ✓ it rejects wood_density_kg_m3 without a source_reference             0.19s  
+  ✓ it accepts wood_density_kg_m3 and carbon_fraction when a source_ref… 0.17s  
+  ✓ it renders wood_density_kg_m3, carbon_fraction, and source_referenc… 0.20s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\Auth\RegistrationTest > new users can register         
+  The user is not authenticated
+Failed asserting that false is true.
+
+  at tests\Feature\Auth\RegistrationTest.php:17
+     13▕         'password' => 'password',
+     14▕         'password_confirmation' => 'password',
+     15▕     ]);
+     16▕ 
+  ➜  17▕     $this->assertAuthenticated();
+     18▕     $response->assertRedirect(route('dashboard', absolute: false));
+     19▕ });
+     20▕
+
+
+  Tests:    1 failed, 113 passed (390 assertions)
+  Duration: 28.05s
+
+Script @php artisan test handling the test event returned with error code 1
+
+===== DECISIONS.md entry (full text, as written in the file) =====
+## 2026-08-26 — Replaced top nav bar with a persistent sidebar (desktop) + left-sliding drawer (mobile)
+
+**Context**
+
+Follows a dedicated investigation pass (full nav item inventory, Tailwind
+theme audit, z-index audit, width-cap audit) covering `layouts/app.blade.php`
+and `layouts/navigation.blade.php`. Findings that shaped the decisions below:
+the app had no fixed-header-offset (`pt-16`-style) hacks to unwind since the
+old nav was static-flow, not fixed; 9 pages independently cap their own
+content at `max-w-7xl`; nothing in the app exceeded `z-50`; the `sm:` (640px)
+breakpoint was the only mobile/desktop switch point in the old nav; and two
+separate, drifted implementations of the profile/logout UI existed (a desktop
+dropdown, an always-expanded mobile block).
+
+**Decision**
+
+- `layouts/app.blade.php`: body becomes `sm:flex` — hero banner
+  (`partials/header.blade.php`) stays untouched, full-width, above the flex
+  row (not inside it, not touched at all). The sidebar and a `flex-1 min-w-0`
+  content column (still containing the original `$header`/`<main>` slot
+  markup, byte-for-byte) sit side by side at `sm:`+. Below `sm:`, `sm:flex`
+  doesn't apply, so the layout stacks vertically as before.
+- Nav data now lives in one place, `layouts/partials/nav-items.blade.php`,
+  rendered twice — once for the sidebar (new `<x-sidebar-link>` component,
+  vertical, `primary`-colored active state), once for the mobile drawer
+  (existing `<x-responsive-nav-link>`, reused as-is) — via an
+  `<x-dynamic-component>` keyed on a `$linkComponent` param passed at each
+  `@include`. This guarantees the sidebar and drawer can never drift out of
+  sync on items, order, or `@role` gating again, which the old
+  copy-pasted-twice `navigation.blade.php` was already prone to (desktop and
+  mobile orderings had quietly diverged — "Tree Types" was in a different
+  position on each). All 10 nav items, their route names, and their exact
+  `@role`/`@auth` gates are unchanged from before; no items added or removed.
+- Profile/role/logout consolidated into one partial,
+  `layouts/partials/user-menu.blade.php`, included by both the sidebar and
+  the drawer — replacing the two previously-separate implementations. Same
+  logout mechanism as before (hidden form + `onclick` JS submit), just one
+  copy of it instead of two. No avatar/profile picture added — out of scope,
+  matches prior behavior (name + role text only).
+- `responsive-nav-link.blade.php`'s active-state color changed from Tailwind
+  `indigo` to the theme's `primary` (`#2F855A`, `tailwind.config.js`), so
+  active-state styling is consistent between the sidebar and the drawer and
+  no new arbitrary color is introduced. Safe to change in place: confirmed
+  via full-codebase grep that `x-responsive-nav-link` (and `x-nav-link`) were
+  used nowhere except the old `navigation.blade.php`.
+- Mobile drawer/backdrop use `z-40` (investigation confirmed nothing in the
+  app currently exceeds `z-50`, so this sits below existing modals/dropdowns
+  while still layering above ordinary page content). Clicking a nav link
+  inside the open drawer also closes it (`@click="open = false"` on the
+  drawer's `<nav>` wrapper) — not explicitly requested, but without it the
+  drawer would stay open after navigating, which is a usability bug for any
+  off-canvas pattern, not a new feature.
+- The 640px (`sm:`) breakpoint is unchanged — same cutoff as the old nav,
+  deliberately not revisited here.
+- The 9 pages that independently cap their own content at `max-w-7xl`
+  (`home`, `dashboard`, `stats/map`, `users/report`, `profile/edit`,
+  `stats/stats1`, `tree-plantings/report`, plus the layout/nav files
+  themselves) are untouched internally — the sidebar just sits to the left
+  of whatever width they already render at. None of them were widened to use
+  the freed-up horizontal space; that's a separate decision for later if
+  wanted, not bundled into this change.
+
+**Known, deliberately not touched as part of this change**
+
+- `x-nav-link` (`components/nav-link.blade.php`) is now unused — it was the
+  old horizontal top-bar link style, which no longer applies anywhere now
+  that both the sidebar and drawer are vertical. Left in place rather than
+  deleted, since removing unused files wasn't part of this task's scope.
+- The leftover `data-theme="emerald"` attribute on `<html>` in
+  `layouts/app.blade.php` (from a removed DaisyUI dependency) has no effect
+  and was left as-is.
+- `pictures/create.blade.php`'s redundant nested `min-h-screen` wrapper
+  (inside the already-`min-h-screen` layout) was left as-is.
+- No collapsible/icon-only sidebar mode — a simple, always-fully-expanded
+  fixed-width (`w-64`) sidebar was judged sufficient; a collapse toggle can
+  be added later as its own decision if the sidebar proves too wide for any
+  workflow.
+
+**Reasoning**
+
+A single persistent sidebar reads better than a horizontal bar once the nav
+item count reaches 10 (plus profile/logout), especially on the map-heavy
+pages this app centers on, and it removes the desktop-only dropdown that was
+duplicating what the mobile menu already did inline. Consolidating the two
+nav-rendering paths into one data source removes an entire class of "desktop
+and mobile silently went out of sync" bugs that had already happened once
+(the Tree Types ordering drift) before this change.

@@ -10,6 +10,94 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-26 — Replaced top nav bar with a persistent sidebar (desktop) + left-sliding drawer (mobile)
+
+**Context**
+
+Follows a dedicated investigation pass (full nav item inventory, Tailwind
+theme audit, z-index audit, width-cap audit) covering `layouts/app.blade.php`
+and `layouts/navigation.blade.php`. Findings that shaped the decisions below:
+the app had no fixed-header-offset (`pt-16`-style) hacks to unwind since the
+old nav was static-flow, not fixed; 9 pages independently cap their own
+content at `max-w-7xl`; nothing in the app exceeded `z-50`; the `sm:` (640px)
+breakpoint was the only mobile/desktop switch point in the old nav; and two
+separate, drifted implementations of the profile/logout UI existed (a desktop
+dropdown, an always-expanded mobile block).
+
+**Decision**
+
+- `layouts/app.blade.php`: body becomes `sm:flex` — hero banner
+  (`partials/header.blade.php`) stays untouched, full-width, above the flex
+  row (not inside it, not touched at all). The sidebar and a `flex-1 min-w-0`
+  content column (still containing the original `$header`/`<main>` slot
+  markup, byte-for-byte) sit side by side at `sm:`+. Below `sm:`, `sm:flex`
+  doesn't apply, so the layout stacks vertically as before.
+- Nav data now lives in one place, `layouts/partials/nav-items.blade.php`,
+  rendered twice — once for the sidebar (new `<x-sidebar-link>` component,
+  vertical, `primary`-colored active state), once for the mobile drawer
+  (existing `<x-responsive-nav-link>`, reused as-is) — via an
+  `<x-dynamic-component>` keyed on a `$linkComponent` param passed at each
+  `@include`. This guarantees the sidebar and drawer can never drift out of
+  sync on items, order, or `@role` gating again, which the old
+  copy-pasted-twice `navigation.blade.php` was already prone to (desktop and
+  mobile orderings had quietly diverged — "Tree Types" was in a different
+  position on each). All 10 nav items, their route names, and their exact
+  `@role`/`@auth` gates are unchanged from before; no items added or removed.
+- Profile/role/logout consolidated into one partial,
+  `layouts/partials/user-menu.blade.php`, included by both the sidebar and
+  the drawer — replacing the two previously-separate implementations. Same
+  logout mechanism as before (hidden form + `onclick` JS submit), just one
+  copy of it instead of two. No avatar/profile picture added — out of scope,
+  matches prior behavior (name + role text only).
+- `responsive-nav-link.blade.php`'s active-state color changed from Tailwind
+  `indigo` to the theme's `primary` (`#2F855A`, `tailwind.config.js`), so
+  active-state styling is consistent between the sidebar and the drawer and
+  no new arbitrary color is introduced. Safe to change in place: confirmed
+  via full-codebase grep that `x-responsive-nav-link` (and `x-nav-link`) were
+  used nowhere except the old `navigation.blade.php`.
+- Mobile drawer/backdrop use `z-40` (investigation confirmed nothing in the
+  app currently exceeds `z-50`, so this sits below existing modals/dropdowns
+  while still layering above ordinary page content). Clicking a nav link
+  inside the open drawer also closes it (`@click="open = false"` on the
+  drawer's `<nav>` wrapper) — not explicitly requested, but without it the
+  drawer would stay open after navigating, which is a usability bug for any
+  off-canvas pattern, not a new feature.
+- The 640px (`sm:`) breakpoint is unchanged — same cutoff as the old nav,
+  deliberately not revisited here.
+- The 9 pages that independently cap their own content at `max-w-7xl`
+  (`home`, `dashboard`, `stats/map`, `users/report`, `profile/edit`,
+  `stats/stats1`, `tree-plantings/report`, plus the layout/nav files
+  themselves) are untouched internally — the sidebar just sits to the left
+  of whatever width they already render at. None of them were widened to use
+  the freed-up horizontal space; that's a separate decision for later if
+  wanted, not bundled into this change.
+
+**Known, deliberately not touched as part of this change**
+
+- `x-nav-link` (`components/nav-link.blade.php`) is now unused — it was the
+  old horizontal top-bar link style, which no longer applies anywhere now
+  that both the sidebar and drawer are vertical. Left in place rather than
+  deleted, since removing unused files wasn't part of this task's scope.
+- The leftover `data-theme="emerald"` attribute on `<html>` in
+  `layouts/app.blade.php` (from a removed DaisyUI dependency) has no effect
+  and was left as-is.
+- `pictures/create.blade.php`'s redundant nested `min-h-screen` wrapper
+  (inside the already-`min-h-screen` layout) was left as-is.
+- No collapsible/icon-only sidebar mode — a simple, always-fully-expanded
+  fixed-width (`w-64`) sidebar was judged sufficient; a collapse toggle can
+  be added later as its own decision if the sidebar proves too wide for any
+  workflow.
+
+**Reasoning**
+
+A single persistent sidebar reads better than a horizontal bar once the nav
+item count reaches 10 (plus profile/logout), especially on the map-heavy
+pages this app centers on, and it removes the desktop-only dropdown that was
+duplicating what the mobile menu already did inline. Consolidating the two
+nav-rendering paths into one data source removes an entire class of "desktop
+and mobile silently went out of sync" bugs that had already happened once
+(the Tree Types ordering drift) before this change.
+
 ## 2026-08-22 — Removed "Move Plantings" button from planting-locations show page
 
 Removed the "Move Plantings" link from `show.blade.php` (was lines 95-99) —

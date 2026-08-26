@@ -1,0 +1,37 @@
+{{--
+    Shared profile/logout footer — the single consolidated implementation
+    used by both the desktop sidebar and the mobile drawer (previously two
+    separate implementations: a dropdown on desktop, an always-expanded
+    block on mobile). Name/role display now lives in partials/header.blade.php
+    instead (desktop only).
+
+    Expects a $linkComponent variable ('sidebar-link' or
+    'responsive-nav-link') naming which Blade component to render each
+    link with, matching layouts/partials/nav-items.blade.php's convention.
+--}}
+@auth
+    <div class="border-t border-gray-200 pt-4 space-y-1">
+        <x-dynamic-component :component="$linkComponent" :href="route('profile.edit')">
+            {{ __('Profile') }}
+        </x-dynamic-component>
+
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <x-dynamic-component :component="$linkComponent" :href="route('logout')"
+                             onclick="event.preventDefault(); this.closest('form').submit();">
+                {{ __('Log Out') }}
+            </x-dynamic-component>
+        </form>
+    </div>
+@else
+    <div class="border-t border-gray-200 pt-4 px-3 space-y-1">
+        <x-dynamic-component :component="$linkComponent" :href="route('login')">
+            {{ __('Log in') }}
+        </x-dynamic-component>
+        @if (Route::has('register'))
+            <x-dynamic-component :component="$linkComponent" :href="route('register')">
+                {{ __('Register') }}
+            </x-dynamic-component>
+        @endif
+    </div>
+@endauth

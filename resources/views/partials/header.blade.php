@@ -1,4 +1,4 @@
-<header class="bg-primary text-white p-6">
+<header class="bg-primary text-white p-6 relative">
     <div class="max-w-4xl mx-auto flex items-center gap-4 sm:gap-8 justify-center">
         <img src="{{ asset('images/TreePlantingImage.png') }}"
              alt="Tree Icon"
@@ -9,4 +9,15 @@
                 <br>in&nbsp;Africa.</p>
         </div>
     </div>
+
+    @auth
+        <div class="hidden sm:block absolute bottom-2 right-4 text-sm text-white/80">
+            {{ Auth::user()->name }}
+            @role('Admin|SuperAdmin|Monitor|Grower')
+                {{ Auth::user()->roles->first()->name }}
+            @else
+                Unassigned
+            @endrole
+        </div>
+    @endauth
 </header>
