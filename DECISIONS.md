@@ -10,6 +10,214 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-26 — LiDAR Integration — Investigation & Proposal
+
+**Status:** investigation + proposal only — no migrations, models, controllers,
+or views were touched. Nothing here is built yet.
+
+### Investigation findings
+
+**Model/migration/controller for the measurement record:**
+`App\Models\TreePlantingMeasurement`, table `tree_planting_measurements`
+(`database/migrations/2026_06_02_000000_create_tree_planting_measurements_table.php`),
+`App\Http\Controllers\TreePlantingMeasurementController`. Views:
+`resources/views/tree-planting-measurements/{index,create,edit}.blade.php`.
+
+**Full schema** (`tree_planting_measurements`):
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint | |
+| `tree_planting_id` | FK → `tree_plantings`, cascade | measurement has no meaning without its parent |
+| `measurement_date` | date | |
+| `trees_surviving` | unsigned int, nullable | validated ≤ `tree_planting.number_of_trees` |
+| `height_avg_cm` | decimal(6,2), nullable | |
+| `dbh_avg_cm` | decimal(6,2), nullable | |
+| `canopy_cover_pct` | decimal(5,2), nullable | validated 0–100 |
+| `notes` | text, nullable | |
+| `user_id` | FK → `users`, cascade | who recorded it |
+| `verified_by_user_id` | FK → `users`, nullable, nullOnDelete | deliberately distinct from `user_id`; never the same person |
+| `verified_at` | timestamp, nullable | |
+| `created_at`/`updated_at` | | editable table, normal timestamps (unlike `change_logs`) |
+
+**Related tables**, walking the actual hierarchy — there is no "tree" or
+"plot" or "site" entity: `PlantingLocation` (the site) → `TreePlanting`
+(a cohort/batch of `number_of_trees` trees of one `TreeType`, planted on
+one date — individual trees are never tracked as separate rows) →
+`TreePlantingMeasurement` (a periodic measurement of that whole cohort).
+`TreeType` (species) hangs off `TreePlanting`, not the measurement.
+
+**How Height avg / DBH avg / Canopy % are entered:** all three are plain
+manual `<input type="number" step="0.01">` fields on
+`tree-planting-measurements/create.blade.php` (lines ~41-68), validated
+server-side as `nullable|numeric` (with `canopy_cover_pct` additionally
+capped 0–100). Confirmed — not a calculated average across individual
+tree records (no such records exist to average) and not derived from
+any photo or sensor input. A human estimates/measures the cohort and
+types in a single number for each field.
+
+**GPS/photo provenance:** exists, but only on `Picture`
+(`captured_at`, `captured_latitude`, `captured_longitude`,
+`capture_source` — added in
+`2026_06_04_000000_add_capture_provenance_to_pictures_table.php` —
+plus `consent_confirmed_at`), which belongs to `PlantingLocation`, not
+to `TreePlanting` or `TreePlantingMeasurement`. There is no FK from
+`Picture` to either, and no GPS/provenance fields anywhere on the
+measurement itself. `ExifExtractor` (`app/Services/ExifExtractor.php`)
+is the existing provenance-reading service, but it's wired only into
+`PictureController`'s upload flow.
+
+**Audit trail pattern:** `ChangeLog` (`app/Models/ChangeLog.php`,
+table `change_logs`) — polymorphic (`loggable_type`/`loggable_id`,
+deliberately **not** a real FK so history survives a hard delete of the
+parent), `action` string, `old_values`/`new_values` JSON, `reason`,
+`changed_by` (nullable FK, nullOnDelete) + `changed_by_name` (a name
+snapshot, so attribution survives even after the user is gone),
+append-only (`created_at` only, no `updated_at`). Written explicitly via
+`App\Services\ChangeLogger::record()` at each mutation point in
+controllers — not model observers, specifically because at least one
+existing mutation (`TreePlanting::whereIn(...)->update(...)` in the
+"move" feature) is a query-builder mass update that wouldn't fire
+Eloquent events. `TreePlantingMeasurementController` already uses this
+for `measurement_updated`, `measurement_verification_reset`, and
+`measurement_verified` — any new LiDAR-related mutation should log
+through the same service, the same way.
+
+### Proposal
+
+**New fields** (see table design below): `scan_source`,
+`scan_file_path`, `lidar_height_cm`, `lidar_dbh_estimate_cm`,
+`lidar_canopy_area_m2`, `scan_confidence`, `method_note`,
+plus a `measurement_source` column on the *existing* measurement table
+(see below — this one field is the one thing I'd add to
+`tree_planting_measurements` itself).
+
+**Same record or separate table — recommendation: separate table**,
+e.g. `lidar_scans`, referenced from `tree_planting_measurements`.
+Reasoning, tied specifically to how `Recorded By`/`Verified` work today:
+
+- `Recorded By` (`user_id`) and `Verified` (`verified_by_user_id` +
+  `verified_at`) currently model one specific attestation shape: *one
+  named person entered these numbers, a second named person confirmed
+  they're right.* A LiDAR scan's provenance is structurally different —
+  it's *a device produced this dataset*, which is a different kind of
+  fact than *a person typed this number*. Bolting LiDAR columns
+  directly onto `tree_planting_measurements` would blur those two
+  distinct claims into one row's worth of nullable columns.
+- Cardinality doesn't match 1:1 cleanly either: a field verifier might
+  redo a scan that came out blurry, or capture multiple scans of the
+  same cohort over the lifetime of one measurement date, or capture a
+  scan slightly before the measurement record itself is finalized. A
+  separate table with its own `id` and a nullable FK back to the
+  measurement handles all of that without forcing awkward
+  "which scan wins" logic on a single-row schema.
+- Most measurements will likely never have LiDAR data at all (phone
+  LiDAR requires specific hardware — iPhone/iPad **Pro** models only —
+  so paper/manual fallback stays the norm for a long time). Adding a
+  wide set of always-null columns to every measurement row is exactly
+  the kind of schema bloat this app has avoided elsewhere (see
+  `GeometryFingerprint`'s own comment about not storing full geometry
+  on every edit "for anything beyond a handful of vertices" — same
+  instinct applies here).
+- This mirrors the app's own precedent: GPS/EXIF provenance already
+  lives on its own table (`pictures`) rather than being jammed onto
+  `planting_locations`, specifically because it's a different kind of
+  fact (device/file provenance) about a related-but-distinct thing.
+
+Proposed `lidar_scans` schema:
+| Column | Type | Notes |
+|---|---|---|
+| `id` | bigint | |
+| `tree_planting_measurement_id` | FK → `tree_planting_measurements`, nullable, nullOnDelete | nullable so a scan can be uploaded and later linked; explore tightening to required once the upload flow is proven out |
+| `user_id` | FK → `users`, cascade | who captured/uploaded it — mirrors `TreePlantingMeasurement.user_id` |
+| `scan_source` | string, nullable | free string, not a DB enum — matches `pictures.capture_source`'s established convention (e.g. `'phone_lidar'`, `'drone'`, `'satellite'`) |
+| `scan_file_path` | string, nullable | exported mesh/point cloud/report file, stored the same way `pictures.path` is |
+| `lidar_height_cm` | decimal, nullable | |
+| `lidar_dbh_estimate_cm` | decimal, nullable | |
+| `lidar_canopy_area_m2` | decimal, nullable | note: m² here, not the existing `canopy_cover_pct` — a LiDAR scan naturally yields an area, not a percentage; reconciling the two is a UI/reporting concern, not a schema one |
+| `scan_confidence` | string, nullable | free text or a small fixed vocabulary (e.g. high/medium/low), self-reported by the capturer |
+| `method_note` | text, nullable | freeform — which app was used, scan conditions, anything not worth a dedicated column |
+| `created_at`/`updated_at` | | |
+
+Plus one addition to the *existing* `tree_planting_measurements` table:
+`measurement_source` (string, nullable, e.g. `'manual'` /
+`'lidar_derived'` / `'lidar_assisted'`, default `'manual'` so every
+existing row is unaffected). This is the one field I'd put on the
+measurement itself rather than the scan table, because it's a property
+of *the measurement's numbers*, not of any one scan — see verification
+impact below.
+
+**Impact on the Verified workflow:** I'd recommend **not** forking a
+second verification tier. Verra/Plan Vivo's preference for objective
+methods is better served by making the *source* of a measurement
+queryable/reportable than by inventing a parallel "LiDAR-verified"
+state machine that this codebase would then have to keep in sync with
+the existing one forever. Concretely:
+
+- `measurement_source` (above) makes "how was this row produced"
+  filterable in exports/reports without touching `verified_at`'s
+  meaning at all.
+- The existing self-verification rule (recorder ≠ verifier,
+  `TreePlantingMeasurementController::verify()`) applies identically
+  regardless of source. A device doesn't verify itself — phone LiDAR is
+  still a rough estimate, not survey-grade, so a second human
+  confirming the transcribed numbers are plausible is exactly as
+  necessary as it is for a manual measurement today.
+- A stronger bar — e.g. `verify()` refusing to proceed unless a linked
+  `lidar_scans` row's file is still retrievable — is worth flagging as
+  a **later** enhancement, not part of a first slice. It adds a real
+  dependency (file-storage health) to the verification path that the
+  app doesn't have today, and isn't needed to get LiDAR data flowing
+  and reportable.
+
+**Minimal viable capture flow, phone-based (iPhone/iPad Pro):** this
+app has no native mobile component and shouldn't grow one for this.
+The realistic v1 flow treats the web app as a passive receiver of a
+third-party scanning app's output, exactly the way `PictureController`
+already receives photos:
+
+1. Field verifier scans the cohort with an off-the-shelf LiDAR app
+   (e.g. Polycam, 3D Scanner App, SiteScape, Scaniverse) on an
+   iPhone/iPad **Pro**-class device (only these have a LiDAR sensor).
+2. That app computes and/or exports whatever it exports (a mesh/point
+   cloud file, and often its own on-device dimensional readout).
+3. The verifier opens this web app on the same device, goes to a new
+   "Attach LiDAR Scan" form against the relevant measurement, manually
+   transcribes the number(s) the scanning app reported
+   (`lidar_height_cm` etc.), picks `scan_source`, optionally rates
+   `scan_confidence`, and uploads the exported file as
+   `scan_file_path` — same upload mechanics as photo upload today.
+4. `ChangeLogger` records `lidar_scan_added`, same pattern as every
+   other mutation in this subsystem.
+
+No native SDK integration, no in-browser 3D rendering, no server-side
+point cloud parsing — this app never opens the scan file, it just
+stores it and the numbers a human copied out of another app.
+
+**Explicitly NOT part of a first slice:**
+- Full point cloud storage/processing pipeline (no in-browser viewer,
+  no server-side meshing/segmentation — this app's stack has no
+  point-cloud tooling, e.g. no PDAL/Open3D equivalent, and adding one
+  is a much bigger decision than this task).
+- Drone flyover batch ingestion (multi-file import, orthomosaic
+  stitching, automated per-tree canopy segmentation).
+- Automatic height/DBH/canopy extraction from a raw scan file — v1
+  stores whatever number a human already read off the scanning app's
+  own UI, nothing is computed from the file server-side.
+- A native mobile app or custom scanning SDK.
+- A second/parallel verification tier (see above).
+
+**Reasonable first slice:** the `lidar_scans` table + `user_id`/
+`scan_source`/`scan_file_path`/three numeric fields/`scan_confidence`/
+`method_note` as designed above; the single `measurement_source`
+addition to `tree_planting_measurements`; a `LidarScanController`
+mirroring `TreePlantingMeasurementController`'s structure (`index`/
+`create`/`store` — no `verify()` of its own, verification stays on the
+parent measurement); file upload validated the same way
+`PictureController`'s upload flow already validates photo uploads;
+`ChangeLogger` entries for scan uploads; and on the measurements
+index/create views, a small indicator for measurements that have a
+linked scan plus a link into the new upload form.
+
 ## 2026-08-26 — Introduced FontAwesome (CDN, 6.4.0), restyled planting-locations filter section to match a sibling project's design
 
 **Context**
