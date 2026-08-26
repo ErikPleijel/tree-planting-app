@@ -36,9 +36,15 @@ class PlantingLocationController extends Controller
             $query->where('division_id', $request->division);
         }
 
-        // Apply search filter
+        // Apply search filter — match location name OR division name
         if ($request->filled('search')) {
-            $query->where('location', 'like', '%' . $request->search . '%');
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('location', 'like', "%{$search}%")
+                    ->orWhereHas('division', function ($dq) use ($search) {
+                        $dq->where('LGA_name', 'like', "%{$search}%");
+                    });
+            });
         }
 
         $sort = $request->input('sort', 'name_asc');
@@ -49,7 +55,7 @@ class PlantingLocationController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $divisions = \App\Models\Division::orderBy('LGA_name')->get();
+        $divisions = \App\Models\Division::whereHas('plantingLocations')->orderBy('LGA_name')->get();
 
         return view('planting-locations.index', compact('plantingLocations', 'divisions'));
     }

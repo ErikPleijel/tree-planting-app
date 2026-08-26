@@ -31,7 +31,7 @@
                     <input type="text"
                            id="search"
                            name="search"
-                           placeholder="Search..."
+                           placeholder="Country, Location"
                            value="{{ request('search') }}"
                            class="filter-input {{ request('search') ? 'filter-active' : '' }}">
                 </div>
