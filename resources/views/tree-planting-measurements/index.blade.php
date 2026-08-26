@@ -46,6 +46,7 @@
                             <th class="px-2 py-1 whitespace-nowrap border-b">Notes</th>
                             <th class="px-2 py-1 whitespace-nowrap border-b">Recorded By</th>
                             <th class="px-2 py-1 whitespace-nowrap border-b">Verified</th>
+                            <th class="px-2 py-1 whitespace-nowrap border-b">LiDAR</th>
                             <th class="px-2 py-1 whitespace-nowrap text-center border-b">Actions</th>
                         </tr>
                         </thead>
@@ -66,6 +67,18 @@
                                     @else
                                         <span class="text-yellow-600">Pending</span>
                                     @endif
+                                </td>
+                                <td class="px-2 py-1 whitespace-nowrap">
+                                    @if($measurement->lidarScans->isNotEmpty())
+                                        <span class="text-green-700" title="{{ $measurement->lidarScans->count() }} linked scan(s)">📡 {{ $measurement->lidarScans->count() }}</span>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
+                                    @role('Admin|SuperAdmin|Monitor|Grower')
+                                        <div>
+                                            <a href="{{ route('lidar-scans.create', ['tree_planting_measurement_id' => $measurement->id]) }}" class="text-xs text-blue-600 hover:underline">+ Attach Scan</a>
+                                        </div>
+                                    @endrole
                                 </td>
                                 <td class="px-2 py-1 whitespace-nowrap">
                                     <div class="flex flex-wrap justify-center gap-1">

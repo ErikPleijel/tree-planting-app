@@ -47,6 +47,16 @@ Route::patch('/tree-planting-measurements/{measurement}/verify', [\App\Http\Cont
     ->middleware(['auth', 'role:Admin|SuperAdmin|Monitor'])
     ->name('tree-planting-measurements.verify');
 
+// LiDAR Scans — same roles as TreePlantingMeasurements' record/edit gate.
+// No verify() route: verification stays entirely on the parent
+// measurement, per the LiDAR Integration DECISIONS.md entry.
+Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(function () {
+    Route::get('/lidar-scans/create', [\App\Http\Controllers\LidarScanController::class, 'create'])
+        ->name('lidar-scans.create');
+    Route::post('/lidar-scans', [\App\Http\Controllers\LidarScanController::class, 'store'])
+        ->name('lidar-scans.store');
+});
+
 // Biochar Batches — same roles as Inspections/TreePlantings/Measurements.
 Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(function () {
     Route::get('/planting-locations/{plantingLocation}/biochar-batches', [\App\Http\Controllers\BiocharBatchController::class, 'index'])
