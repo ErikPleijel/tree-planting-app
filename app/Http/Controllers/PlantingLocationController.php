@@ -11,6 +11,9 @@ use App\Services\GeoJsonPolygonValidator;
 use App\Services\GeometryFingerprint;
 use App\Services\NearbyLocationFinder;
 use App\Services\PhotoLocationMarkerService;
+use App\Services\PolygonAreaCalculator;
+use App\Models\BiocharBatch;
+use App\Models\Inspection;
 use Illuminate\Support\Facades\DB;
 
 class PlantingLocationController extends Controller
@@ -160,6 +163,7 @@ class PlantingLocationController extends Controller
         MapMarkerService $markerService,
         PhotoLocationMarkerService $photoMarkerService,
         NearbyLocationFinder $nearbyLocationFinder,
+        PolygonAreaCalculator $areaCalculator,
         PlantingLocation $plantingLocation
     ) {
         $filters = [
@@ -187,7 +191,32 @@ class PlantingLocationController extends Controller
         // on the show/edit maps".
         $neighbors = $nearbyLocationFinder->find($plantingLocation);
 
-        return view('planting-locations.show', compact('plantingLocation', 'markers', 'photos', 'neighbors'));
+        // Reuses the already-eager-loaded treePlantings relation rather
+        // than a fresh query.
+        $totalTrees = $plantingLocation->treePlantings->sum('number_of_trees');
+
+        $areaHectares = $areaCalculator->calculateHectares($plantingLocation->boundary_geojson);
+
+        // Never divide by a null or zero area.
+        $densityTreesPerHectare = ($areaHectares !== null && $areaHectares > 0)
+            ? $totalTrees / $areaHectares
+            : null;
+
+        $totalBiocharKg = BiocharBatch::where('planting_location_id', $plantingLocation->id)->sum('quantity_kg');
+
+        $inspectionCount = Inspection::where('planting_location_id', $plantingLocation->id)->count();
+
+        return view('planting-locations.show', compact(
+            'plantingLocation',
+            'markers',
+            'photos',
+            'neighbors',
+            'totalTrees',
+            'areaHectares',
+            'densityTreesPerHectare',
+            'totalBiocharKg',
+            'inspectionCount'
+        ));
     }
 
     /**

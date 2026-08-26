@@ -12,81 +12,109 @@
         </div>
     @endif
 
-    <div class="max-w-2xl mx-auto mt-6 p-4 bg-white shadow rounded-lg">
-        <h2 class="text-4xl text-center font-semibold text-gray-700 mb-4">Location Data</h2>
-        <!-- Rest of the existing content -->
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ $plantingLocation->location }}</h1>
-            <p class="text-lg text-gray-600 mb-2">{{ $plantingLocation->division->LGA_name ?? 'N/A' }}</p>
-            <p class="text-gray-600 italic mb-3">{{ $plantingLocation->comment ?: '—' }}</p>
-            <div class="flex justify-center gap-4">
-                <p class="text-gray-600">
-                    <span class="font-semibold">Lat:</span> {{ $plantingLocation->latitude ?: '—' }}
-                </p>
-                <p class="text-gray-600">
-                    <span class="font-semibold">Long:</span> {{ $plantingLocation->longitude ?: '—' }}
-                </p>
-            </div>
-        </div>
+    <div class="max-w-6xl mx-auto mt-6 p-4 bg-white shadow rounded-lg">
+        <h2 class="text-4xl font-bold mb-4 text-center"><i class="fas fa-location-dot mr-2"></i>Location Data</h2>
 
-        <!-- Location Button -->
-        <div class="flex justify-center flex-wrap gap-2 mb-4">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2 text-center">{{ $plantingLocation->location }}</h1>
+        @if($plantingLocation->comment)
+            <p class="text-gray-600 italic text-center mb-6">{{ $plantingLocation->comment }}</p>
+        @else
+            <div class="mb-6"></div>
+        @endif
+
+        <!-- Actions -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
             @role('Admin|SuperAdmin|Monitor|Grower')
-            <a href="{{ route('planting-locations.edit', $plantingLocation) }}" class="bg-yellow-500 text-white px-3 py-1 text-xs rounded hover:bg-yellow-600 transition-colors">Edit Site Data</a>
+            <a href="{{ route('planting-locations.edit', $plantingLocation) }}"
+               class="bg-yellow-500 text-white px-3 py-2 text-sm text-center rounded hover:bg-yellow-600 transition-colors">
+                Edit
+            </a>
             @endrole
+
             @role('Admin|SuperAdmin')
             <form action="{{ route('planting-locations.destroy', $plantingLocation) }}" method="POST"
                   onsubmit="return confirm('Are you sure you want to delete this location?');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="bg-red-500 text-white px-3 py-1 text-xs rounded hover:bg-red-600 transition-colors">Delete</button>
+                <button type="submit"
+                        class="w-full bg-red-500 text-white px-3 py-2 text-sm rounded hover:bg-red-600 transition-colors">
+                    Delete
+                </button>
             </form>
             @endrole
 
+            <a href="{{ route('public.planting-locations.show', $plantingLocation->public_code) }}"
+               class="bg-blue-600 text-white px-3 py-2 text-sm text-center rounded hover:bg-blue-700 transition-colors">
+                Public Page
+            </a>
 
-        </div>
-        <div class="flex justify-center">
-            <a href="{{ route('public.planting-locations.show', $plantingLocation->public_code) }}" class="bg-yellow-500 text-white px-3 py-1 text-lg rounded hover:bg-yellow-600 transition-colors">PUBLIC PAGE</a>
-        </div>
-        <div class="flex justify-center mt-5">
             <a href="{{ route('planting-locations.qr-label', $plantingLocation) }}"
                target="_blank"
-               class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
-                Print QR Label
+               class="bg-gray-700 text-white px-3 py-2 text-sm text-center rounded hover:bg-gray-800 transition-colors">
+                Print QR
             </a>
         </div>
+
+        <!-- Data + Map -->
+        <div class="flex flex-col lg:flex-row gap-6">
+            <div class="w-full lg:w-1/3">
+                <table class="w-full text-sm border-collapse">
+                    <thead>
+                        <tr>
+                            <th class="px-3 py-2 text-left border-b bg-gray-50">Type</th>
+                            <th class="px-3 py-2 text-left border-b bg-gray-50">Data</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-600">Division</td>
+                            <td class="px-3 py-2 border-b">{{ $plantingLocation->division->LGA_name ?? 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-600">Latitude</td>
+                            <td class="px-3 py-2 border-b">{{ $plantingLocation->latitude ?: '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-600">Longitude</td>
+                            <td class="px-3 py-2 border-b">{{ $plantingLocation->longitude ?: '—' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-600">Total trees</td>
+                            <td class="px-3 py-2 border-b">{{ $totalTrees }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-600">Area</td>
+                            <td class="px-3 py-2 border-b">{{ $areaHectares !== null ? number_format($areaHectares, 2) . ' ha' : 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-600">Density</td>
+                            <td class="px-3 py-2 border-b">{{ $densityTreesPerHectare !== null ? number_format($densityTreesPerHectare, 2) . ' trees/ha' : 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 border-b font-medium text-gray-600">Total biochar</td>
+                            <td class="px-3 py-2 border-b">{{ number_format($totalBiocharKg, 2) }} kg</td>
+                        </tr>
+                        <tr>
+                            <td class="px-3 py-2 font-medium text-gray-600">Number of inspections</td>
+                            <td class="px-3 py-2">{{ $inspectionCount }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="w-full lg:w-2/3">
+                <x-map2
+                    lat="{{ $plantingLocation->latitude }}"
+                    lng="{{ $plantingLocation->longitude }}"
+                    :zoom="12"
+                    :markers="$markers"
+                    :boundary="$plantingLocation->boundary_geojson"
+                    :photos="$photos"
+                    :neighbors="$neighbors"
+                />
+            </div>
+        </div>
     </div>
-
-    <div class="max-w-2xl mx-auto mt-6 p-4 bg-white shadow rounded-lg text-center">
-        <h2 class="text-xl font-semibold text-gray-700 mb-2">Area &amp; Planting Density</h2>
-        <p class="text-gray-600 mb-1">
-            <span class="font-semibold">Total trees:</span> {{ $plantingLocation->treePlantings->sum('number_of_trees') }}
-        </p>
-        @if($plantingLocation->boundary_geojson)
-            <p class="text-gray-600 mb-1">
-                <span class="font-semibold">Area:</span> <span id="area-ha">—</span>
-            </p>
-            <p class="text-gray-600">
-                <span class="font-semibold">Density:</span> <span id="density-per-ha">—</span>
-            </p>
-        @else
-            <p class="text-gray-500 italic text-sm">No boundary drawn — area unavailable.</p>
-        @endif
-    </div>
-
-    <div class="mx-auto w-full max-w-xl px-4 mt-10">
-        <x-map2
-            lat="{{ $plantingLocation->latitude }}"
-            lng="{{ $plantingLocation->longitude }}"
-            :zoom="12"
-            :markers="$markers"
-            :boundary="$plantingLocation->boundary_geojson"
-            :photos="$photos"
-            :neighbors="$neighbors"
-        />
-    </div>
-
-
 
     <!-- Trees Planted -->
     <h2 class="text-2xl font-semibold mt-12 mb-3 text-center">Trees Planted</h2>
@@ -379,48 +407,5 @@
         @else
             <p class="text-center text-gray-500 mb-10">No pictures uploaded yet.</p>
         @endif
-
-    {{-- Leaflet.draw — loaded only for L.GeometryUtil.geodesicArea() below.
-         This page is read-only (no drawing controls/edit handles/draw event
-         listeners initialized), unlike create/edit.blade.php's use of this
-         same library. Not added to map2.blade.php itself, so the public
-         /p/{public_code} page (which also renders that component) is
-         unaffected. --}}
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            // Read directly from a PHP-rendered value rather than reaching
-            // into map2.blade.php's own (separate, independent) map init —
-            // same pattern create/edit.blade.php use for their own boundary
-            // data.
-            const boundary = @json($plantingLocation->boundary_geojson);
-            if (!boundary) {
-                return;
-            }
-
-            const totalTrees = {{ $plantingLocation->treePlantings->sum('number_of_trees') }};
-
-            // Same pattern the removed centerMarkerInPolygon() in
-            // create/edit.blade.php used to reach a polygon's outer ring
-            // from GeoJSON: wrap it as a Leaflet layer and read getLatLngs().
-            const layer = L.geoJSON(boundary).getLayers()[0];
-            if (!layer) {
-                return;
-            }
-
-            const latlngs = layer.getLatLngs()[0]; // outer ring
-            const areaSqMeters = L.GeometryUtil.geodesicArea(latlngs);
-            const areaHectares = areaSqMeters / 10000;
-
-            document.getElementById('area-ha').textContent = areaHectares.toFixed(1) + ' ha';
-
-            if (areaHectares > 0) {
-                const density = totalTrees / areaHectares;
-                document.getElementById('density-per-ha').textContent = density.toFixed(1) + ' trees/ha';
-            }
-        });
-    </script>
 
 </x-app-layout>
