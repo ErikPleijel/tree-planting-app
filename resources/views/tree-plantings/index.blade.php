@@ -1,57 +1,75 @@
 <x-app-layout>
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 class="text-4xl font-bold mb-4 text-center">Tree Plantings</h1>
+        <h1 class="text-4xl font-bold mb-4 text-center"><i class="fas fa-seedling mr-2"></i>Tree Plantings</h1>
 
 
         {{-- Filters --}}
-        <form method="GET" action="{{ route('tree-plantings.index') }}" class="mb-4 flex flex-wrap gap-3 items-end">
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Tree Type</label>
-                <select name="tree_type_id" class="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-                    <option value="">All tree types</option>
-                    @foreach($treeTypes as $type)
-                        <option value="{{ $type->id }}" {{ request('tree_type_id') == $type->id ? 'selected' : '' }}>
-                            {{ $type->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+        @php $hasFilters = request()->hasAny(['search', 'tree_type_id', 'status', 'sort']); @endphp
+        <div class="filter-container">
+            <div class="filter-form-content">
+                <form method="GET" action="{{ route('tree-plantings.index') }}" class="filter-form">
+                    <div class="filter-grid filter-grid-4">
+                        <div>
+                            <label for="search" class="filter-label">Search</label>
+                            <input type="text"
+                                   id="search"
+                                   name="search"
+                                   placeholder="Country, Location"
+                                   value="{{ request('search') }}"
+                                   class="filter-input {{ request('search') ? 'filter-active' : '' }}">
+                        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
-                <select name="status" class="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-                    <option value="">All</option>
-                    @foreach($statuses as $s)
-                        <option value="{{ $s->id }}" {{ request('status') == $s->id ? 'selected' : '' }}>
-                            {{ $s->tree_planting_status }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+                        <div>
+                            <label for="tree_type_id" class="filter-label">Tree Type</label>
+                            <select name="tree_type_id" id="tree_type_id" class="filter-select {{ request('tree_type_id') ? 'filter-active' : '' }}">
+                                <option value="">All tree types</option>
+                                @foreach($treeTypes as $type)
+                                    <option value="{{ $type->id }}" {{ request('tree_type_id') == $type->id ? 'selected' : '' }}>
+                                        {{ $type->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Sort by</label>
-                <select name="sort" class="border border-gray-300 rounded px-3 py-2 text-sm focus:ring-primary focus:border-primary">
-                    <option value="date_desc"     {{ request('sort', 'date_desc') === 'date_desc'     ? 'selected' : '' }}>Date: Newest First</option>
-                    <option value="date_asc"      {{ request('sort') === 'date_asc'                   ? 'selected' : '' }}>Date: Oldest First</option>
-                    <option value="tree_type_asc" {{ request('sort') === 'tree_type_asc'              ? 'selected' : '' }}>Tree Type: A → Z</option>
-                    <option value="tree_type_desc"{{ request('sort') === 'tree_type_desc'             ? 'selected' : '' }}>Tree Type: Z → A</option>
-                    <option value="location_asc"  {{ request('sort') === 'location_asc'              ? 'selected' : '' }}>Location: A → Z</option>
-                    <option value="location_desc" {{ request('sort') === 'location_desc'              ? 'selected' : '' }}>Location: Z → A</option>
-                </select>
-            </div>
+                        <div>
+                            <label for="status" class="filter-label">Status</label>
+                            <select name="status" id="status" class="filter-select {{ request('status') ? 'filter-active' : '' }}">
+                                <option value="">All</option>
+                                @foreach($statuses as $s)
+                                    <option value="{{ $s->id }}" {{ request('status') == $s->id ? 'selected' : '' }}>
+                                        {{ $s->tree_planting_status }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
 
-            <div class="flex gap-2">
-                <button type="submit" class="bg-primary text-white px-4 py-2 rounded text-sm hover:bg-green-700 transition-colors">
-                    Apply
-                </button>
-                @if(request()->hasAny(['tree_type_id', 'status', 'sort']))
-                    <a href="{{ route('tree-plantings.index') }}" class="border border-gray-300 text-gray-700 px-4 py-2 rounded text-sm hover:bg-gray-50 transition-colors">
-                        Reset
-                    </a>
-                @endif
+                        <div>
+                            <label for="sort" class="filter-label">Sort by</label>
+                            <select name="sort" id="sort" class="filter-select {{ request('sort') && request('sort') !== 'date_desc' ? 'filter-active' : '' }}">
+                                <option value="date_desc"     {{ request('sort', 'date_desc') === 'date_desc'     ? 'selected' : '' }}>Date: Newest First</option>
+                                <option value="date_asc"      {{ request('sort') === 'date_asc'                   ? 'selected' : '' }}>Date: Oldest First</option>
+                                <option value="tree_type_asc" {{ request('sort') === 'tree_type_asc'              ? 'selected' : '' }}>Tree Type: A → Z</option>
+                                <option value="tree_type_desc"{{ request('sort') === 'tree_type_desc'             ? 'selected' : '' }}>Tree Type: Z → A</option>
+                                <option value="location_asc"  {{ request('sort') === 'location_asc'              ? 'selected' : '' }}>Location: A → Z</option>
+                                <option value="location_desc" {{ request('sort') === 'location_desc'              ? 'selected' : '' }}>Location: Z → A</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-actions">
+                        <div class="filter-button-group">
+                            <button type="submit" class="filter-btn-primary">
+                                <i class="fas fa-search mr-1"></i>Filter
+                            </button>
+                            <a @if($hasFilters) href="{{ route('tree-plantings.index') }}" @endif
+                               class="filter-btn-secondary {{ $hasFilters ? 'filter-btn-secondary-active' : 'filter-btn-disabled' }}">
+                                <i class="fas fa-times mr-1"></i>Clear
+                            </a>
+                        </div>
+                    </div>
+                </form>
             </div>
-        </form>
+        </div>
 
         <div class="overflow-x-auto">
             <table class="w-full text-sm border-collapse bg-white">
@@ -59,6 +77,7 @@
                 <tr class="border-b bg-gray-50">
                     <th class="px-4 py-2 text-left">Updated at</th>
                     <th class="px-4 py-2 text-left">Location</th>
+                    <th class="px-4 py-2 text-left">Division</th>
                     <th class="px-4 py-2 text-left">Tree Type</th>
                     <th class="px-4 py-2 text-left">#</th>
                     <th class="px-4 py-2 text-left">Status</th>
@@ -70,6 +89,7 @@
                     <tr class="border-b {{ $index % 2 === 0 ? 'bg-white' : 'bg-gray-50' }}">
                         <td class="px-4 py-2">{{ $planting->updated_at->format('Y-m-d H:i') }}</td>
                         <td class="px-4 py-2">{{ $planting->plantingLocation->location ?? 'N/A' }}</td>
+                        <td class="px-4 py-2">{{ $planting->plantingLocation->division->LGA_name ?? 'N/A' }}</td>
                         <td class="px-4 py-2">{{ $planting->treeType->name ?? 'N/A' }}</td>
                         <td class="px-4 py-2">{{ $planting->number_of_trees }}</td>
                         <td class="px-4 py-2">

@@ -27,7 +27,7 @@
     </x-slot>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
-        <h2 class="text-2xl font-bold mb-4 text-center">DASHBOARD</h2>
+        <h2 class="text-4xl font-bold mb-4 text-center"><i class="fas fa-gauge-high mr-2"></i>DASHBOARD</h2>
 
         <p class="text-center text-gray-600 mb-6 max-w-2xl mx-auto">
             This dashboard gives you an overview of current tree planting activities in your assigned areas. As a Monitor or Field Worker, your role is essential in ensuring that each planting meets the standards for survival, documentation, and long-term sustainability.
@@ -42,6 +42,15 @@
             </p>
         </div>
         @endif
+
+        @role('SuperAdmin')
+        <div class="text-center mb-8">
+            <a href="{{ route('divisions.index') }}"
+               class="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                Manage Divisions
+            </a>
+        </div>
+        @endrole
 
         {{-- Stat cards --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">

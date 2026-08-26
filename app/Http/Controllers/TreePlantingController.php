@@ -17,7 +17,7 @@ class TreePlantingController extends Controller
 
     public function index(Request $request)
     {
-        $query = \App\Models\TreePlanting::with(['plantingLocation', 'treeType', 'statusRelation', 'statusUpdatedBy'])
+        $query = \App\Models\TreePlanting::with(['plantingLocation.division', 'treeType', 'statusRelation', 'statusUpdatedBy'])
             ->join('tree_types', 'tree_plantings.tree_type_id', '=', 'tree_types.id')
             ->join('planting_locations', 'tree_plantings.planting_location_id', '=', 'planting_locations.id')
             ->select('tree_plantings.*');
@@ -28,6 +28,20 @@ class TreePlantingController extends Controller
 
         if ($status = $request->input('status')) {
             $query->where('tree_plantings.status', $status);
+        }
+
+        // Apply search filter — match the planting location's name OR its
+        // division's LGA_name. whereHas() compiles to a single self-contained
+        // WHERE EXISTS clause, so it stays correctly ANDed with the filters
+        // above without leaking into an unguarded OR.
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->whereHas('plantingLocation', function ($lq) use ($search) {
+                $lq->where('location', 'like', "%{$search}%")
+                    ->orWhereHas('division', function ($dq) use ($search) {
+                        $dq->where('LGA_name', 'like', "%{$search}%");
+                    });
+            });
         }
 
         match ($request->input('sort', 'date_desc')) {

@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-xl font-semibold leading-tight text-gray-800">
-            {{ __('User Management') }}
+        <h2 class="text-4xl font-bold mb-4 text-center">
+            <i class="fas fa-user-shield mr-2"></i>{{ __('Authorizations') }}
         </h2>
     </x-slot>
 

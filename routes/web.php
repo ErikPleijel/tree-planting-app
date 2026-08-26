@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Vite;
 use App\Http\Controllers\PublicPlantingLocationController;
 use App\Http\Controllers\TreeTypeController;
+use App\Http\Controllers\DivisionController;
 
 // Homepage
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -182,6 +183,15 @@ Route::get('/contributors/search', [\App\Http\Controllers\ContributorController:
 Route::resource('contributors', \App\Http\Controllers\ContributorController::class)
     ->except(['show'])
     ->middleware(['auth', 'role:Admin|SuperAdmin']);
+
+// Divisions — SuperAdmin only, including index/viewing (unlike tree-types,
+// where index/show are public). Adding/editing/removing a region is a
+// bigger action than a tree type, so the whole feature is gated, not just
+// mutations. No show() — LGA_name/latitude/longitude are simple enough
+// that index + edit cover everything a detail view would show.
+Route::resource('divisions', DivisionController::class)
+    ->except(['show'])
+    ->middleware(['auth', 'role:SuperAdmin']);
 
 // Attach/detach contributors on a specific TreePlanting — broader gate,
 // matches the existing pattern for measurements/biochar batches.

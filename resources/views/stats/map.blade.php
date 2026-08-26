@@ -2,7 +2,7 @@
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                <h2 class="text-2xl font-bold mb-6 text-center">Tree Planting Locations Map</h2>
+                <h2 class="text-4xl font-bold mb-4 text-center"><i class="fas fa-map mr-2"></i>Tree Planting Locations Map</h2>
 
                 <!-- Map Component -->
                 <div class="w-full mb-6">

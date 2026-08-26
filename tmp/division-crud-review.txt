@@ -1,0 +1,575 @@
+===== app/Http/Controllers/DivisionController.php (new file, full content) =====
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Division;
+use Illuminate\Http\Request;
+
+class DivisionController extends Controller
+{
+    public function index()
+    {
+        $divisions = Division::orderBy('LGA_name')->paginate(150);
+
+        return view('divisions.index', compact('divisions'));
+    }
+
+    public function create()
+    {
+        return view('divisions.create');
+    }
+
+    public function store(Request $request)
+    {
+        $validated = $request->validate($this->rules());
+
+        Division::create($validated);
+
+        return redirect()
+            ->route('divisions.index')
+            ->with('success', 'Division created successfully.');
+    }
+
+    public function edit(Division $division)
+    {
+        return view('divisions.edit', compact('division'));
+    }
+
+    public function update(Request $request, Division $division)
+    {
+        $validated = $request->validate($this->rules());
+
+        $division->update($validated);
+
+        return redirect()
+            ->route('divisions.index')
+            ->with('success', 'Division updated successfully.');
+    }
+
+    /**
+     * division_id on planting_locations has an onDelete('cascade') FK, so an
+     * unguarded delete() here would silently cascade-delete every
+     * PlantingLocation in this division (and everything recorded under
+     * them). This guard is not optional.
+     */
+    public function destroy(Division $division)
+    {
+        if ($division->plantingLocations()->exists()) {
+            return redirect()
+                ->route('divisions.index')
+                ->with('error', 'This division cannot be deleted because it has planting locations assigned to it. Deleting it would also delete those locations and everything recorded under them.');
+        }
+
+        $division->delete();
+
+        return redirect()
+            ->route('divisions.index')
+            ->with('success', 'Division deleted successfully.');
+    }
+
+    private function rules(): array
+    {
+        return [
+            'LGA_name'  => ['required', 'string', 'max:255'],
+            'latitude'  => ['nullable', 'numeric', 'between:-90,90'],
+            'longitude' => ['nullable', 'numeric', 'between:-180,180'],
+        ];
+    }
+}
+
+===== app/Models/Division.php (diff — added $fillable, required for Division::create()/update() to work at all) =====
+diff --git a/app/Models/Division.php b/app/Models/Division.php
+index bcea704..e12c070 100644
+--- a/app/Models/Division.php
++++ b/app/Models/Division.php
+@@ -12,6 +12,13 @@ class Division extends Model
+     // Optional: This is actually redundant if the table is named "divisions"
+     // protected $table = 'divisions';
+     protected $table = 'division';
++
++    protected $fillable = [
++        'LGA_name',
++        'latitude',
++        'longitude',
++    ];
++
+     public function plantingLocations()
+     {
+         return $this->hasMany(PlantingLocation::class);
+
+NOTE: this wasn't explicitly requested in scope but is required for the
+feature to function at all — base Eloquent defaults to $guarded = ['*']
+(everything mass-assignment-protected) unless a model defines $fillable
+or overrides $guarded. Division had neither, so Division::create([...])
+/ $division->update([...]) would throw a MassAssignmentException without
+this. An existing test (TreePlantingMeasurementTest.php) already worked
+around this via Division::forceCreate() — this fix makes the plain
+create()/update() calls TreeTypeController's pattern relies on actually
+work for Division too.
+
+===== resources/views/divisions/partials/form.blade.php (new file, full content) =====
+<!-- Division Name -->
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="LGA_name">
+        <span>Division Name</span>
+    </label>
+    <input type="text" id="LGA_name" name="LGA_name"
+           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+           value="{{ old('LGA_name', $division->LGA_name ?? '') }}" required>
+
+    @error('LGA_name')
+    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+    @enderror
+</div>
+
+<!-- Latitude -->
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="latitude">
+        <span>Latitude</span>
+    </label>
+    <input type="number" step="0.0000001" min="-90" max="90" id="latitude" name="latitude"
+           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+           value="{{ old('latitude', $division->latitude ?? '') }}">
+
+    @error('latitude')
+    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+    @enderror
+</div>
+
+<!-- Longitude -->
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-1" for="longitude">
+        <span>Longitude</span>
+    </label>
+    <input type="number" step="0.0000001" min="-180" max="180" id="longitude" name="longitude"
+           class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary"
+           value="{{ old('longitude', $division->longitude ?? '') }}">
+
+    @error('longitude')
+    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+    @enderror
+</div>
+
+<!-- Buttons -->
+<div class="flex justify-end space-x-2 pt-4">
+    <button type="submit"
+            class="bg-primary text-white px-6 py-3 rounded hover:bg-green-700 transition-colors">
+        {{ $buttonText }}
+    </button>
+
+    <a href="{{ route('divisions.index') }}"
+       class="border border-gray-300 text-gray-700 px-6 py-3 rounded hover:bg-gray-50 transition-colors">
+        Cancel
+    </a>
+</div>
+
+===== routes/web.php (diff) =====
+diff --git a/routes/web.php b/routes/web.php
+index 718d18d..219ae39 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -12,6 +12,7 @@
+ use Illuminate\Support\Facades\Vite;
+ use App\Http\Controllers\PublicPlantingLocationController;
+ use App\Http\Controllers\TreeTypeController;
++use App\Http\Controllers\DivisionController;
+
+ // Homepage
+ Route::get('/', [HomeController::class, 'index'])->name('home');
+@@ -183,6 +184,15 @@
+     ->except(['show'])
+     ->middleware(['auth', 'role:Admin|SuperAdmin']);
+
++// Divisions — SuperAdmin only, including index/viewing (unlike tree-types,
++// where index/show are public). Adding/editing/removing a region is a
++// bigger action than a tree type, so the whole feature is gated, not just
++// mutations. No show() — LGA_name/latitude/longitude are simple enough
++// that index + edit cover everything a detail view would show.
++Route::resource('divisions', DivisionController::class)
++    ->except(['show'])
++    ->middleware(['auth', 'role:SuperAdmin']);
++
+ // Attach/detach contributors on a specific TreePlanting — broader gate,
+ // matches the existing pattern for measurements/biochar batches.
+ Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(function () {
+
+Confirmed via `php artisan route:list | grep division`: 6 routes registered
+(index, store, create, update, destroy, edit) — no show, matching plan.
+
+===== resources/views/dashboard.blade.php (diff) =====
+diff --git a/resources/views/dashboard.blade.php b/resources/views/dashboard.blade.php
+index 58ada8c..d726c43 100644
+--- a/resources/views/dashboard.blade.php
++++ b/resources/views/dashboard.blade.php
+@@ -43,6 +43,15 @@ class="w-20 h-24 object-cover rounded-lg flex-shrink-0">
+         </div>
+         @endif
+
++        @role('SuperAdmin')
++        <div class="text-center mb-8">
++            <a href="{{ route('divisions.index') }}"
++               class="inline-block bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
++                Manage Divisions
++            </a>
++        </div>
++        @endrole
++
+         {{-- Stat cards --}}
+         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+             <div class="bg-white rounded-lg shadow p-6 text-center">
+
+===== tests/Feature/DivisionTest.php (new file, full content) =====
+<?php
+
+use App\Models\Division;
+use App\Models\PlantingLocation;
+use App\Models\PlantingLocationStatus;
+use App\Models\User;
+use Database\Seeders\RolesSeeder;
+
+beforeEach(function () {
+    $this->seed(RolesSeeder::class);
+
+    $this->superAdmin = User::factory()->create();
+    $this->superAdmin->assignRole('SuperAdmin');
+
+    $this->admin = User::factory()->create();
+    $this->admin->assignRole('Admin');
+});
+
+it('lets a SuperAdmin view, create, edit, and delete an unreferenced division', function () {
+    $this->actingAs($this->superAdmin)
+        ->get(route('divisions.index'))
+        ->assertOk();
+
+    $this->actingAs($this->superAdmin)
+        ->get(route('divisions.create'))
+        ->assertOk();
+
+    $this->actingAs($this->superAdmin)
+        ->post(route('divisions.store'), [
+            'LGA_name'  => 'Test Division',
+            'latitude'  => 1.234,
+            'longitude' => 36.789,
+        ])
+        ->assertRedirect(route('divisions.index'));
+
+    $division = Division::where('LGA_name', 'Test Division')->firstOrFail();
+
+    $this->actingAs($this->superAdmin)
+        ->get(route('divisions.edit', $division))
+        ->assertOk();
+
+    $this->actingAs($this->superAdmin)
+        ->put(route('divisions.update', $division), [
+            'LGA_name' => 'Updated Division',
+        ])
+        ->assertRedirect(route('divisions.index'));
+
+    expect($division->fresh()->LGA_name)->toBe('Updated Division');
+
+    $this->actingAs($this->superAdmin)
+        ->delete(route('divisions.destroy', $division))
+        ->assertRedirect(route('divisions.index'));
+
+    expect(Division::find($division->id))->toBeNull();
+});
+
+it('blocks an Admin from every divisions route, including index', function () {
+    $division = Division::create(['LGA_name' => 'Blocked Division']);
+
+    $this->actingAs($this->admin)
+        ->get(route('divisions.index'))
+        ->assertForbidden();
+
+    $this->actingAs($this->admin)
+        ->get(route('divisions.create'))
+        ->assertForbidden();
+
+    $this->actingAs($this->admin)
+        ->post(route('divisions.store'), ['LGA_name' => 'Should Not Be Created'])
+        ->assertForbidden();
+
+    $this->actingAs($this->admin)
+        ->get(route('divisions.edit', $division))
+        ->assertForbidden();
+
+    $this->actingAs($this->admin)
+        ->put(route('divisions.update', $division), ['LGA_name' => 'Should Not Update'])
+        ->assertForbidden();
+
+    $this->actingAs($this->admin)
+        ->delete(route('divisions.destroy', $division))
+        ->assertForbidden();
+
+    expect(Division::where('LGA_name', 'Should Not Be Created')->exists())->toBeFalse();
+    expect($division->fresh()->LGA_name)->toBe('Blocked Division');
+    expect(Division::find($division->id))->not->toBeNull();
+});
+
+it('blocks deleting a division that has at least one planting location, and does not cascade the delete', function () {
+    $status = PlantingLocationStatus::forceCreate(['planting_location_status' => 'Planned']);
+    $division = Division::create(['LGA_name' => 'In Use Division']);
+    $owner = User::factory()->create();
+    $owner->assignRole('Grower');
+
+    $location = PlantingLocation::create([
+        'location'    => 'Guarded Location',
+        'division_id' => $division->id,
+        'status_id'   => $status->id,
+        'user_id'     => $owner->id,
+    ]);
+
+    $this->actingAs($this->superAdmin)
+        ->delete(route('divisions.destroy', $division))
+        ->assertRedirect(route('divisions.index'))
+        ->assertSessionHas('error');
+
+    // The whole point of the guard: division_id has an onDelete('cascade')
+    // FK, so this isn't just about the error message — verify nothing was
+    // actually deleted at the DB level.
+    expect(Division::find($division->id))->not->toBeNull();
+    expect(PlantingLocation::find($location->id))->not->toBeNull();
+});
+
+it('deletes a division with no planting locations', function () {
+    $division = Division::create(['LGA_name' => 'Empty Division']);
+
+    $this->actingAs($this->superAdmin)
+        ->delete(route('divisions.destroy', $division))
+        ->assertRedirect(route('divisions.index'))
+        ->assertSessionHas('success');
+
+    expect(Division::find($division->id))->toBeNull();
+});
+
+it('rejects out-of-range latitude and longitude values', function () {
+    $this->actingAs($this->superAdmin)
+        ->post(route('divisions.store'), [
+            'LGA_name'  => 'Bad Coordinates',
+            'latitude'  => 95,
+            'longitude' => 200,
+        ])
+        ->assertSessionHasErrors(['latitude', 'longitude']);
+
+    expect(Division::where('LGA_name', 'Bad Coordinates')->exists())->toBeFalse();
+});
+
+===== DivisionTest.php run in isolation =====
+ PASS  Tests\Feature\DivisionTest
+ - it lets a SuperAdmin view, create, edit, and delete an unreferenced division   1.84s
+ - it blocks an Admin from every divisions route, including index                0.66s
+ - it blocks deleting a division that has at least one planting location...      0.13s
+ - it deletes a division with no planting locations                              0.12s
+ - it rejects out-of-range latitude and longitude values                         0.13s
+
+ Tests:    5 passed (33 assertions)
+ Duration: 4.13s
+
+===== Full test suite run (composer run test) =====
+> @php artisan config:clear --ansi
+
+   INFO  Configuration cache cleared successfully.  
+
+> @php artisan test
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true                                                    0.03s  
+
+   PASS  Tests\Unit\ExifExtractorDmsConversionTest
+  ✓ it converts a Southern-hemisphere DMS coordinate to a negative deci… 0.01s  
+  ✓ it converts a Western-hemisphere DMS coordinate to a negative decimal degree
+  ✓ it converts a Northern/Eastern DMS coordinate to a positive decimal degree
+  ✓ it returns null when the DMS array has fewer than three components
+
+   PASS  Tests\Unit\GeometryFingerprintTest
+  ✓ it produces the same hash for two differently-formatted representations of the identical shape
+  ✓ it produces a different hash when even one vertex differs            0.01s  
+  ✓ it counts vertices excluding the duplicate closing point
+  ✓ it computes a bounding box matching the outer ring extents
+
+   PASS  Tests\Unit\PointInPolygonTest
+  ✓ it returns true for a point clearly inside a simple rectangular polygon
+  ✓ it returns false for a point clearly outside a simple rectangular polygon
+  ✓ it resolves a point inside the notch of a concave L-shaped polygon as outside
+  ✓ it resolves points inside each leg of a concave L-shaped polygon as inside
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                         0.70s  
+  ✓ users can authenticate using the login screen                        0.15s  
+  ✓ users can not authenticate with invalid password                     0.27s  
+  ✓ users can logout                                                     0.06s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                            0.08s  
+  ✓ email can be verified                                                0.15s  
+  ✓ email is not verified with invalid hash                              0.25s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                              0.11s  
+  ✓ password can be confirmed                                            0.08s  
+  ✓ password is not confirmed with invalid password                      0.28s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                           0.12s  
+  ✓ reset password link can be requested                                 0.34s  
+  ✓ reset password screen can be rendered                                0.32s  
+  ✓ password can be reset with valid token                               0.33s  
+
+   PASS  Tests\Feature\Auth\PasswordUpdateTest
+  ✓ password can be updated                                              0.12s  
+  ✓ correct password must be provided to update password                 0.08s  
+
+   FAIL  Tests\Feature\Auth\RegistrationTest
+  ✓ registration screen can be rendered                                  0.10s  
+  ⨯ new users can register                                               0.07s  
+
+   PASS  Tests\Feature\BiocharBatchTest
+  ✓ it derives planting_location_id automatically when only tree_planti… 0.10s  
+  ✓ it accepts a batch linked only to a planting_location with no speci… 0.07s  
+  ✓ it rejects a batch with neither planting_location_id nor tree_plant… 0.09s  
+  ✓ it nulls out tree_planting_id when the parent planting is deleted,…  0.13s  
+  ✓ it logs a change entry with correct old/new values when quantity_kg… 0.18s  
+
+   PASS  Tests\Feature\BoundaryGeojsonTest
+  ✓ it stores a valid boundary and logs boundary_set with the correct f… 0.18s  
+  ✓ it does not log boundary_set when no boundary is provided on create  0.18s  
+  ✓ it logs boundary_updated with only fingerprint fields (no raw coord… 0.18s  
+  ✓ it does not log boundary_updated when the same shape is resubmitted… 0.15s  
+  ✓ it rejects a boundary with fewer than 3 distinct vertices            0.13s  
+  ✓ it accepts an unclosed ring and saves it correctly auto-closed       0.13s  
+  ✓ it rejects a ring shaped like [A, B, A] that collapses to only 2 di… 0.13s  
+  ✓ it rejects an out-of-range coordinate within the polygon             0.13s  
+
+   PASS  Tests\Feature\ChangeLogTest
+  ✓ it creates one change log row per moved planting with correct old/n… 0.14s  
+  ✓ it logs multiple moved plantings as separate rows, not one combined… 0.14s  
+  ✓ it logs a coordinates change only when latitude/longitude actually…  0.14s  
+  ✓ it logs coordinate and status changes as two separate rows when bot… 0.12s  
+  ✓ it logs a tree planting status change with correct old/new values a… 0.14s  
+  ✓ it rejects out-of-range latitude and longitude values                0.17s  
+  ✓ it preserves changed_by_name after the acting user is deleted        0.13s  
+  ✓ it ignores a caller-supplied created_at and always stamps the real…  0.10s  
+  ✓ it keeps change log rows after the parent record is hard-deleted vi… 0.10s  
+
+   PASS  Tests\Feature\ContributorTest
+  ✓ it attaches an existing contributor and logs contributor_attached w… 0.11s  
+  ✓ it attaches a brand-new contributor created inline in the same requ… 0.09s  
+  ✓ it rejects attaching the same contributor twice to the same plantin… 0.10s  
+  ✓ it returns the same friendly duplicate-attachment error when two re… 0.11s  
+  ✓ it detaches a contributor and logs contributor_detached              0.08s  
+  ✓ it logs contributor_updated with correct old/new values, and a no-o… 0.07s  
+  ✓ it blocks deleting a contributor that has at least one attachment    0.08s  
+  ✓ it cascades pivot rows when the TreePlanting is deleted, contrastin… 0.07s  
+  ✓ it renders attached contributors per TreePlanting on the public pag… 0.09s  
+
+   PASS  Tests\Feature\DivisionTest
+  ✓ it lets a SuperAdmin view, create, edit, and delete an unreferenced… 0.29s  
+  ✓ it blocks an Admin from every divisions route, including index       0.82s  
+  ✓ it blocks deleting a division that has at least one planting locati… 0.13s  
+  ✓ it deletes a division with no planting locations                     0.14s  
+  ✓ it rejects out-of-range latitude and longitude values                0.13s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ it returns a successful response                                     0.14s  
+
+   PASS  Tests\Feature\GpsProvenanceTest
+  ✓ it logs a coordinates_set change entry with capture method and accu… 0.16s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.18s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.17s  
+  ✓ it rejects out-of-range latitude and longitude values on create      0.12s  
+  ✓ it does not log a coordinates_set entry when creating a location wi… 0.13s  
+  ✓ it logs coordinates_updated with capture_method/accuracy_meters in…  0.11s  
+  ✓ it logs coordinates_updated with capture_method map_center_adjust i… 0.17s  
+  ✓ it logs coordinates_updated with capture_method polygon_centroid in… 0.13s  
+
+   PASS  Tests\Feature\NearbyLocationFinderTest
+  ✓ it returns a location that falls within the bounding box             0.11s  
+  ✓ it excludes a location that is clearly outside the bounding box      0.08s  
+  ✓ it never includes the current location in its own results            0.09s  
+  ✓ it excludes locations with null latitude/longitude without erroring  0.09s  
+  ✓ it returns an empty collection, not an error, when the current loca… 0.09s  
+  ✓ it caps results at the configured limit even when more locations ma… 0.10s  
+  ✓ it returns an empty collection, not an error, when nothing else is…  0.09s  
+  ✓ it includes only id, location, latitude, longitude, and boundary_ge… 0.08s  
+  ✓ it renders the admin show page successfully with a nearby neighbor…  0.17s  
+  ✓ it renders the edit page successfully with a nearby neighbor that h… 0.14s  
+
+   PASS  Tests\Feature\PhotoLocationBoundaryTest
+  ✓ it includes photos with captured coordinates and excludes photos wi… 0.14s  
+  ✓ it flags a photo whose captured coordinates fall inside the boundar… 0.12s  
+  ✓ it flags a photo whose captured coordinates fall outside the bounda… 0.18s  
+  ✓ it gives a photo a null flag, not false, when the location has no b… 0.38s  
+  ✓ it includes the same captured-coordinate photo data on the public p… 0.19s  
+  ✓ it flags a photo on the public page as outside the boundary the sam… 0.16s  
+
+   PASS  Tests\Feature\PictureConsentTest
+  ✓ it rejects a camera-captured photo upload when consent is not confi… 0.21s  
+  ✓ it creates a camera-captured photo with consent_confirmed_at set wh… 0.14s  
+  ✓ it rejects a device-upload photo batch when consent is not confirme… 0.20s  
+  ✓ it creates device-uploaded photos with consent_confirmed_at set whe… 0.22s  
+  ✓ it still displays and behaves normally for an existing photo with a… 0.22s  
+
+   PASS  Tests\Feature\PictureProvenanceTest
+  ✓ it records exif provenance on a file-uploaded photo when the ExifEx… 0.19s  
+  ✓ it leaves all provenance fields null when the ExifExtractor finds n… 0.12s  
+  ✓ it records device-geolocation provenance on a camera-captured photo… 0.15s  
+  ✓ it leaves all provenance fields null on a camera-captured photo whe… 0.14s  
+
+   PASS  Tests\Feature\ProfileTest
+  ✓ profile page is displayed                                            0.24s  
+  ✓ profile information can be updated                                   0.07s  
+  ✓ email verification status is unchanged when the email address is un… 0.05s  
+  ✓ user can delete their account                                        0.04s  
+  ✓ correct password must be provided to delete account                  0.04s  
+
+   PASS  Tests\Feature\TreePlantingMeasurementTest
+  ✓ it links a measurement to the specific tree planting it was recorde… 0.13s  
+  ✓ it rejects trees_surviving greater than the plantings number_of_tre… 0.17s  
+  ✓ it rejects a measurement_date before the plantings planting_date     0.22s  
+  ✓ it lets a grower create a measurement but rejects them from verifyi… 0.25s  
+  ✓ it does not allow a privileged user to verify a measurement they re… 0.14s  
+  ✓ it sets verified_by_user_id and verified_at and writes a change log… 0.26s  
+  ✓ it logs only the fields that actually changed when editing a measur… 0.19s  
+  ✓ it editing a verified measurement resets its verification and logs…  0.18s  
+  ✓ it does not reset verification or log anything when a no-op edit re… 0.18s  
+  ✓ it cascades measurement deletion when the parent tree planting is d… 0.12s  
+
+   PASS  Tests\Feature\TreeTypeCarbonFieldsTest
+  ✓ it rejects wood_density_kg_m3 without a source_reference             0.16s  
+  ✓ it accepts wood_density_kg_m3 and carbon_fraction when a source_ref… 0.13s  
+  ✓ it renders wood_density_kg_m3, carbon_fraction, and source_referenc… 0.15s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\Auth\RegistrationTest > new users can register         
+  The user is not authenticated
+Failed asserting that false is true.
+
+  at tests\Feature\Auth\RegistrationTest.php:17
+     13▕         'password' => 'password',
+     14▕         'password_confirmation' => 'password',
+     15▕     ]);
+     16▕ 
+  ➜  17▕     $this->assertAuthenticated();
+     18▕     $response->assertRedirect(route('dashboard', absolute: false));
+     19▕ });
+     20▕
+
+
+  Tests:    1 failed, 118 passed (423 assertions)
+  Duration: 17.98s
+
+Script @php artisan test handling the test event returned with error code 1
+
+Also ran `php artisan route:list | grep division` (6 routes, no show — see
+above) and `php artisan view:cache` (all Blade templates across the app,
+including the 3 new divisions/*.blade.php files, compiled with zero
+syntax errors) before running the test suite.
+
+===== NOT built (out of scope per this task, not overlooked) =====
+- resources/views/divisions/index.blade.php has no .filter-* search
+  section — with only 47 divisions total and paginate(150) meaning the
+  whole list fits on one page, a filter/search UI wasn't judged
+  worthwhile. Easy to add later using the established .filter-* pattern
+  if the row count grows.
+- No show() route/view/controller method, per explicit scope.

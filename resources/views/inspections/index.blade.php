@@ -1,58 +1,46 @@
 <x-app-layout>
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 class="text-2xl font-bold mb-4 text-center">Inspections</h1>
+        <h1 class="text-4xl font-bold mb-4 text-center"><i class="fas fa-clipboard-check mr-2"></i>Inspections</h1>
 
         <!-- Search and Filter Form -->
-        <div class="bg-white shadow-md rounded-lg mb-6">
-            <div class="p-6">
-                <form method="GET" action="{{ route('inspections.index') }}" class="flex flex-wrap gap-4 items-end">
-                    <!-- Search Input -->
-                    <div class="flex-1 min-w-64">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Search
-                        </label>
-                        <input
-                            type="text"
-                            name="search"
-                            value="{{ request('search') }}"
-                            placeholder="Search by location, monitor, or comment..."
-                            class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                    </div>
-
-                    <!-- Status Filter -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Status
-                        </label>
-                        <select name="status" class="px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                            <option value="">All Status</option>
-                            <option value="verified" {{ request('status') === 'verified' ? 'selected' : '' }}>Verified</option>
-                            <option value="unverified" {{ request('status') === 'unverified' ? 'selected' : '' }}>Unverified</option>
-                        </select>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div>
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors inline-flex items-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                            </svg>
-                            Search
-                        </button>
-                    </div>
-
-                    <!-- Clear Filters -->
-                    @if(request('search') || request('status'))
+        @php $hasFilters = request()->hasAny(['search', 'status']); @endphp
+        <div class="filter-container">
+            <div class="filter-form-content">
+                <form method="GET" action="{{ route('inspections.index') }}" class="filter-form">
+                    <div class="filter-grid filter-grid-2">
                         <div>
-                            <a href="{{ route('inspections.index') }}" class="px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded transition-colors inline-flex items-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                                Clear
+                            <label for="search" class="filter-label">Search</label>
+                            <input
+                                type="text"
+                                id="search"
+                                name="search"
+                                value="{{ request('search') }}"
+                                placeholder="Search by location, division, country, monitor, or comment..."
+                                class="filter-input {{ request('search') ? 'filter-active' : '' }}"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="status" class="filter-label">Status</label>
+                            <select name="status" id="status" class="filter-select {{ request('status') ? 'filter-active' : '' }}">
+                                <option value="">All Status</option>
+                                <option value="verified" {{ request('status') === 'verified' ? 'selected' : '' }}>Verified</option>
+                                <option value="unverified" {{ request('status') === 'unverified' ? 'selected' : '' }}>Unverified</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="filter-actions">
+                        <div class="filter-button-group">
+                            <button type="submit" class="filter-btn-primary">
+                                <i class="fas fa-search mr-1"></i>Filter
+                            </button>
+                            <a @if($hasFilters) href="{{ route('inspections.index') }}" @endif
+                               class="filter-btn-secondary {{ $hasFilters ? 'filter-btn-secondary-active' : 'filter-btn-disabled' }}">
+                                <i class="fas fa-times mr-1"></i>Clear
                             </a>
                         </div>
-                    @endif
+                    </div>
                 </form>
             </div>
         </div>

@@ -12,6 +12,13 @@ class Division extends Model
     // Optional: This is actually redundant if the table is named "divisions"
     // protected $table = 'divisions';
     protected $table = 'division';
+
+    protected $fillable = [
+        'LGA_name',
+        'latitude',
+        'longitude',
+    ];
+
     public function plantingLocations()
     {
         return $this->hasMany(PlantingLocation::class);

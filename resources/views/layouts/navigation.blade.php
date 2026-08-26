@@ -20,7 +20,7 @@
         @guest
             <a href="{{ route('login') }}"
                class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-primary text-primary-content hover:bg-primary/90 transition duration-150 ease-in-out">
-                {{ __('Log in') }}
+                <i class="fas fa-right-to-bracket mr-2"></i>{{ __('Log in') }}
             </a>
         @endguest
     </div>

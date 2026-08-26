@@ -1,6 +1,6 @@
 <x-app-layout>
     <div class="max-w-5xl mx-auto px-4 py-6">
-        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Planting Locations</h1>
+        <h1 class="text-4xl font-bold mb-4 text-center"><i class="fas fa-location-dot mr-2"></i>Planting Locations</h1>
 
         <div class="text-right mb-4">
             <a href="{{ route('planting-locations.create') }}"

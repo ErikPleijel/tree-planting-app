@@ -20,6 +20,9 @@ class InspectionController extends Controller
                   ->orWhereHas('plantingLocation', function($q) use ($search) {
                       $q->where('location', 'LIKE', "%{$search}%");
                   })
+                  ->orWhereHas('plantingLocation.division', function($q) use ($search) {
+                      $q->where('LGA_name', 'LIKE', "%{$search}%");
+                  })
                   ->orWhereHas('user', function($q) use ($search) {
                       $q->where('name', 'LIKE', "%{$search}%");
                   });
