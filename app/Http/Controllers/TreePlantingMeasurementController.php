@@ -18,7 +18,7 @@ class TreePlantingMeasurementController extends Controller
         $treePlanting->load(['plantingLocation', 'treeType']);
 
         $measurements = $treePlanting->measurements()
-            ->with(['recordedBy', 'verifiedBy'])
+            ->with(['recordedBy', 'verifiedBy', 'lidarScans'])
             ->orderBy('measurement_date', 'desc')
             ->get();
 
