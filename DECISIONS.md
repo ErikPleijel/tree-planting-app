@@ -10,6 +10,108 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-26 — Computed area/density on the planting-location show page
+
+**Context**
+
+`app/Services/PolygonAreaCalculator.php`, its wiring into
+`PlantingLocationController::show()`, the restructured "Location Data"
+section on `resources/views/planting-locations/show.blade.php`, and
+`tests/Unit/PolygonAreaCalculatorTest.php` were built during an earlier
+investigation task that was supposed to be read-only — they were never
+intended as that task's deliverable. This entry exists to properly
+document the feature after the fact, rather than leave it sitting
+undocumented.
+
+Checked before deciding whether to keep or discard it:
+- **Already committed**, not sitting as an uncommitted working-tree
+  change as originally assumed — commit `1297ba1`, containing exactly
+  these four files and nothing else (a clean, already-atomic commit,
+  just under this repo's generic "Commit this" message rather than a
+  descriptive one).
+- **Live, not inert** — wired into `planting-locations.show`
+  (`GET /planting-locations/{planting_location}`), one of the
+  most-visited routes in the app (every "View" link from the dashboard,
+  tree-plantings index, inspections index, etc. lands here).
+- **Handles the missing-boundary case correctly.** At the time this was
+  built, 1 of 3 `planting_locations` rows had no `boundary_geojson`.
+  `PolygonAreaCalculator::calculateHectares()` returns `null` (not
+  `0.0`) when there's no ring to calculate from;
+  `PlantingLocationController::show()` guards the density calculation
+  against a `null` or zero area before dividing; the view renders
+  "N/A" for both Area and Density rather than a misleading `0.00`.
+  Confirmed via `tests/Unit/PolygonAreaCalculatorTest.php` (3/3
+  passing) and by hand-calculating a known rectangle's expected area.
+
+**Decision**
+
+Kept as a real, documented feature — computed on read from
+`boundary_geojson` each time the page loads, not stored anywhere. Not
+rewriting `1297ba1`'s commit message: it's several commits back from
+the current tip (not the tip itself), so rewording it would require an
+interactive rebase, which is outside what's done in this workflow; this
+entry is the documentation trail instead.
+
+**Reasoning**
+
+The area/density approximation is the same latitude-adjusted
+degree-to-km approach already used by `NearbyLocationFinder`
+(consistent precision expectations across the codebase, not
+survey-grade), and showing it on the location page is a genuine,
+low-risk improvement — it doesn't touch stored data, degrades
+gracefully to "N/A" for the locations that don't have a boundary yet,
+and reuses an already-eager-loaded relation (`treePlantings`) for the
+total-trees figure rather than adding a new query.
+
+## 2026-08-26 — LiDAR Scan Upload — Implementation Judgment Calls
+
+**Context**
+
+Two judgment calls made while building `LidarScanController::store()`
+(see "LiDAR Integration — Investigation & Proposal" below for the
+underlying design) that weren't dictated by the proposal itself and are
+worth recording explicitly, since both are places a future change could
+silently regress.
+
+**Decision**
+
+1. **Scan file size limit: 100MB, an explicit guess.**
+   `PictureController::uploadStore()` caps photo uploads at 8MB — that
+   limit is inappropriate for LiDAR mesh/point cloud exports, which run
+   far larger. 100MB was set as a starting ceiling with **no basis in
+   real file samples** from actual phone LiDAR app exports (Polycam,
+   3D Scanner App, etc.). This needs revisiting once real scan files
+   from field use are available — it may be too generous, too
+   restrictive, or roughly right; there's no evidence either way yet.
+
+2. **File type validated by extension, not Laravel's `mimes:` rule —
+   and this means there is no content-level check at all.** Several
+   expected scan formats (`.usdz`, `.glb`, `.las`, `.laz`) aren't in
+   Laravel/Symfony's default MIME-type database, so `mimes:` would
+   falsely reject legitimate uploads in those formats. The workaround —
+   checking the uploaded file's extension string directly
+   (`getClientOriginalExtension()`) against a fixed allow-list — means
+   validation currently trusts the extension alone. There is **no
+   minimum size floor, and no attempt to open or parse the file to
+   confirm its contents actually match its claimed type.** A file named
+   `scan.obj` that's actually empty, corrupted, or something else
+   entirely would pass validation and be stored as-is.
+
+**Reasoning**
+
+Both are accepted tradeoffs for this first slice, not silent gaps —
+recorded here specifically so they're documented rather than
+rediscovered. The extension-only check in particular is deliberately
+scoped to this being an internal tool used by known field verifiers
+(the same small set of privileged roles that can already record
+measurements), not a public upload surface — the threat model for
+someone deliberately uploading a mislabeled file is low. If this tool's
+audience ever broadens, or if scan files start being processed
+server-side (parsed, rendered, or otherwise opened rather than just
+stored and linked), this tradeoff should be revisited: at minimum a
+magic-byte/content sniff before trusting the extension, and likely a
+minimum size floor to catch empty/truncated uploads.
+
 ## 2026-08-26 — LiDAR Integration — Investigation & Proposal
 
 **Status:** investigation + proposal only — no migrations, models, controllers,
