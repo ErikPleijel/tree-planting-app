@@ -43,31 +43,6 @@
         </div>
         @endif
 
-        {{-- Quick-action buttons --}}
-        <div class="flex flex-wrap justify-center gap-2 mb-8">
-            <a href="{{ route('home') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">HOME</a>
-            @role('Admin|SuperAdmin|Monitor|Grower')
-            <a href="{{ route('planting-locations.create') }}" class="bg-green-700 text-white px-4 py-2 text-sm rounded hover:bg-green-800 transition-colors">Add New Location</a>
-            <a href="{{ route('planting-locations.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Locations</a>
-            @endrole
-
-            @role('Admin|SuperAdmin|Monitor')
-            <a href="{{ route('tree-plantings.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Plantings</a>
-            <a href="{{ route('inspections.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Inspections</a>
-            @endrole
-
-            <a href="{{ route('tree-types.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Tree Types</a>
-
-            @role('Admin|SuperAdmin')
-            <a href="{{ route('users.report') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Authorizations</a>
-            @endrole
-
-            <a href="{{ route('team.index') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">The Team</a>
-            <a href="{{ route('stats.map') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Map</a>
-            <a href="{{ route('stats.stats1') }}" class="bg-gray-700 text-white px-4 py-2 text-sm rounded hover:bg-gray-800 transition-colors">Statistics</a>
-            <a href="{{ route('profile.edit') }}" class="bg-indigo-600 text-white px-4 py-2 text-sm rounded hover:bg-indigo-700 transition-colors">Profile</a>
-        </div>
-
         {{-- Stat cards --}}
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div class="bg-white rounded-lg shadow p-6 text-center">

@@ -1,0 +1,588 @@
+===== "Add New Location" uniqueness check (before removing the dashboard's copy) =====
+Grepped the whole resources/views tree for `planting-locations.create` — it
+appears in exactly two files: dashboard.blade.php (the grid being removed)
+and resources/views/planting-locations/index.blade.php:6-8, which has its
+own, independent, unconditional "Add New Location" button:
+
+    <div class="text-right mb-4">
+        <a href="{{ route('planting-locations.create') }}"
+           class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+            Add New Location
+        </a>
+    </div>
+
+This button is not role-gated in the view itself (the whole planting-locations
+route group is already gated at the route level to Admin|SuperAdmin|Monitor|
+Grower, same roles the dashboard button was scoped to via @role(...)), and it
+does not depend on anything the dashboard grid provided. So removing the
+dashboard's "Add New Location" shortcut causes no functionality loss —
+planting-locations.create remains reachable from the Locations index page
+for the same set of roles. Proceeded with the removal; did not stop for a
+decision.
+
+===== resources/views/layouts/partials/user-menu.blade.php =====
+{{--
+    Shared profile/logout footer — the single consolidated implementation
+    used by both the desktop sidebar and the mobile drawer (previously two
+    separate implementations: a dropdown on desktop, an always-expanded
+    block on mobile). Name/role display now lives in partials/header.blade.php
+    instead (desktop only).
+
+    Expects a $linkComponent variable ('sidebar-link' or
+    'responsive-nav-link') naming which Blade component to render each
+    link with, matching layouts/partials/nav-items.blade.php's convention.
+
+    Optionally accepts $showGuestLinks (default true) to suppress the
+    guest Login/Register block per-caller — the mobile drawer passes
+    false since guests get a compact Login button in the mobile top bar
+    instead (see layouts/navigation.blade.php).
+--}}
+@auth
+    <div class="border-t border-gray-200 pt-4 space-y-1">
+        <x-dynamic-component :component="$linkComponent" :href="route('profile.edit')">
+            {{ __('Profile') }}
+        </x-dynamic-component>
+
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <x-dynamic-component :component="$linkComponent" :href="route('logout')"
+                             onclick="event.preventDefault(); this.closest('form').submit();">
+                {{ __('Log Out') }}
+            </x-dynamic-component>
+        </form>
+    </div>
+@else
+    @if($showGuestLinks ?? true)
+        <div class="border-t border-gray-200 pt-4 px-3 space-y-1">
+            <x-dynamic-component :component="$linkComponent" :href="route('login')">
+                {{ __('Log in') }}
+            </x-dynamic-component>
+            @if (Route::has('register'))
+                <x-dynamic-component :component="$linkComponent" :href="route('register')">
+                    {{ __('Register') }}
+                </x-dynamic-component>
+            @endif
+        </div>
+    @endif
+@endauth
+
+===== resources/views/layouts/navigation.blade.php =====
+{{--
+    Orchestrates two renderings of the same nav data (see
+    layouts/partials/nav-items.blade.php and layouts/partials/user-menu.blade.php):
+      - sm:+  a persistent vertical sidebar (<aside>), sticky while scrolling.
+      - <sm   a mobile top bar with a left-aligned hamburger that opens a
+              left-sliding off-canvas drawer.
+    x-data is scoped to this whole block so the hamburger button and the
+    drawer/backdrop share the same `open` state.
+--}}
+<div x-data="{ open: false }">
+    {{-- Mobile top bar: hamburger on the LEFT, compact Login button (guests only) on the right --}}
+    <div class="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-100 sm:hidden">
+        <button @click="open = true" aria-label="Open navigation menu"
+                class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+            <svg class="h-7 w-7" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+        </button>
+
+        @guest
+            <a href="{{ route('login') }}"
+               class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-primary text-primary-content hover:bg-primary/90 transition duration-150 ease-in-out">
+                {{ __('Log in') }}
+            </a>
+        @endguest
+    </div>
+
+    {{-- Desktop sidebar (sm:+), sticky for the height of the viewport --}}
+    <aside class="hidden sm:flex sm:flex-col sm:w-64 sm:shrink-0 sm:sticky sm:top-0 sm:h-screen sm:overflow-y-auto bg-white border-r border-gray-100 px-3 py-4">
+        <nav class="space-y-1">
+            @include('layouts.partials.nav-items', ['linkComponent' => 'sidebar-link'])
+        </nav>
+
+        @include('layouts.partials.user-menu', ['linkComponent' => 'sidebar-link'])
+    </aside>
+
+    {{-- Mobile off-canvas drawer + backdrop --}}
+    <div x-show="open" class="fixed inset-0 z-40 sm:hidden" style="display: none;" x-cloak>
+        <div x-show="open"
+             x-transition:enter="transition-opacity ease-linear duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition-opacity ease-linear duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             class="fixed inset-0 bg-black/50"
+             @click="open = false"
+             style="display: none;">
+        </div>
+
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="-translate-x-full"
+             x-transition:enter-end="translate-x-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="translate-x-0"
+             x-transition:leave-end="-translate-x-full"
+             class="fixed inset-y-0 left-0 z-40 w-64 bg-white shadow-lg flex flex-col px-3 py-4 overflow-y-auto"
+             style="display: none;">
+            <div class="flex items-center justify-between mb-4 px-1">
+                <span class="font-semibold text-gray-700">Menu</span>
+                <button @click="open = false" aria-label="Close navigation menu"
+                        class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
+                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <nav class="space-y-1" @click="open = false">
+                @include('layouts.partials.nav-items', ['linkComponent' => 'responsive-nav-link'])
+            </nav>
+
+            @include('layouts.partials.user-menu', ['linkComponent' => 'responsive-nav-link', 'showGuestLinks' => false])
+        </div>
+    </div>
+</div>
+
+===== resources/views/dashboard.blade.php =====
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center gap-4">
+            @if(Auth::user()->profile_picture_path)
+                <img src="{{ asset('storage/' . Auth::user()->profile_picture_path) }}"
+                     alt="Profile photo"
+                     class="w-20 h-24 object-cover rounded-lg flex-shrink-0">
+            @else
+                <div class="w-20 h-24 rounded-lg bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                    </svg>
+                </div>
+            @endif
+            <div class="text-xl font-semibold leading-tight text-gray-800">
+                <h1>{{ Auth::user()->name }}</h1>
+                <p class="text-lg mt-1">
+                    Your role:
+                    @role('Admin|SuperAdmin|Monitor|Grower')
+                        <span class="bg-green-800 text-white px-2 py-1 rounded">{{ Auth::user()->roles->first()->name }}</span>
+                    @else
+                        <span class="bg-yellow-200 px-2 py-1 rounded">You have not been assigned a role yet</span>
+                    @endrole
+                </p>
+            </div>
+        </div>
+    </x-slot>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+        <h2 class="text-2xl font-bold mb-4 text-center">DASHBOARD</h2>
+
+        <p class="text-center text-gray-600 mb-6 max-w-2xl mx-auto">
+            This dashboard gives you an overview of current tree planting activities in your assigned areas. As a Monitor or Field Worker, your role is essential in ensuring that each planting meets the standards for survival, documentation, and long-term sustainability.
+        </p>
+
+        {{-- No photo reminder --}}
+        @if(!Auth::user()->profile_picture_path)
+        <div class="text-center mb-4">
+            <p class="text-lg font-semibold text-orange-600">
+                ❗ You have not uploaded a profile photo yet.
+                <a href="{{ route('profile.edit') }}" class="underline hover:text-orange-800">Upload one on your Profile page.</a>
+            </p>
+        </div>
+        @endif
+
+        {{-- Stat cards --}}
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-4xl font-bold text-green-700">{{ number_format($statTreesPlanted) }}</p>
+                <p class="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">Trees Planted by You</p>
+            </div>
+            @if($statVerifications !== null)
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-4xl font-bold text-yellow-600">{{ number_format($statVerifications) }}</p>
+                <p class="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">Plantings Verified by You</p>
+            </div>
+            <div class="bg-white rounded-lg shadow p-6 text-center">
+                <p class="text-4xl font-bold text-blue-600">{{ number_format($statInspections) }}</p>
+                <p class="mt-2 text-sm font-medium text-gray-600 uppercase tracking-wide">Inspections Carried Out by You</p>
+            </div>
+            @endif
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto mt-8 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="p-6 bg-white border-b border-gray-200">
+            <h2 class="text-2xl font-semibold mb-4">My Tree Plantings</h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated at</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Species</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse ($treePlantings as $planting)
+    <tr class="{{ $planting->status === 1 ? 'bg-red-100' : ($planting->status === 2 ? 'bg-green-100' : '') }}">
+        <td class="px-6 py-4 whitespace-nowrap">
+            {{ $planting->updated_at ? $planting->updated_at->format('Y-m-d H:i') : 'Not set' }}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+            {{ $planting->plantingLocation?->division?->LGA_name ?? 'No Division Assigned' }}
+        </td>
+        <td class="px-6 py-4">
+            {{ $planting->treeType->name ?? 'No Species' }}
+        </td>
+        <td class="px-6 py-4">
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                {{ $planting->statusRelation?->tree_planting_status === 'Planted' ? 'bg-green-100 text-green-800' :
+                   ($planting->statusRelation?->tree_planting_status === 'Verified' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800') }}">
+                {{ ucfirst($planting->statusRelation?->tree_planting_status ?? 'Unknown') }}
+            </span>
+        </td>
+        <td class="px-6 py-4">
+            <a href="{{ route('planting-locations.show', $planting->plantingLocation) }}" class="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors">View</a>
+        </td>
+    </tr>
+@empty
+    <tr>
+        <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+            No tree plantings found
+        </td>
+    </tr>
+@endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4">
+                {{ $treePlantings->links() }}
+            </div>
+        </div>
+    </div>
+</div>
+
+@if($verifications !== null)
+<div class="max-w-7xl mx-auto mt-8 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="p-6 bg-white border-b border-gray-200">
+            <h2 class="text-2xl font-semibold mb-4">My Verifications</h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated at</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tree Type</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse ($verifications as $planting)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ $planting->updated_at->format('Y-m-d H:i') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ $planting->plantingLocation?->location ?? 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ $planting->treeType?->name ?? 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ $planting->number_of_trees }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a href="{{ route('planting-locations.show', $planting->plantingLocation) }}" class="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors">View</a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                    No verifications found
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4">
+                {{ $verifications->links() }}
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+@if($inspections !== null)
+<div class="max-w-7xl mx-auto mt-8 px-4 sm:px-6 lg:px-8">
+    <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+        <div class="p-6 bg-white border-b border-gray-200">
+            <h2 class="text-2xl font-semibold mb-4">My Inspections</h2>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Updated at</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Comment</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Verified</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse ($inspections as $inspection)
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ $inspection->updated_at->format('Y-m-d H:i') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ $inspection->plantingLocation?->location ?? 'N/A' }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    {{ $inspection->comment ?? '—' }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ $inspection->verified ? 'Yes' : 'No' }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a href="{{ route('planting-locations.show', $inspection->plantingLocation) }}" class="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors">View</a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                    No inspections found
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4">
+                {{ $inspections->links() }}
+            </div>
+        </div>
+    </div>
+</div>
+@endif
+
+<div class="bg-white p-6 rounded shadow max-w-3xl mx-auto mt-8 mb-8">
+    <h3 class="text-xl font-semibold mt-2 mb-2">Your Responsibilities:</h3>
+    <ul class="list-disc list-inside mb-4">
+        <li>Review and verify newly planted trees in the field.</li>
+        <li>Record accurate inspection results and upload supporting photos if required.</li>
+        <li>Report any issues such as missing trees, poor soil conditions, or pest damage.</li>
+        <li>Ensure that each planting location is properly geotagged and documented.</li>
+        <li><strong>Always write down all key data on paper as a backup</strong>, in case of technical problems or poor network coverage.</li>
+    </ul>
+
+    <h3 class="text-xl font-semibold mt-6 mb-2">Getting Started:</h3>
+    <ol class="list-decimal list-inside mb-4">
+        <li>Use the navigation menu to access <strong>Plantings</strong>, <strong>Inspections</strong>, or <strong>Locations</strong>.</li>
+        <li>Click on any record to view details, update status, or submit inspection notes.</li>
+    </ol>
+
+    <p class="text-sm text-gray-600">
+        Thank you for your work in restoring our environment — one tree at a time.
+    </p>
+</div>
+
+</x-app-layout>
+
+===== Full test suite run (composer run test) =====
+> @php artisan config:clear --ansi
+
+   INFO  Configuration cache cleared successfully.  
+
+> @php artisan test
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true                                                    0.03s  
+
+   PASS  Tests\Unit\ExifExtractorDmsConversionTest
+  ✓ it converts a Southern-hemisphere DMS coordinate to a negative deci… 0.01s  
+  ✓ it converts a Western-hemisphere DMS coordinate to a negative decimal degree
+  ✓ it converts a Northern/Eastern DMS coordinate to a positive decimal degree
+  ✓ it returns null when the DMS array has fewer than three components
+
+   PASS  Tests\Unit\GeometryFingerprintTest
+  ✓ it produces the same hash for two differently-formatted representations of the identical shape
+  ✓ it produces a different hash when even one vertex differs            0.01s  
+  ✓ it counts vertices excluding the duplicate closing point
+  ✓ it computes a bounding box matching the outer ring extents
+
+   PASS  Tests\Unit\PointInPolygonTest
+  ✓ it returns true for a point clearly inside a simple rectangular polygon
+  ✓ it returns false for a point clearly outside a simple rectangular polygon
+  ✓ it resolves a point inside the notch of a concave L-shaped polygon as outside
+  ✓ it resolves points inside each leg of a concave L-shaped polygon as inside
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                         0.69s  
+  ✓ users can authenticate using the login screen                        0.13s  
+  ✓ users can not authenticate with invalid password                     0.26s  
+  ✓ users can logout                                                     0.04s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                            0.05s  
+  ✓ email can be verified                                                0.05s  
+  ✓ email is not verified with invalid hash                              0.10s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                              0.05s  
+  ✓ password can be confirmed                                            0.04s  
+  ✓ password is not confirmed with invalid password                      0.25s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                           0.12s  
+  ✓ reset password link can be requested                                 0.30s  
+  ✓ reset password screen can be rendered                                0.30s  
+  ✓ password can be reset with valid token                               0.29s  
+
+   PASS  Tests\Feature\Auth\PasswordUpdateTest
+  ✓ password can be updated                                              0.08s  
+  ✓ correct password must be provided to update password                 0.07s  
+
+   FAIL  Tests\Feature\Auth\RegistrationTest
+  ✓ registration screen can be rendered                                  0.12s  
+  ⨯ new users can register                                               0.09s  
+
+   PASS  Tests\Feature\BiocharBatchTest
+  ✓ it derives planting_location_id automatically when only tree_planti… 0.12s  
+  ✓ it accepts a batch linked only to a planting_location with no speci… 0.10s  
+  ✓ it rejects a batch with neither planting_location_id nor tree_plant… 0.08s  
+  ✓ it nulls out tree_planting_id when the parent planting is deleted,…  0.13s  
+  ✓ it logs a change entry with correct old/new values when quantity_kg… 0.16s  
+
+   PASS  Tests\Feature\BoundaryGeojsonTest
+  ✓ it stores a valid boundary and logs boundary_set with the correct f… 0.12s  
+  ✓ it does not log boundary_set when no boundary is provided on create  0.10s  
+  ✓ it logs boundary_updated with only fingerprint fields (no raw coord… 0.25s  
+  ✓ it does not log boundary_updated when the same shape is resubmitted… 0.16s  
+  ✓ it rejects a boundary with fewer than 3 distinct vertices            0.16s  
+  ✓ it accepts an unclosed ring and saves it correctly auto-closed       0.17s  
+  ✓ it rejects a ring shaped like [A, B, A] that collapses to only 2 di… 0.09s  
+  ✓ it rejects an out-of-range coordinate within the polygon             0.12s  
+
+   PASS  Tests\Feature\ChangeLogTest
+  ✓ it creates one change log row per moved planting with correct old/n… 0.12s  
+  ✓ it logs multiple moved plantings as separate rows, not one combined… 0.11s  
+  ✓ it logs a coordinates change only when latitude/longitude actually…  0.14s  
+  ✓ it logs coordinate and status changes as two separate rows when bot… 0.16s  
+  ✓ it logs a tree planting status change with correct old/new values a… 0.13s  
+  ✓ it rejects out-of-range latitude and longitude values                0.10s  
+  ✓ it preserves changed_by_name after the acting user is deleted        0.07s  
+  ✓ it ignores a caller-supplied created_at and always stamps the real…  0.06s  
+  ✓ it keeps change log rows after the parent record is hard-deleted vi… 0.06s  
+
+   PASS  Tests\Feature\ContributorTest
+  ✓ it attaches an existing contributor and logs contributor_attached w… 0.08s  
+  ✓ it attaches a brand-new contributor created inline in the same requ… 0.08s  
+  ✓ it rejects attaching the same contributor twice to the same plantin… 0.07s  
+  ✓ it returns the same friendly duplicate-attachment error when two re… 0.08s  
+  ✓ it detaches a contributor and logs contributor_detached              0.08s  
+  ✓ it logs contributor_updated with correct old/new values, and a no-o… 0.08s  
+  ✓ it blocks deleting a contributor that has at least one attachment    0.08s  
+  ✓ it cascades pivot rows when the TreePlanting is deleted, contrastin… 0.09s  
+  ✓ it renders attached contributors per TreePlanting on the public pag… 0.14s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ it returns a successful response                                     0.09s  
+
+   PASS  Tests\Feature\GpsProvenanceTest
+  ✓ it logs a coordinates_set change entry with capture method and accu… 0.09s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.08s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.09s  
+  ✓ it rejects out-of-range latitude and longitude values on create      0.07s  
+  ✓ it does not log a coordinates_set entry when creating a location wi… 0.07s  
+  ✓ it logs coordinates_updated with capture_method/accuracy_meters in…  0.06s  
+  ✓ it logs coordinates_updated with capture_method map_center_adjust i… 0.06s  
+  ✓ it logs coordinates_updated with capture_method polygon_centroid in… 0.07s  
+
+   PASS  Tests\Feature\NearbyLocationFinderTest
+  ✓ it returns a location that falls within the bounding box             0.12s  
+  ✓ it excludes a location that is clearly outside the bounding box      0.14s  
+  ✓ it never includes the current location in its own results            0.12s  
+  ✓ it excludes locations with null latitude/longitude without erroring  0.12s  
+  ✓ it returns an empty collection, not an error, when the current loca… 0.14s  
+  ✓ it caps results at the configured limit even when more locations ma… 0.16s  
+  ✓ it returns an empty collection, not an error, when nothing else is…  0.09s  
+  ✓ it includes only id, location, latitude, longitude, and boundary_ge… 0.14s  
+  ✓ it renders the admin show page successfully with a nearby neighbor…  0.26s  
+  ✓ it renders the edit page successfully with a nearby neighbor that h… 0.19s  
+
+   PASS  Tests\Feature\PhotoLocationBoundaryTest
+  ✓ it includes photos with captured coordinates and excludes photos wi… 0.25s  
+  ✓ it flags a photo whose captured coordinates fall inside the boundar… 0.20s  
+  ✓ it flags a photo whose captured coordinates fall outside the bounda… 0.25s  
+  ✓ it gives a photo a null flag, not false, when the location has no b… 0.22s  
+  ✓ it includes the same captured-coordinate photo data on the public p… 0.11s  
+  ✓ it flags a photo on the public page as outside the boundary the sam… 0.11s  
+
+   PASS  Tests\Feature\PictureConsentTest
+  ✓ it rejects a camera-captured photo upload when consent is not confi… 0.15s  
+  ✓ it creates a camera-captured photo with consent_confirmed_at set wh… 0.10s  
+  ✓ it rejects a device-upload photo batch when consent is not confirme… 0.12s  
+  ✓ it creates device-uploaded photos with consent_confirmed_at set whe… 0.09s  
+  ✓ it still displays and behaves normally for an existing photo with a… 0.14s  
+
+   PASS  Tests\Feature\PictureProvenanceTest
+  ✓ it records exif provenance on a file-uploaded photo when the ExifEx… 0.10s  
+  ✓ it leaves all provenance fields null when the ExifExtractor finds n… 0.10s  
+  ✓ it records device-geolocation provenance on a camera-captured photo… 0.09s  
+  ✓ it leaves all provenance fields null on a camera-captured photo whe… 0.10s  
+
+   PASS  Tests\Feature\ProfileTest
+  ✓ profile page is displayed                                            0.15s  
+  ✓ profile information can be updated                                   0.04s  
+  ✓ email verification status is unchanged when the email address is un… 0.04s  
+  ✓ user can delete their account                                        0.04s  
+  ✓ correct password must be provided to delete account                  0.05s  
+
+   PASS  Tests\Feature\TreePlantingMeasurementTest
+  ✓ it links a measurement to the specific tree planting it was recorde… 0.16s  
+  ✓ it rejects trees_surviving greater than the plantings number_of_tre… 0.15s  
+  ✓ it rejects a measurement_date before the plantings planting_date     0.16s  
+  ✓ it lets a grower create a measurement but rejects them from verifyi… 0.21s  
+  ✓ it does not allow a privileged user to verify a measurement they re… 0.13s  
+  ✓ it sets verified_by_user_id and verified_at and writes a change log… 0.19s  
+  ✓ it logs only the fields that actually changed when editing a measur… 0.16s  
+  ✓ it editing a verified measurement resets its verification and logs…  0.18s  
+  ✓ it does not reset verification or log anything when a no-op edit re… 0.16s  
+  ✓ it cascades measurement deletion when the parent tree planting is d… 0.12s  
+
+   PASS  Tests\Feature\TreeTypeCarbonFieldsTest
+  ✓ it rejects wood_density_kg_m3 without a source_reference             0.11s  
+  ✓ it accepts wood_density_kg_m3 and carbon_fraction when a source_ref… 0.11s  
+  ✓ it renders wood_density_kg_m3, carbon_fraction, and source_referenc… 0.11s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\Auth\RegistrationTest > new users can register         
+  The user is not authenticated
+Failed asserting that false is true.
+
+  at tests\Feature\Auth\RegistrationTest.php:17
+     13▕         'password' => 'password',
+     14▕         'password_confirmation' => 'password',
+     15▕     ]);
+     16▕ 
+  ➜  17▕     $this->assertAuthenticated();
+     18▕     $response->assertRedirect(route('dashboard', absolute: false));
+     19▕ });
+     20▕
+
+
+  Tests:    1 failed, 113 passed (390 assertions)
+  Duration: 14.12s
+
+Script @php artisan test handling the test event returned with error code 1

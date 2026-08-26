@@ -10,6 +10,64 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-26 — Introduced FontAwesome (CDN, 6.4.0), restyled planting-locations filter section to match a sibling project's design
+
+**Context**
+
+Restyling the Planting Locations filter section to match a design pulled
+from a sibling Laravel project (`redcross_volunteers/nrcs-volunteer-database`,
+`organisations/index.blade.php`). That reference's Filter/Clear buttons use
+real FontAwesome icons (`fas fa-search`, `fas fa-times`). This app had no
+FontAwesome loaded anywhere — everywhere else (nav hamburger/close/chevron)
+uses inline SVG, and a prior investigation found `home.blade.php`'s existing
+`fas fa-phone`/`fas fa-envelope` markup was already present but inert, since
+no FontAwesome stylesheet was ever loaded to back it.
+
+**Decision**
+
+Added FontAwesome via CDN link (`cdnjs.cloudflare.com`, version 6.4.0 —
+matching the reference project exactly) to `layouts/app.blade.php`'s
+`<head>`, alongside the existing Leaflet CSS/JS includes. Used real
+`fas fa-search` / `fas fa-times` icons directly in the filter section's
+Filter/Clear buttons, rather than building one-off inline SVG for just this
+task and replacing it again later — the person I'm working with plans
+broader FontAwesome adoption for menu items and headings in a follow-up
+task, so introducing the dependency now (rather than twice) was the better
+sequencing.
+
+Ported the reference project's `.filter-*` utility-class family
+(`.filter-container`, `.filter-form`, `.filter-grid`/`-2`/`-3`/`-4`/`-5`/`-6`,
+`.filter-label`, `.filter-input`, `.filter-select` (+ `-small` variants),
+`.filter-active`, `.filter-btn-primary`, `.filter-btn-secondary`
+(+ `-active`/`-disabled`), `.filter-actions`, `.filter-button-group`) into
+this app's `resources/css/app.css`, which was previously just the three bare
+`@tailwind` directives with no custom classes. Substituted this app's
+`primary` theme color (`#2F855A`) for the reference's `blue-600`/`blue-700`
+on `.filter-btn-primary` and the input/select focus rings — every other
+color in the ported classes (gray secondary button, yellow `.filter-active`
+highlight) was left as in the reference, since only the blue was
+project-specific branding.
+
+Restructured `planting-locations/index.blade.php`'s filter form to use this
+new class family, added `<label>`s for Division/Search/Sort (previously
+unlabeled, centered-text inputs), and a Clear button that's visually
+disabled (`.filter-btn-disabled`, no `href`) when no filter is active vs.
+`.filter-btn-secondary-active` when one is — matching the reference's
+active/disabled distinction, which the old plain-gray "Reset" link didn't
+have. No backend change: still the same `division`/`search`/`sort` query
+params, same `PlantingLocationController::index()` logic.
+
+**Explicitly not done in this task**
+
+- No other icon in the app was touched — sidebar hamburger/close/chevron
+  stay inline SVG, emoji icons elsewhere (📏🌰🤝📍 etc.) stay as emoji.
+  Broader FontAwesome adoption for menu items/headings is a separate,
+  later task.
+- `home.blade.php`'s existing `fas fa-phone` / `fas fa-envelope` markup
+  (`home.blade.php:220-221,246-247`) was not touched — it will simply start
+  rendering correctly now that FontAwesome is actually loaded app-wide, as
+  a side effect of this change rather than a deliberate edit.
+
 ## 2026-08-26 — Replaced top nav bar with a persistent sidebar (desktop) + left-sliding drawer (mobile)
 
 **Context**

@@ -8,6 +8,11 @@
     Expects a $linkComponent variable ('sidebar-link' or
     'responsive-nav-link') naming which Blade component to render each
     link with, matching layouts/partials/nav-items.blade.php's convention.
+
+    Optionally accepts $showGuestLinks (default true) to suppress the
+    guest Login/Register block per-caller — the mobile drawer passes
+    false since guests get a compact Login button in the mobile top bar
+    instead (see layouts/navigation.blade.php).
 --}}
 @auth
     <div class="border-t border-gray-200 pt-4 space-y-1">
@@ -24,14 +29,16 @@
         </form>
     </div>
 @else
-    <div class="border-t border-gray-200 pt-4 px-3 space-y-1">
-        <x-dynamic-component :component="$linkComponent" :href="route('login')">
-            {{ __('Log in') }}
-        </x-dynamic-component>
-        @if (Route::has('register'))
-            <x-dynamic-component :component="$linkComponent" :href="route('register')">
-                {{ __('Register') }}
+    @if($showGuestLinks ?? true)
+        <div class="border-t border-gray-200 pt-4 px-3 space-y-1">
+            <x-dynamic-component :component="$linkComponent" :href="route('login')">
+                {{ __('Log in') }}
             </x-dynamic-component>
-        @endif
-    </div>
+            @if (Route::has('register'))
+                <x-dynamic-component :component="$linkComponent" :href="route('register')">
+                    {{ __('Register') }}
+                </x-dynamic-component>
+            @endif
+        </div>
+    @endif
 @endauth

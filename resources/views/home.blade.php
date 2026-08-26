@@ -1,17 +1,5 @@
 <x-app-layout>
-    @guest
-        <div class="w-full mt-10 px-10">
-            <div class="text-center">
-                <p class="text-3xl font-semibold">{{-- Welcome --}}</p>
-            </div>
-        </div>
-        <div class="flex justify-center gap-3 mt-4 sm:hidden">
-            <a href="{{ route('login') }}" class="inline-flex items-center justify-center px-5 py-2 bg-gray-800 text-white text-sm font-semibold rounded-md hover:bg-gray-700 transition-colors">Log in</a>
-            @if(Route::has('register'))
-            <a href="{{ route('register') }}" class="inline-flex items-center justify-center px-5 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-semibold rounded-md hover:bg-gray-50 transition-colors">Register</a>
-            @endif
-        </div>
-    @endguest
+
 
         <!-- Welcome Text -->
         <section class="py-12 bg-white">

@@ -9,49 +9,55 @@
             </a>
         </div>
 
-<div class="mb-6 flex justify-center"> <!-- Center the form container -->
-    <form action="{{ route('planting-locations.index') }}" method="GET" class="flex items-center gap-4"> <!-- Center items vertically and remove flex-1 -->
-        <!-- Division Filter -->
-        <div class="w-[150px] text-center"> <!-- Add text-center -->
-            <select name="division" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-center"> <!-- Add text-center -->
-                <option value="">All</option>
-                @foreach($divisions as $division)
-                    <option value="{{ $division->id }}" {{ request('division') == $division->id ? 'selected' : '' }}>
-                        {{ $division->LGA_name }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
+@php $hasFilters = request()->hasAny(['division', 'search', 'sort']); @endphp
+<div class="filter-container">
+    <div class="filter-form-content">
+        <form action="{{ route('planting-locations.index') }}" method="GET" class="filter-form">
+            <div class="filter-grid filter-grid-3">
+                <div>
+                    <label for="division" class="filter-label">Division</label>
+                    <select name="division" id="division" class="filter-select {{ request('division') ? 'filter-active' : '' }}">
+                        <option value="">All</option>
+                        @foreach($divisions as $division)
+                            <option value="{{ $division->id }}" {{ request('division') == $division->id ? 'selected' : '' }}>
+                                {{ $division->LGA_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
 
-        <!-- Search Input -->
-        <div class="w-[150px] text-center"> <!-- Add text-center -->
-            <input type="text"
-                   name="search"
-                   placeholder="Search..."
-                   value="{{ request('search') }}"
-                   class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-center"> <!-- Add text-center -->
-        </div>
+                <div>
+                    <label for="search" class="filter-label">Search</label>
+                    <input type="text"
+                           id="search"
+                           name="search"
+                           placeholder="Search..."
+                           value="{{ request('search') }}"
+                           class="filter-input {{ request('search') ? 'filter-active' : '' }}">
+                </div>
 
-        <!-- Sort -->
-        <div class="w-[160px]">
-            <select name="sort" class="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary text-center">
-                <option value="name_asc" {{ request('sort', 'name_asc') === 'name_asc' ? 'selected' : '' }}>Name A → Z</option>
-                <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name Z → A</option>
-            </select>
-        </div>
+                <div>
+                    <label for="sort" class="filter-label">Sort By</label>
+                    <select name="sort" id="sort" class="filter-select {{ request('sort') === 'name_desc' ? 'filter-active' : '' }}">
+                        <option value="name_asc" {{ request('sort', 'name_asc') === 'name_asc' ? 'selected' : '' }}>Name A → Z</option>
+                        <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name Z → A</option>
+                    </select>
+                </div>
+            </div>
 
-        <!-- Filter Button -->
-        <button type="submit" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors">
-            Filter
-        </button>
-
-        <!-- Reset Button -->
-        @if(request()->hasAny(['division', 'search', 'sort']))
-            <a href="{{ route('planting-locations.index') }}" class="text-gray-500 hover:text-gray-700 px-4 py-2 hover:bg-gray-100 rounded-lg transition-colors">
-                Reset
-            </a>
-        @endif
-    </form>
+            <div class="filter-actions">
+                <div class="filter-button-group">
+                    <button type="submit" class="filter-btn-primary">
+                        <i class="fas fa-search mr-1"></i>Filter
+                    </button>
+                    <a @if($hasFilters) href="{{ route('planting-locations.index') }}" @endif
+                       class="filter-btn-secondary {{ $hasFilters ? 'filter-btn-secondary-active' : 'filter-btn-disabled' }}">
+                        <i class="fas fa-times mr-1"></i>Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
         <div class="overflow-x-auto">

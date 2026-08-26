@@ -1,0 +1,558 @@
+===== resources/views/layouts/app.blade.php (only the <head> is shown; body unchanged from prior work) =====
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="emerald">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
+
+        {{-- Add favicon links here --}}
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+        {{-- For better compatibility across devices, you can add multiple formats --}}
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+
+        <title>ItacenMu.org Planting trees, growing futures in Afica.</title>
+        <!-- ... rest of your head section ... -->
+
+        <!-- Fonts -->
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        {{-- Leaflet CSS --}}
+        <!-- Leaflet CSS -->
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+        <!-- FontAwesome for Icons -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+        <!-- Leaflet JS -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script>
+            window.mapboxAccessToken = @json(config('services.mapbox.access_token'));
+        </script>
+        <script src="//unpkg.com/alpinejs" defer></script>
+
+        <!-- Scripts -->
+        @vite(['resources/css/app.css', 'resources/js/app.js'])
+    </head>
+    <body class="font-sans antialiased">
+        @include('partials.header')
+
+        <div class="min-h-screen bg-gray-100 sm:flex sm:items-start">
+            @include('layouts.navigation')
+
+            <div class="flex-1 min-w-0">
+                <!-- Page Heading -->
+                @isset($header)
+                    <header class="bg-white shadow">
+                        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endisset
+
+                <!-- Page Content -->
+                <main>
+                    {{ $slot }}
+                </main>
+            </div>
+        </div>
+
+        @include('partials.footer')
+    </body>
+</html>
+
+===== resources/css/app.css (full content) =====
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Filter Form Containers */
+.filter-container {
+    @apply bg-white shadow rounded-lg mb-6;
+}
+
+.filter-form-content {
+    @apply px-6 py-4;
+}
+
+.filter-form {
+    @apply space-y-4;
+}
+
+/* Filter Grid Layouts */
+.filter-grid {
+    @apply grid grid-cols-1 gap-4;
+}
+
+.filter-grid-2 {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.filter-grid-3 {
+    @apply grid grid-cols-1 md:grid-cols-3 gap-4;
+}
+
+.filter-grid-4 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+}
+
+.filter-grid-5 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4;
+}
+
+.filter-grid-6 {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4;
+}
+
+/* Filter Fields */
+.filter-label {
+    @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.filter-label-small {
+    @apply block text-xs font-medium text-gray-700 mb-1;
+}
+
+.filter-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary;
+}
+
+.filter-input-small {
+    @apply w-full px-2 py-1 text-xs border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary;
+}
+
+.filter-select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary;
+}
+
+.filter-select-small {
+    @apply w-full px-2 py-1 text-xs border border-gray-300 rounded shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary;
+}
+
+.filter-active {
+    background-color: #fef9c3; /* bg-yellow-100 */
+}
+
+/* Filter Buttons */
+.filter-btn-primary {
+    @apply bg-primary hover:bg-primary/90 text-white font-bold py-2 px-4 rounded;
+}
+
+.filter-btn-secondary {
+    @apply bg-gray-500 text-white font-bold py-2 px-4 rounded;
+}
+
+.filter-btn-secondary-active {
+    @apply hover:bg-gray-700;
+}
+
+.filter-btn-disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+
+/* Filter Actions */
+.filter-actions {
+    @apply flex justify-between items-center;
+}
+
+.filter-button-group {
+    @apply flex space-x-2;
+}
+
+===== resources/views/planting-locations/index.blade.php (full content) =====
+<x-app-layout>
+    <div class="max-w-5xl mx-auto px-4 py-6">
+        <h1 class="text-3xl font-bold text-center text-gray-800 mb-6">Planting Locations</h1>
+
+        <div class="text-right mb-4">
+            <a href="{{ route('planting-locations.create') }}"
+               class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                Add New Location
+            </a>
+        </div>
+
+@php $hasFilters = request()->hasAny(['division', 'search', 'sort']); @endphp
+<div class="filter-container">
+    <div class="filter-form-content">
+        <form action="{{ route('planting-locations.index') }}" method="GET" class="filter-form">
+            <div class="filter-grid filter-grid-3">
+                <div>
+                    <label for="division" class="filter-label">Division</label>
+                    <select name="division" id="division" class="filter-select {{ request('division') ? 'filter-active' : '' }}">
+                        <option value="">All</option>
+                        @foreach($divisions as $division)
+                            <option value="{{ $division->id }}" {{ request('division') == $division->id ? 'selected' : '' }}>
+                                {{ $division->LGA_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label for="search" class="filter-label">Search</label>
+                    <input type="text"
+                           id="search"
+                           name="search"
+                           placeholder="Search..."
+                           value="{{ request('search') }}"
+                           class="filter-input {{ request('search') ? 'filter-active' : '' }}">
+                </div>
+
+                <div>
+                    <label for="sort" class="filter-label">Sort By</label>
+                    <select name="sort" id="sort" class="filter-select {{ request('sort') === 'name_desc' ? 'filter-active' : '' }}">
+                        <option value="name_asc" {{ request('sort', 'name_asc') === 'name_asc' ? 'selected' : '' }}>Name A → Z</option>
+                        <option value="name_desc" {{ request('sort') === 'name_desc' ? 'selected' : '' }}>Name Z → A</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <div class="filter-button-group">
+                    <button type="submit" class="filter-btn-primary">
+                        <i class="fas fa-search mr-1"></i>Filter
+                    </button>
+                    <a @if($hasFilters) href="{{ route('planting-locations.index') }}" @endif
+                       class="filter-btn-secondary {{ $hasFilters ? 'filter-btn-secondary-active' : 'filter-btn-disabled' }}">
+                        <i class="fas fa-times mr-1"></i>Clear
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+        <div class="overflow-x-auto">
+            <table class="table w-auto mx-auto text-sm bg-white shadow-lg rounded-lg">
+                <thead class="bg-gray-100 hidden">
+                <tr>
+                    {{--<th class="px-6 py-3 text-left whitespace-nowrap">ID</th>--}}
+                    <th class="px-6 py-3 text-left whitespace-nowrap text-lg">Location</th>
+                    <th class="px-6 py-3 text-left whitespace-nowrap text-lg">Division</th>
+                    {{--<th class="px-6 py-3 text-left whitespace-nowrap">Status</th>--}}
+                    <th class="px-6 py-3 text-left whitespace-nowrap text-lg">Total Trees</th>
+                    <th class="px-6 py-3 text-left whitespace-nowrap text-lg"></th>
+
+                </tr>
+                </thead>
+                <tbody>
+                @foreach($plantingLocations as $location)
+                    <tr class="border-t hover:bg-gray-50 transition">
+                        {{-- <td class="px-6 py-3">{{ $location->id }}</td> --}}
+                        <td class="px-6 py-2 font-bold text-2xl">{{ $location->location }}</td>
+                        <td class="px-6 py-2 font-bold text-lg">{{ $location->division->LGA_name ?? 'N/A' }}</td>
+                        {{-- <td class="px-6 py-3">{{ $location->statusRelation->planting_location_status ?? 'N/A' }}</td> --}}
+                        <td class="px-6 py-2 text-center hidden">{{ $location->total_trees ?? 0 }}</td>
+                        <td class="px-6 py-2 space-x-2">
+                            <a href="{{ route('planting-locations.show', $location) }}" class="bg-blue-500 text-white px-3 py-1 text-sm rounded hover:bg-blue-600 transition-colors">View</a>
+                        </td>
+                    </tr>
+                    {{-- Subtable for Tree Plantings --}}
+                    <tr>
+                        <td colspan="6" class="pt-0 pb-0"> <!-- Remove padding -->
+                            @if($location->treePlantings->count())
+                                <table class="w-full text-sm border">
+                                    <thead class="bg-gray-100 hidden">
+                                    <tr>
+                                        {{-- <th class="px-4 py-2 border">ID</th> --}}
+                                        <th class="px-4 py-2 border">Planting Date</th>
+                                        <th class="px-4 py-2 border"></th>
+                                        <th class="px-4 py-2 border">Trees</th>
+                                        <th class="px-4 py-2 border">Status</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    @foreach($location->treePlantings as $planting)
+                                        <tr class="hover:bg-gray-50">
+                                            {{--<td class="px-4 py-2 border">{{ $planting->id }}</td>--}}
+                                            <td class="px-2 py-1 border">{{ $planting->planting_date->format('Y-m-d') }}</td>
+                                            <td class="px-2 py-1 border text-right">{{ $planting->number_of_trees }}</td>
+                                            <td class="px-2 py-1 border">{{ $planting->treeType->name ?? 'N/A' }}</td>
+                                            <td class="px-2 py-1 border">
+                                                {{ $planting->statusRelation->tree_planting_status ?? 'N/A' }}
+                                                @if($planting->statusRelation?->tree_planting_status === 'Verified' && $planting->statusUpdatedBy)
+                                                    <span class="text-gray-500 text-xs">by {{ $planting->statusUpdatedBy->name }}</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                    </tbody>
+                                </table>
+                            @else
+                                <p class="text-gray-500">No tree plantings recorded for this location.</p>
+                            @endif
+                        </td>
+                    </tr>
+                    <tr> <!-- Wrap the total in proper tr -->
+                        <td class="px-6 py-1 text-center" colspan="6"> <!-- Changed colspan to 6 to match table structure -->
+                            <div class="relative top-[-4px] text-lg font-bold flex justify-center w-full border border-gray-300 rounded">
+                                Total trees: {{ $location->total_trees ?? 0 }}
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="h-8"></tr>
+
+
+                @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="mt-4">
+        {{ $plantingLocations->links('custom.pagination') }}
+    </div>
+</x-app-layout>
+
+===== DECISIONS.md entry (full text, as written in the file) =====
+## 2026-08-26 — Introduced FontAwesome (CDN, 6.4.0), restyled planting-locations filter section to match a sibling project's design
+
+**Context**
+
+Restyling the Planting Locations filter section to match a design pulled
+from a sibling Laravel project (`redcross_volunteers/nrcs-volunteer-database`,
+`organisations/index.blade.php`). That reference's Filter/Clear buttons use
+real FontAwesome icons (`fas fa-search`, `fas fa-times`). This app had no
+FontAwesome loaded anywhere — everywhere else (nav hamburger/close/chevron)
+uses inline SVG, and a prior investigation found `home.blade.php`'s existing
+`fas fa-phone`/`fas fa-envelope` markup was already present but inert, since
+no FontAwesome stylesheet was ever loaded to back it.
+
+**Decision**
+
+Added FontAwesome via CDN link (`cdnjs.cloudflare.com`, version 6.4.0 —
+matching the reference project exactly) to `layouts/app.blade.php`'s
+`<head>`, alongside the existing Leaflet CSS/JS includes. Used real
+`fas fa-search` / `fas fa-times` icons directly in the filter section's
+Filter/Clear buttons, rather than building one-off inline SVG for just this
+task and replacing it again later — the person I'm working with plans
+broader FontAwesome adoption for menu items and headings in a follow-up
+task, so introducing the dependency now (rather than twice) was the better
+sequencing.
+
+Ported the reference project's `.filter-*` utility-class family
+(`.filter-container`, `.filter-form`, `.filter-grid`/`-2`/`-3`/`-4`/`-5`/`-6`,
+`.filter-label`, `.filter-input`, `.filter-select` (+ `-small` variants),
+`.filter-active`, `.filter-btn-primary`, `.filter-btn-secondary`
+(+ `-active`/`-disabled`), `.filter-actions`, `.filter-button-group`) into
+this app's `resources/css/app.css`, which was previously just the three bare
+`@tailwind` directives with no custom classes. Substituted this app's
+`primary` theme color (`#2F855A`) for the reference's `blue-600`/`blue-700`
+on `.filter-btn-primary` and the input/select focus rings — every other
+color in the ported classes (gray secondary button, yellow `.filter-active`
+highlight) was left as in the reference, since only the blue was
+project-specific branding.
+
+Restructured `planting-locations/index.blade.php`'s filter form to use this
+new class family, added `<label>`s for Division/Search/Sort (previously
+unlabeled, centered-text inputs), and a Clear button that's visually
+disabled (`.filter-btn-disabled`, no `href`) when no filter is active vs.
+`.filter-btn-secondary-active` when one is — matching the reference's
+active/disabled distinction, which the old plain-gray "Reset" link didn't
+have. No backend change: still the same `division`/`search`/`sort` query
+params, same `PlantingLocationController::index()` logic.
+
+**Explicitly not done in this task**
+
+- No other icon in the app was touched — sidebar hamburger/close/chevron
+  stay inline SVG, emoji icons elsewhere (📏🌰🤝📍 etc.) stay as emoji.
+  Broader FontAwesome adoption for menu items/headings is a separate,
+  later task.
+- `home.blade.php`'s existing `fas fa-phone` / `fas fa-envelope` markup
+  (`home.blade.php:220-221,246-247`) was not touched — it will simply start
+  rendering correctly now that FontAwesome is actually loaded app-wide, as
+  a side effect of this change rather than a deliberate edit.
+
+
+===== Test suite confirmation =====
+> @php artisan config:clear --ansi
+
+   INFO  Configuration cache cleared successfully.  
+
+> @php artisan test
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true                                                    0.03s  
+
+   PASS  Tests\Unit\ExifExtractorDmsConversionTest
+  ✓ it converts a Southern-hemisphere DMS coordinate to a negative deci… 0.02s  
+  ✓ it converts a Western-hemisphere DMS coordinate to a negative decimal degree
+  ✓ it converts a Northern/Eastern DMS coordinate to a positive decimal degree
+  ✓ it returns null when the DMS array has fewer than three components
+
+   PASS  Tests\Unit\GeometryFingerprintTest
+  ✓ it produces the same hash for two differently-formatted representations of the identical shape
+  ✓ it produces a different hash when even one vertex differs            0.01s  
+  ✓ it counts vertices excluding the duplicate closing point
+  ✓ it computes a bounding box matching the outer ring extents
+
+   PASS  Tests\Unit\PointInPolygonTest
+  ✓ it returns true for a point clearly inside a simple rectangular polygon
+  ✓ it returns false for a point clearly outside a simple rectangular polygon
+  ✓ it resolves a point inside the notch of a concave L-shaped polygon as outside
+  ✓ it resolves points inside each leg of a concave L-shaped polygon as inside
+
+   PASS  Tests\Feature\Auth\AuthenticationTest
+  ✓ login screen can be rendered                                         0.90s  
+  ✓ users can authenticate using the login screen                        0.15s  
+  ✓ users can not authenticate with invalid password                     0.26s  
+  ✓ users can logout                                                     0.04s  
+
+   PASS  Tests\Feature\Auth\EmailVerificationTest
+  ✓ email verification screen can be rendered                            0.05s  
+  ✓ email can be verified                                                0.04s  
+  ✓ email is not verified with invalid hash                              0.11s  
+
+   PASS  Tests\Feature\Auth\PasswordConfirmationTest
+  ✓ confirm password screen can be rendered                              0.07s  
+  ✓ password can be confirmed                                            0.05s  
+  ✓ password is not confirmed with invalid password                      0.25s  
+
+   PASS  Tests\Feature\Auth\PasswordResetTest
+  ✓ reset password link screen can be rendered                           0.06s  
+  ✓ reset password link can be requested                                 0.25s  
+  ✓ reset password screen can be rendered                                0.27s  
+  ✓ password can be reset with valid token                               0.27s  
+
+   PASS  Tests\Feature\Auth\PasswordUpdateTest
+  ✓ password can be updated                                              0.08s  
+  ✓ correct password must be provided to update password                 0.14s  
+
+   FAIL  Tests\Feature\Auth\RegistrationTest
+  ✓ registration screen can be rendered                                  0.15s  
+  ⨯ new users can register                                               0.12s  
+
+   PASS  Tests\Feature\BiocharBatchTest
+  ✓ it derives planting_location_id automatically when only tree_planti… 0.18s  
+  ✓ it accepts a batch linked only to a planting_location with no speci… 0.15s  
+  ✓ it rejects a batch with neither planting_location_id nor tree_plant… 0.16s  
+  ✓ it nulls out tree_planting_id when the parent planting is deleted,…  0.26s  
+  ✓ it logs a change entry with correct old/new values when quantity_kg… 0.24s  
+
+   PASS  Tests\Feature\BoundaryGeojsonTest
+  ✓ it stores a valid boundary and logs boundary_set with the correct f… 0.14s  
+  ✓ it does not log boundary_set when no boundary is provided on create  0.15s  
+  ✓ it logs boundary_updated with only fingerprint fields (no raw coord… 0.19s  
+  ✓ it does not log boundary_updated when the same shape is resubmitted… 0.15s  
+  ✓ it rejects a boundary with fewer than 3 distinct vertices            0.11s  
+  ✓ it accepts an unclosed ring and saves it correctly auto-closed       0.11s  
+  ✓ it rejects a ring shaped like [A, B, A] that collapses to only 2 di… 0.12s  
+  ✓ it rejects an out-of-range coordinate within the polygon             0.12s  
+
+   PASS  Tests\Feature\ChangeLogTest
+  ✓ it creates one change log row per moved planting with correct old/n… 0.13s  
+  ✓ it logs multiple moved plantings as separate rows, not one combined… 0.11s  
+  ✓ it logs a coordinates change only when latitude/longitude actually…  0.09s  
+  ✓ it logs coordinate and status changes as two separate rows when bot… 0.09s  
+  ✓ it logs a tree planting status change with correct old/new values a… 0.08s  
+  ✓ it rejects out-of-range latitude and longitude values                0.08s  
+  ✓ it preserves changed_by_name after the acting user is deleted        0.08s  
+  ✓ it ignores a caller-supplied created_at and always stamps the real…  0.06s  
+  ✓ it keeps change log rows after the parent record is hard-deleted vi… 0.07s  
+
+   PASS  Tests\Feature\ContributorTest
+  ✓ it attaches an existing contributor and logs contributor_attached w… 0.08s  
+  ✓ it attaches a brand-new contributor created inline in the same requ… 0.07s  
+  ✓ it rejects attaching the same contributor twice to the same plantin… 0.08s  
+  ✓ it returns the same friendly duplicate-attachment error when two re… 0.12s  
+  ✓ it detaches a contributor and logs contributor_detached              0.11s  
+  ✓ it logs contributor_updated with correct old/new values, and a no-o… 0.08s  
+  ✓ it blocks deleting a contributor that has at least one attachment    0.08s  
+  ✓ it cascades pivot rows when the TreePlanting is deleted, contrastin… 0.08s  
+  ✓ it renders attached contributors per TreePlanting on the public pag… 0.10s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ it returns a successful response                                     0.07s  
+
+   PASS  Tests\Feature\GpsProvenanceTest
+  ✓ it logs a coordinates_set change entry with capture method and accu… 0.07s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.07s  
+  ✓ it logs a coordinates_set change entry when creating a location wit… 0.09s  
+  ✓ it rejects out-of-range latitude and longitude values on create      0.06s  
+  ✓ it does not log a coordinates_set entry when creating a location wi… 0.07s  
+  ✓ it logs coordinates_updated with capture_method/accuracy_meters in…  0.08s  
+  ✓ it logs coordinates_updated with capture_method map_center_adjust i… 0.12s  
+  ✓ it logs coordinates_updated with capture_method polygon_centroid in… 0.20s  
+
+   PASS  Tests\Feature\NearbyLocationFinderTest
+  ✓ it returns a location that falls within the bounding box             0.20s  
+  ✓ it excludes a location that is clearly outside the bounding box      0.14s  
+  ✓ it never includes the current location in its own results            0.12s  
+  ✓ it excludes locations with null latitude/longitude without erroring  0.15s  
+  ✓ it returns an empty collection, not an error, when the current loca… 0.16s  
+  ✓ it caps results at the configured limit even when more locations ma… 0.22s  
+  ✓ it returns an empty collection, not an error, when nothing else is…  0.14s  
+  ✓ it includes only id, location, latitude, longitude, and boundary_ge… 0.20s  
+  ✓ it renders the admin show page successfully with a nearby neighbor…  0.27s  
+  ✓ it renders the edit page successfully with a nearby neighbor that h… 0.28s  
+
+   PASS  Tests\Feature\PhotoLocationBoundaryTest
+  ✓ it includes photos with captured coordinates and excludes photos wi… 0.35s  
+  ✓ it flags a photo whose captured coordinates fall inside the boundar… 0.21s  
+  ✓ it flags a photo whose captured coordinates fall outside the bounda… 0.22s  
+  ✓ it gives a photo a null flag, not false, when the location has no b… 0.19s  
+  ✓ it includes the same captured-coordinate photo data on the public p… 0.15s  
+  ✓ it flags a photo on the public page as outside the boundary the sam… 0.13s  
+
+   PASS  Tests\Feature\PictureConsentTest
+  ✓ it rejects a camera-captured photo upload when consent is not confi… 0.21s  
+  ✓ it creates a camera-captured photo with consent_confirmed_at set wh… 0.15s  
+  ✓ it rejects a device-upload photo batch when consent is not confirme… 0.22s  
+  ✓ it creates device-uploaded photos with consent_confirmed_at set whe… 0.26s  
+  ✓ it still displays and behaves normally for an existing photo with a… 0.26s  
+
+   PASS  Tests\Feature\PictureProvenanceTest
+  ✓ it records exif provenance on a file-uploaded photo when the ExifEx… 0.15s  
+  ✓ it leaves all provenance fields null when the ExifExtractor finds n… 0.13s  
+  ✓ it records device-geolocation provenance on a camera-captured photo… 0.13s  
+  ✓ it leaves all provenance fields null on a camera-captured photo whe… 0.17s  
+
+   PASS  Tests\Feature\ProfileTest
+  ✓ profile page is displayed                                            0.21s  
+  ✓ profile information can be updated                                   0.06s  
+  ✓ email verification status is unchanged when the email address is un… 0.05s  
+  ✓ user can delete their account                                        0.04s  
+  ✓ correct password must be provided to delete account                  0.04s  
+
+   PASS  Tests\Feature\TreePlantingMeasurementTest
+  ✓ it links a measurement to the specific tree planting it was recorde… 0.08s  
+  ✓ it rejects trees_surviving greater than the plantings number_of_tre… 0.07s  
+  ✓ it rejects a measurement_date before the plantings planting_date     0.07s  
+  ✓ it lets a grower create a measurement but rejects them from verifyi… 0.20s  
+  ✓ it does not allow a privileged user to verify a measurement they re… 0.17s  
+  ✓ it sets verified_by_user_id and verified_at and writes a change log… 0.23s  
+  ✓ it logs only the fields that actually changed when editing a measur… 0.24s  
+  ✓ it editing a verified measurement resets its verification and logs…  0.20s  
+  ✓ it does not reset verification or log anything when a no-op edit re… 0.18s  
+  ✓ it cascades measurement deletion when the parent tree planting is d… 0.15s  
+
+   PASS  Tests\Feature\TreeTypeCarbonFieldsTest
+  ✓ it rejects wood_density_kg_m3 without a source_reference             0.14s  
+  ✓ it accepts wood_density_kg_m3 and carbon_fraction when a source_ref… 0.12s  
+  ✓ it renders wood_density_kg_m3, carbon_fraction, and source_referenc… 0.10s  
+  ────────────────────────────────────────────────────────────────────────────  
+   FAILED  Tests\Feature\Auth\RegistrationTest > new users can register         
+  The user is not authenticated
+Failed asserting that false is true.
+
+  at tests\Feature\Auth\RegistrationTest.php:17
+     13▕         'password' => 'password',
+     14▕         'password_confirmation' => 'password',
+     15▕     ]);
+     16▕ 
+  ➜  17▕     $this->assertAuthenticated();
+     18▕     $response->assertRedirect(route('dashboard', absolute: false));
+     19▕ });
+     20▕
+
+
+  Tests:    1 failed, 113 passed (390 assertions)
+  Duration: 16.08s
+
+Script @php artisan test handling the test event returned with error code 1
+
+Also ran `npm run build` (Vite) to compile the new .filter-* Tailwind
+classes into public/build — succeeded, CSS bundle grew from ~58KB to
+~64KB. Also ran `php artisan view:cache` to force-compile every Blade
+template in the app (confirms no Blade syntax errors) — succeeded.
