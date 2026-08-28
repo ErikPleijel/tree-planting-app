@@ -181,6 +181,7 @@
                                 <div class="flex flex-wrap justify-center gap-1">
                                     @role('Admin|SuperAdmin|Monitor|Grower')
                                     <a href="{{ route('tree-planting-measurements.index', $planting) }}" class="bg-blue-500 text-white px-2 py-1 text-xs rounded hover:bg-blue-600 transition-colors">📏 Measurements</a>
+                                    <a href="{{ route('lidar-scans.create') }}" class="bg-indigo-600 text-white px-2 py-1 text-xs rounded hover:bg-indigo-700 transition-colors" title="Not yet linked to a specific measurement — can be linked to one later">📡 Attach Scan</a>
                                     <a href="{{ route('tree-planting-contributors.index', $planting) }}" class="bg-teal-600 text-white px-2 py-1 text-xs rounded hover:bg-teal-700 transition-colors">🤝 Contributors ({{ $planting->contributors->count() }})</a>
                                     <a href="{{ route('tree-plantings.edit', $planting) }}" class="bg-yellow-500 text-white px-2 py-1 text-xs rounded hover:bg-yellow-600 transition-colors">Edit</a>
                                     @endrole

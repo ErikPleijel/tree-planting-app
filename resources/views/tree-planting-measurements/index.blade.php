@@ -24,9 +24,12 @@
             at {{ $treePlanting->plantingLocation->location ?? 'N/A' }}
         </p>
 
-        <div class="flex justify-end mb-4">
+        <div class="flex justify-end gap-2 mb-4">
             <a href="{{ route('tree-planting-measurements.create', $treePlanting) }}" class="bg-primary text-white px-4 py-2 text-sm rounded hover:bg-green-700 transition-colors">
                 ➕ New Measurement
+            </a>
+            <a href="{{ route('lidar-scans.create') }}" class="bg-indigo-600 text-white px-4 py-2 text-sm rounded hover:bg-indigo-700 transition-colors" title="Not yet linked to a specific measurement — can be linked to one later">
+                📡 Attach LiDAR Scan
             </a>
         </div>
 
