@@ -10,6 +10,88 @@ the context that prompted it, the decision, and the reasoning.
 
 ---
 
+## 2026-08-28 — LiDAR Scan Upload — Discoverability Fix
+
+**Context**
+
+The LiDAR scan upload feature (migrations → model → controller →
+views/routes, see "LiDAR Integration — Investigation & Proposal" and
+"LiDAR Scan Upload — Implementation Judgment Calls" below) had no
+visible entry point anywhere in the UI. A dedicated diagnosis pass
+traced the actual cause, evidence-based rather than assumed:
+
+- **Coverage gap**: the only existing link into `lidar-scans.create`
+  lived *inside* the per-measurement-row loop on
+  `tree-planting-measurements/index.blade.php` — rendered once per
+  existing `TreePlantingMeasurement` row. Confirmed via a real
+  authenticated request that a `TreePlanting` with **zero** recorded
+  measurements shows only the "No measurements recorded yet." message,
+  with no `lidar-scans` reference anywhere on that page — no path to
+  the upload form at all in that state.
+- **Prominence gap**: even where it existed, the link was a bare
+  `text-xs text-blue-600 hover:underline` text link stacked in a
+  narrow table cell — easy to miss — several clicks deep (Location
+  show page → a specific TreePlanting's Measurements page), with no
+  higher-level entry point anywhere (not on the Location show page,
+  not on the dashboard, not as its own nav item).
+
+Also confirmed, before writing any code, that `tree-plantings.show`
+(the "likely" TreePlanting-level view) is never linked from anywhere
+in the app's actual views — it's reachable only by a direct URL a user
+would have to already know. The real navigation path is
+`planting-locations/show.blade.php`'s "Trees Planted" table, where
+each `TreePlanting` row already has its own action buttons
+(📏 Measurements, 🤝 Contributors, Edit, Delete) — that row is the
+genuine "TreePlanting level" UI, not a separate show page.
+
+**Decision**
+
+Added two new, properly-styled buttons (not text links) — both use the
+upload-first flow (`lidar-scans.create` with no
+`tree_planting_measurement_id`), confirmed working end-to-end against
+the current `LidarScanController` before relying on it (see below):
+
+- `planting-locations/show.blade.php`: a "📡 Attach Scan" pill in the
+  Trees Planted table's per-row Actions cell, matching that row's
+  existing button convention exactly (same `px-2 py-1 text-xs rounded`
+  sizing as Measurements/Contributors/Edit, a new indigo color to stay
+  visually distinct from the existing blue/teal/yellow/red).
+- `tree-planting-measurements/index.blade.php`: a "📡 Attach LiDAR
+  Scan" button next to the existing "➕ New Measurement" button, in the
+  always-visible top action row — placed *above* the
+  `@if($measurements->isEmpty())` check, so it renders regardless of
+  whether the `TreePlanting` has any measurements yet. This is the
+  direct fix for the coverage gap.
+
+The existing per-row "+ Attach Scan" text links (pre-linked to a
+specific measurement) are unchanged — both flows now coexist. A scan
+tied to an already-recorded measurement is still a legitimate,
+narrower flow; the two new buttons are a second, broader entry point
+that doesn't depend on any measurement existing.
+
+**`LidarScanController` was not modified — verified, not assumed,
+that it didn't need to be.** Before writing the new buttons, tested
+the upload-first flow directly: submitted a request to `store()` with
+`tree_planting_measurement_id` omitted entirely (not even `null` —
+genuinely absent from the input), and confirmed a real `lidar_scans`
+row was created with `tree_planting_measurement_id = NULL`, matching
+the original nullable-FK design intent from the LiDAR Integration
+proposal. `create()` already handles the same omitted-param case via
+its existing `if ($measurementId)` guard and the view's `@else`
+branch. No controller or route changes were needed or made.
+
+**Reasoning**
+
+Keeping both entry points (broad, unlinked upload vs. narrow,
+pre-linked-to-a-measurement upload) rather than collapsing to one
+avoids forcing a scan to have a measurement before it can be recorded,
+which was the whole point of the nullable FK in the original design —
+a scan can legitimately be captured before its measurement is
+finalized. Matching each button's styling to its own page's existing
+convention (the row-level pill size on the Location page, the
+top-action-row button size on the Measurements page) keeps the fix
+visually consistent rather than introducing a new one-off style.
+
 ## 2026-08-26 — Computed area/density on the planting-location show page
 
 **Context**
