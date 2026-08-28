@@ -213,3 +213,14 @@ Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(funct
     Route::delete('/tree-plantings/{treePlanting}/contributors/{contributor}', [\App\Http\Controllers\TreePlantingContributorController::class, 'detach'])
         ->name('tree-planting-contributors.detach');
 });
+
+// CSV Export — broad gate, matches this app's most permissive existing
+// multi-role gate (e.g. biochar batch recording). download() streams
+// the full filtered dataset; index() only ever shows a paginated
+// preview of it.
+Route::middleware(['auth', 'role:Admin|SuperAdmin|Monitor|Grower'])->group(function () {
+    Route::get('/export', [\App\Http\Controllers\ExportController::class, 'index'])
+        ->name('export.index');
+    Route::get('/export/download', [\App\Http\Controllers\ExportController::class, 'download'])
+        ->name('export.download');
+});

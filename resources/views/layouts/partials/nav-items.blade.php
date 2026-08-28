@@ -18,14 +18,6 @@
 </x-dynamic-component>
 @endrole
 
-<x-dynamic-component :component="$linkComponent" :href="route('stats.map')" :active="request()->routeIs('stats.map')">
-    <i class="fas fa-map mr-2"></i>Map
-</x-dynamic-component>
-
-<x-dynamic-component :component="$linkComponent" :href="route('stats.stats1')" :active="request()->routeIs('stats.stats1')">
-    <i class="fas fa-chart-column mr-2"></i>Statistics
-</x-dynamic-component>
-
 @role('Admin|SuperAdmin|Monitor|Grower')
 <x-dynamic-component :component="$linkComponent" :href="route('planting-locations.index')" :active="request()->routeIs('planting-locations.*')">
     <i class="fas fa-location-dot mr-2"></i>Locations
@@ -59,3 +51,17 @@
     <i class="fas fa-users mr-2"></i>The Team
 </x-dynamic-component>
 @endauth
+
+<x-dynamic-component :component="$linkComponent" :href="route('stats.map')" :active="request()->routeIs('stats.map')">
+    <i class="fas fa-map mr-2"></i>Map
+</x-dynamic-component>
+
+<x-dynamic-component :component="$linkComponent" :href="route('stats.stats1')" :active="request()->routeIs('stats.stats1')">
+    <i class="fas fa-chart-column mr-2"></i>Statistics
+</x-dynamic-component>
+
+@role('Admin|SuperAdmin|Monitor|Grower')
+<x-dynamic-component :component="$linkComponent" :href="route('export.index')" :active="request()->routeIs('export.*')">
+    <i class="fas fa-file-csv mr-2"></i>Export
+</x-dynamic-component>
+@endrole

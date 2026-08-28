@@ -56,6 +56,14 @@ class PlantingLocation extends Model
         return $this->hasMany(Inspection::class);
     }
 
+    // Inverse of BiocharBatch::plantingLocation() — added so the CSV
+    // export can aggregate totals via withSum() instead of a per-row
+    // query, matching how total_trees/inspection_count are aggregated.
+    public function biocharBatches()
+    {
+        return $this->hasMany(BiocharBatch::class);
+    }
+
     protected static function booted()
     {
         static::creating(function ($location) {
