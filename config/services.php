@@ -39,4 +39,11 @@ return [
         'access_token' => env('MAPBOX_ACCESS_TOKEN'),
     ],
 
+    // Used by `php artisan backup:pull` (local only) to download the production database.
+    'prod_backup' => [
+        'ssh' => env('PROD_BACKUP_SSH'),               // e.g. root@139.84.228.69
+        'database' => env('PROD_BACKUP_DATABASE'),     // DB_DATABASE of the production .env
+        'remote_dir' => env('PROD_BACKUP_REMOTE_DIR'), // where nightly backups are stored
+    ],
+
 ];
