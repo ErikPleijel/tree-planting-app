@@ -2,10 +2,18 @@
     <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data">
         @csrf
 
+        <!-- Invitation Code -->
+        <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <x-input-label for="invitation_code" :value="__('Invitation code')" />
+            <p class="mt-1 text-xs text-gray-500">{{ __('Registration is by invitation only. Enter the code you received to continue.') }}</p>
+            <x-text-input id="invitation_code" class="block mt-2 w-full" type="text" name="invitation_code" :value="old('invitation_code')" required autofocus autocomplete="off" />
+            <x-input-error :messages="$errors->get('invitation_code')" class="mt-2" />
+        </div>
+
         <!-- Name -->
-        <div>
+        <div class="mt-6">
             <x-input-label for="name" :value="__('Name')" />
-            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autofocus autocomplete="name" />
+            <x-text-input id="name" class="block mt-1 w-full" type="text" name="name" :value="old('name')" required autocomplete="name" />
             <x-input-error :messages="$errors->get('name')" class="mt-2" />
         </div>
 
@@ -74,13 +82,6 @@
             </div>
 
             <x-input-error :messages="$errors->get('profile_picture_file')" class="mt-2" />
-        </div>
-
-        <!-- Invitation Code -->
-        <div class="mt-4">
-            <x-input-label for="invitation_code" :value="__('Invitation Code')" />
-            <x-text-input id="invitation_code" class="block mt-1 w-full" type="text" name="invitation_code" required autocomplete="off" />
-            <x-input-error :messages="$errors->get('invitation_code')" class="mt-2" />
         </div>
 
         <!-- Password -->

@@ -10,9 +10,10 @@
     link with, matching layouts/partials/nav-items.blade.php's convention.
 
     Optionally accepts $showGuestLinks (default true) to suppress the
-    guest Login/Register block per-caller — the mobile drawer passes
-    false since guests get a compact Login button in the mobile top bar
-    instead (see layouts/navigation.blade.php).
+    guest Login/Register block per-caller. Both the desktop sidebar and
+    the mobile drawer currently show it; on mobile, guests additionally
+    get compact Log in / Register buttons in the top bar (see
+    layouts/navigation.blade.php).
 --}}
 @auth
     <div class="border-t border-gray-200 pt-4 space-y-1">

@@ -8,7 +8,7 @@
     drawer/backdrop share the same `open` state.
 --}}
 <div x-data="{ open: false }">
-    {{-- Mobile top bar: hamburger on the LEFT, compact Login button (guests only) on the right --}}
+    {{-- Mobile top bar: hamburger on the LEFT, compact Log in / Register buttons (guests only) on the right --}}
     <div class="flex items-center justify-between h-14 px-4 bg-white border-b border-gray-100 sm:hidden">
         <button @click="open = true" aria-label="Open navigation menu"
                 class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
@@ -18,10 +18,18 @@
         </button>
 
         @guest
-            <a href="{{ route('login') }}"
-               class="inline-flex items-center px-3 py-1.5 rounded-md text-xs font-semibold bg-primary text-primary-content hover:bg-primary/90 transition duration-150 ease-in-out">
-                <i class="fas fa-right-to-bracket mr-2"></i>{{ __('Log in') }}
-            </a>
+            <div class="flex items-center gap-2">
+                <a href="{{ route('login') }}"
+                   class="inline-flex items-center whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-semibold border border-primary text-primary bg-white hover:bg-green-50 transition duration-150 ease-in-out">
+                    <i class="fas fa-right-to-bracket mr-1.5"></i>{{ __('Log in') }}
+                </a>
+                @if (Route::has('register'))
+                    <a href="{{ route('register') }}"
+                       class="inline-flex items-center whitespace-nowrap px-3 py-1.5 rounded-md text-xs font-semibold border border-primary bg-primary text-primary-content hover:bg-primary/90 transition duration-150 ease-in-out">
+                        <i class="fas fa-user-plus mr-1.5"></i>{{ __('Register') }}
+                    </a>
+                @endif
+            </div>
         @endguest
     </div>
 
@@ -71,7 +79,7 @@
                 @include('layouts.partials.nav-items', ['linkComponent' => 'responsive-nav-link'])
             </nav>
 
-            @include('layouts.partials.user-menu', ['linkComponent' => 'responsive-nav-link', 'showGuestLinks' => false])
+            @include('layouts.partials.user-menu', ['linkComponent' => 'responsive-nav-link'])
         </div>
     </div>
 </div>
